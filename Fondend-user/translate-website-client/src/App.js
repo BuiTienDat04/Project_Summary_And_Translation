@@ -1,8 +1,13 @@
-export default function App() {
+// src/App.js
+import React from 'react';
+import SummaryTranslate from './pages/SummaryTranslate';
+
+const App = () => {
   return (
-    <h1 className="text-3xl font-bold underline">
-      Hello world!
-      Ok Update code di 
-    </h1>
-  )
-}
+    <div>
+      <SummaryTranslate />
+    </div>
+  );
+};
+
+export default App;
