@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { FaUserGraduate, FaChalkboardTeacher, FaRegNewspaper, FaUserEdit, FaBullhorn, FaUser, FaBook, FaUserTie, FaPenNib, FaBookOpen, FaBuilding, FaSitemap, FaUserPlus, FaEnvelope, FaLock, FaPhone, FaCalendarAlt, FaSignInAlt, FaCheckCircle, FaSmile } from "react-icons/fa"; // Import FaSmile icon
+import axios from 'axios';
 
 export function TextSummarizer() {
   const [text, setText] = useState("");
@@ -33,10 +34,19 @@ export function TextSummarizer() {
   const [loggedInUsername, setLoggedInUsername] = useState(null);
 
   const navigate = useNavigate();
+  const [translatedText, setTranslatedText] = useState("");
+  const [targetLanguage, setTargetLanguage] = useState("en");
+  const [availableLanguages, setAvailableLanguages] = useState([ // Add available languages
+    { code: 'en', name: 'English' },
+    { code: 'fr', name: 'French' },
+    { code: 'es', name: 'Spanish' },
+    { code: 'de', name: 'German' },
+    // Add more languages here as needed
+  ]); // Mặc định là tiếng Anh
 
   const summarizeText = () => {
     if (text.trim() === "") {
-      alert("Vui lòng nhập văn bản để tóm tắt.");
+      alert("Please enter text to summarize.");
       return;
     }
 
@@ -58,72 +68,98 @@ export function TextSummarizer() {
     setSummary(result);
   };
 
+
+
+
   const servicesList = [
     {
-      title: "SINH VIÊN",
-      description: "Với PDFSmart, tóm tắt các bài học và trang Wikipedia của bạn trong vài giây giúp tăng năng suất học tập của bạn.",
+      title: "STUDENTS",
+      description: "With PDFSmart, summarize your lessons and Wikipedia pages in seconds to boost your learning productivity.",
       icon: <FaUserGraduate />,
     },
     {
-      title: "GIÁO SƯ",
-      description: "Xác định các ý tưởng và lập luận quan trọng nhất của văn bản để bạn có thể chuẩn bị bài học của mình.",
+      title: "PROFESSORS",
+      description: "Identify the most important ideas and arguments of a text so you can prepare your lessons.",
       icon: <FaChalkboardTeacher />,
     },
     {
-      title: "NHÀ BÁO",
-      description: "Nếu bạn thích thông tin tóm tắt các sự kiện chính quan trọng, thì PDFSmart là dành cho bạn!",
+      title: "JOURNALISTS",
+      description: "If you like summarized information of the important main events, then PDFSmart is for you!",
       icon: <FaRegNewspaper />,
     },
     {
-      title: "NGƯỜI HIỆU CHỈNH",
-      description: "Xác định và hiểu rất nhanh các sự kiện và ý tưởng của các văn bản của bạn.",
+      title: "EDITORS",
+      description: "Identify and understand very quickly the events and ideas of your texts.",
       icon: <FaUserEdit />,
     },
     {
-      title: "THÔNG CÁO BÁO CHÍ",
-      description: "Với sự giúp đỡ của PDFSmart, đi đến ý tưởng chính của các bài viết của bạn để viết các lập luận và phê bình của bạn.",
+      title: "PRESS RELEASE",
+      description: "With the help of PDFSmart, get to the main idea of your articles to write your arguments and critiques.",
       icon: <FaBullhorn />,
     },
     {
-      title: "NGƯỜI ĐỌC",
-      description: "Tiết kiệm thời gian để tóm tắt các tài liệu của bạn, nắm được thông tin liên quan nhanh chóng.",
+      title: "READERS",
+      description: "Save time to summarize your documents, grasp the relevant information quickly.",
       icon: <FaUser />,
     },
     {
-      title: "THƯ VIỆN",
-      description: "Cần tóm tắt các bài thuyết trình của cuốn sách của bạn? Xác định các đối số trong một vài giây.",
+      title: "LIBRARIES",
+      description: "Need to summarize your book's presentations? Identify the arguments in a few seconds.",
       icon: <FaBook />,
     },
     {
-      title: "NGƯỜI LÀM VIỆC THƯ VIỆN",
-      description: "Quá nhiều tài liệu? Đơn giản hóa bài đọc của bạn, làm cho bài đọc của bạn dễ dàng hơn với PDFSmart như một công cụ máy tính để bàn.",
+      title: "LIBRARIANS",
+      description: "Too much material? Simplify your reading, make your reading easier with PDFSmart as a desktop tool.",
       icon: <FaUserTie />,
     },
     {
-      title: "NHÀ VĂN",
-      description: "Cần tóm tắt các chương của bạn? Với PDFSmart, đi vào trung tâm của ý tưởng của bạn.",
+      title: "WRITERS",
+      description: "Need to summarize your chapters? With PDFSmart, get to the heart of your ideas.",
       icon: <FaPenNib />,
     },
     {
-      title: "NHÀ XUẤT BẢN",
-      description: "Xác định nhanh chóng các cuốn sách của bạn hoặc ý tưởng của tác giả. Tóm tắt những điểm chính quan trọng nhất.",
+      title: "PUBLISHERS",
+      description: "Quickly identify your books or author's ideas. Summarize the most important key points.",
       icon: <FaBookOpen />,
     },
     {
-      title: "VIỆN BẢO TÀNG",
-      description: "Từ bây giờ, hãy tạo bản tóm tắt nhanh chóng về bản trình bày của các nghệ sĩ của bạn và tác phẩm nghệ thuật của họ.",
+      title: "MUSEUMS",
+      description: "From now on, create quick summaries of your artists' presentations and their artworks.",
       icon: <FaBuilding />,
     },
     {
-      title: "TỔ CHỨC",
-      description: "Xác định các đoạn quan trọng nhất trong các văn bản có chứa rất nhiều từ để phân tích chi tiết.",
+      title: "ORGANIZATIONS",
+      description: "Identify the most important passages in texts that contain a lot of words for detailed analysis.",
       icon: <FaSitemap />,
     },
   ];
 
+
+  const translateSummary = async () => {
+    if (!summary) {
+      alert("Please summarize the text first.");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `https://translation.googleapis.com/language/translate/v2?key=YOUR_API_KEY`, // Replace with your API key
+        {
+          q: summary,
+          target: targetLanguage,
+        }
+      );
+
+      setTranslatedText(response.data.data.translations[0].translatedText);
+    } catch (error) {
+      console.error("Translation error:", error);
+      alert("An error occurred during translation.");
+    }
+  };
+
   const handleRegister = async () => {
     if (!name || !email || !password || !phoneNumber || !dateOfBirth) {
-      setErrorMessage('Vui lòng điền đầy đủ thông tin.');
+      setErrorMessage('Please fill in all information.');
       return;
     }
 
@@ -150,7 +186,7 @@ export function TextSummarizer() {
 
   const handleLogin = () => {
     if (!loginUsername || !loginPassword) { // Changed to loginUsername
-      setLoginErrorMessage('Vui lòng điền đầy đủ UserName và mật khẩu.'); // Changed error message
+      setLoginErrorMessage('Please enter UserName and password. '); // Changed error message
       return;
     }
 
@@ -206,12 +242,12 @@ export function TextSummarizer() {
           <div className="space-x-3 flex items-center">
             {loggedInUsername ? (
               <div className="flex items-center space-x-3">
-                <span className="text-gray-700 font-semibold whitespace-nowrap" style={{ fontSize: '0.9rem' }}>Chào, {loggedInUsername}</span> {/* Reduced font size here */}
+                <span className="text-gray-700 font-semibold whitespace-nowrap" style={{ fontSize: '0.9rem' }}>Hi, {loggedInUsername}</span> {/* Reduced font size here */}
                 <button
                   className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200 whitespace-nowrap"
                   onClick={handleLogout}
                 >
-                  Đăng xuất
+                  Logout
                 </button>
               </div>
             ) : (
@@ -219,12 +255,12 @@ export function TextSummarizer() {
                 <button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200 whitespace-nowrap"
                   onClick={() => setIsLoginFormVisible(true)}
                 >
-                  Đăng nhập
+                  Login
                 </button>
                 <button className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200 whitespace-nowrap"
                   onClick={() => setIsRegisterFormVisible(true)}
                 >
-                  Đăng ký
+                  Register
                 </button>
               </div>
             )}
@@ -240,31 +276,33 @@ export function TextSummarizer() {
       {/* Header Section */}
       <header className="container mx-auto mt-24 px-6 text-center">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-          Công cụ tóm tắt văn bản bằng AI
+          AI-Powered Text Summarization Tool
         </h1>
         <div className="container mx-auto px-6 text-center text-gray-600 text-xl mt-10">
-          Khám phá sức mạnh của tóm tắt văn bản AI để đơn giản hóa việc đọc và học tập của bạn.
+          Unlock the power of AI text summarization to simplify your reading and learning.
         </div>
 
         <p className="text-lg text-gray-600 max-w-2xl mx-auto text-center">
-          Nhanh chóng nắm bắt ý chính từ mọi loại văn bản với công nghệ AI tiên tiến.
+          Quickly grasp the main points from any type of text with advanced AI technology.
         </p>
       </header>
 
       {/* Features and Help Section */}
       <section className="container mx-auto mt-12 px-6 flex justify-center">
-        <div className="flex items-center space-x-8">
-          {/* Function Buttons */}
+        <div className="flex items-center space-x-8 justify-center"> {/* justify-center added here for centering the whole group */}
           <div className="flex space-x-4">
-            <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg focus:outline-none focus:shadow-outline transform hover:scale-105 transition-transform duration-200">
-              Tóm tắt văn bản
-            </button>
-            {/* Outline Document Summarization Button */}
             <button
-              className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-lg focus:outline-none focus:shadow-outline transform hover:scale-105 transition-transform duration-200"
+              className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg focus:outline-none focus:shadow-outline transform hover:scale-105 transition-transform duration-200" // px-8 for more padding
+              onClick={summarizeText}
+            >
+              Summarize Text
+            </button>
+
+            <button
+              className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-lg focus:outline-none focus:shadow-outline transform hover:scale-105 transition-transform duration-200" // px-8 for more padding
               onClick={() => navigate("/tailieu")}
             >
-              Tóm tắt tài liệu
+              Summarize Document
             </button>
           </div>
 
@@ -277,11 +315,11 @@ export function TextSummarizer() {
             />
             {showHelp && (
               <div className="absolute left-full top-1/2 ml-3 w-64 transform -translate-y-1/2 bg-white shadow-md p-4 rounded-md border border-gray-200 text-gray-700 z-10">
-                <h3 className="font-semibold text-gray-800 mb-2">Hướng dẫn nhanh:</h3>
+                <h3 className="font-semibold text-gray-800 mb-2">Quick Guide:</h3>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li><span className="font-semibold text-blue-600">1.</span> Nhập văn bản vào khung bên trái.</li>
-                  <li><span className="font-semibold text-blue-600">2.</span> Chọn loại tóm tắt mong muốn.</li>
-                  <li><span className="font-semibold text-blue-600">3.</span> Nhấn nút "Tóm Tắt".</li>
+                  <li><span className="font-semibold text-blue-600">1.</span> Enter text in the left panel.</li>
+                  <li><span className="font-semibold text-blue-600">2.</span> Select the desired summary length.</li>
+                  <li><span className="font-semibold text-blue-600">3.</span> Click the "Summarize" button.</li>
                 </ul>
               </div>
             )}
@@ -294,12 +332,12 @@ export function TextSummarizer() {
         {/* Text Input */}
         <div className="bg-white p-6 rounded-xl shadow-md">
           <label htmlFor="text-input" className="block text-lg font-semibold text-gray-700 mb-4">
-            Nhập văn bản cần tóm tắt
+            Enter Text to Summarize
           </label>
           <textarea
             id="text-input"
             className="shadow-sm focus:ring-blue-200 focus:border-blue-200 block w-full p-4 border-gray-200 rounded-md h-64 bg-blue-50"
-            placeholder="Dán văn bản của bạn vào đây..."
+            placeholder="Enter and paste your text here..."
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
@@ -309,15 +347,15 @@ export function TextSummarizer() {
               value={summaryType}
               onChange={(e) => setSummaryType(e.target.value)}
             >
-              <option value="short">Tóm tắt ngắn</option>
-              <option value="medium">Tóm tắt vừa phải</option>
-              <option value="long">Tóm tắt dài</option>
+              <option value="short">Short Summary</option>
+              <option value="medium">Medium Summary</option>
+              <option value="long">Long Summary</option>
             </select>
             <button
               onClick={summarizeText}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-md focus:outline-none focus:shadow-outline transition-colors duration-300 transform hover:scale-105"
             >
-              Tóm tắt
+              Summarize
             </button>
           </div>
         </div>
@@ -325,16 +363,60 @@ export function TextSummarizer() {
         {/* Summary Output */}
         <div className="bg-white p-6 rounded-xl shadow-md">
           <h3 className="text-xl font-semibold text-gray-700 mb-4">
-            Kết quả tóm tắt
+            Summary Results
           </h3>
           <div className="bg-gray-50 p-4 rounded-md shadow-inner h-64 overflow-y-auto">
             {summary ? (
-              <p className="text-gray-800">{summary}</p>
+              <div>
+                <p className="text-gray-800">{summary}</p>
+
+                {/* Translation Options - Moved to the bottom */}
+                <div className="mt-4">  {/* Add some margin top for spacing */}
+                  <div className="flex flex-col"> {/* Use flex column to stack items */}
+
+
+                    {/* Display translated text (if available) */}
+                    {translatedText && (
+                      <div className="mt-2">
+                        <h4 className="text-lg font-semibold text-gray-700">
+                          Translated Text:
+                        </h4>
+                        <p className="text-gray-800">{translatedText}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             ) : (
               <p className="text-gray-500 italic">
-                Bản tóm tắt sẽ hiển thị ở đây sau khi bạn thực hiện tóm tắt.
+                The summary will appear here after you perform the summarization.
               </p>
             )}
+          </div>
+          <div> {/* Container for select and button */}
+            <label htmlFor="languageSelect" className="block text-sm font-medium text-gray-700 mb-1">
+              Translate to:
+            </label>
+            <div className="flex items-center"> {/* Align select and button */}
+              <select
+                id="languageSelect"
+                className="block appearance-none w-auto bg-white border border-gray-300 hover:border-gray-400 px-4 py-2 pr-8 rounded leading-tight focus:outline-none focus:shadow-outline"
+                value={targetLanguage}
+                onChange={(e) => setTargetLanguage(e.target.value)}
+              >
+                {availableLanguages.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={translateSummary}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ml-2"
+              >
+                Translate
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -342,42 +424,42 @@ export function TextSummarizer() {
       {/* About Text Summarizer Section */}
       <section className="container mx-auto mt-20 px-6 py-10 bg-blue-50 rounded-xl shadow-md">
         <h2 className="text-3xl font-bold text-blue-700 mb-6 text-center">
-          Về công cụ tóm tắt văn bản PDFSmart
+          About PDFSmart Text Summarizer
         </h2>
         <p className="text-gray-700 text-lg mb-6">
-          Công cụ tóm tắt văn bản PDFSmart sử dụng trí tuệ nhân tạo để giúp bạn dễ dàng tóm tắt bất kỳ loại văn bản nào. Dưới đây là một số thông tin chi tiết và lợi ích khi sử dụng công cụ của chúng tôi.
+          The PDFSmart Text Summarizer uses artificial intelligence to help you easily summarize any type of text. Below is some detailed information and benefits of using our tool.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <h3 className="text-2xl font-semibold text-blue-600 mb-3">
-              Công cụ tóm tắt văn bản là gì?
+              What is a Text Summarizer?
             </h3>
             <p className="text-gray-700 mb-4">
-              Công cụ tóm tắt văn bản giúp người dùng nhanh chóng nắm bắt nội dung chính của văn bản dài mà không cần đọc toàn bộ. Nó hoạt động bằng cách phân tích văn bản và trích xuất những phần quan trọng nhất, sau đó tổng hợp lại thành một bản tóm tắt ngắn gọn và dễ hiểu.
+              A text summarizer helps users quickly grasp the main content of a long text without having to read the entire thing. It works by analyzing the text and extracting the most important parts, then synthesizing them into a concise and easy-to-understand summary.
             </p>
-            <h4 className="text-lg font-semibold text-gray-800 mb-2">Các tính năng chính:</h4>
+            <h4 className="text-lg font-semibold text-gray-800 mb-2">Key Features:</h4>
             <ul className="list-disc pl-5 text-gray-700">
-              <li>Tóm tắt văn bản tự động và nhanh chóng.</li>
-              <li>Tùy chọn độ dài tóm tắt (ngắn, vừa, dài).</li>
-              <li>Hỗ trợ tóm tắt nhiều loại văn bản khác nhau.</li>
-              <li>Giao diện thân thiện, dễ sử dụng.</li>
+              <li>Automatic and fast text summarization.</li>
+              <li>Summary length options (short, medium, long).</li>
+              <li>Supports summarizing various types of text.</li>
+              <li>Friendly and easy-to-use interface.</li>
             </ul>
           </div>
 
           <div>
             <h3 className="text-2xl font-semibold text-blue-600 mb-3">
-              Tại sao nên sử dụng công cụ tóm tắt văn bản?
+              Why Use a Text Summarizer?
             </h3>
             <p className="text-gray-700 mb-4">
-              Trong thời đại thông tin bùng nổ, việc xử lý và nắm bắt thông tin nhanh chóng là vô cùng quan trọng. Công cụ tóm tắt văn bản PDFSmart giúp bạn tiết kiệm thời gian, nâng cao hiệu quả học tập và làm việc.
+              In the age of information explosion, processing and grasping information quickly is extremely important. The PDFSmart Text Summarizer helps you save time and improve learning and work efficiency.
             </p>
-            <h4 className="text-lg font-semibold text-gray-800 mb-2">Lợi ích khi sử dụng:</h4>
+            <h4 className="text-lg font-semibold text-gray-800 mb-2">Benefits of Use:</h4>
             <ul className="list-disc pl-5 text-gray-700">
-              <li>Tiết kiệm thời gian đọc và nghiên cứu tài liệu.</li>
-              <li>Nắm bắt thông tin cốt lõi một cách hiệu quả.</li>
-              <li>Hỗ trợ học sinh, sinh viên và người làm nghiên cứu.</li>
-              <li>Tăng năng suất làm việc và học tập.</li>
+              <li>Saves time reading and researching documents.</li>
+              <li>Effectively grasps core information.</li>
+              <li>Supports students, researchers.</li>
+              <li>Increases work and study productivity.</li>
             </ul>
           </div>
         </div>
@@ -386,7 +468,7 @@ export function TextSummarizer() {
       {/* Services Section as Card Grid */}
       <section id="services-section" className="container mx-auto mt-10 px-6 py-10 text-center">
         <h2 className="text-2xl font-semibold text-gray-700 mb-6 uppercase">
-          AI LÀ NGƯỜI PDFSmart HƯỚNG ĐẾN?
+          Who is PDFSmart For?
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {servicesList.map((service, index) => (
@@ -412,12 +494,13 @@ export function TextSummarizer() {
           <p>&copy; {new Date().getFullYear()} PDFSmart. All rights reserved.</p>
         </div>
       </footer>
-      {/* Popup thông báo đăng ký thành công - Đặt ở cuối component */}
+
+      {/* Success Registration Popup - Placed at the end of the component */}
       {isPopupVisible && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-xl flex items-center space-x-4">
             <FaCheckCircle className="text-green-500 h-10 w-10" />
-            <h2 className="text-lg font-semibold mb-0">Bạn đã đăng ký tài khoản thành công!</h2>
+            <h2 className="text-lg font-semibold mb-0">You have successfully registered!</h2>
             <button
               onClick={() => {
                 setIsPopupVisible(false);
@@ -425,83 +508,93 @@ export function TextSummarizer() {
               }}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ml-4"
             >
-              Đóng
+              Close
             </button>
           </div>
         </div>
       )}
 
-      {/* Form đăng ký - Ẩn hiện theo state isRegisterFormVisible */}
+      {/* Registration Form - Shown/Hidden based on isRegisterFormVisible state */}
       {isRegisterFormVisible && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
           <div className="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto">
             <div className="text-center mb-6">
               <FaUserPlus className="mx-auto h-12 w-12 text-blue-500 mb-2" />
-              <h1 className="text-2xl font-bold text-gray-800">Đăng ký Tài khoản</h1>
-              <p className="text-gray-600">Tạo tài khoản mới để sử dụng PDFSmart</p>
+              <h1 className="text-2xl font-bold text-gray-800">Register</h1>
+              <p className="text-gray-600">Create a new account to use PDFSmart</p>
             </div>
 
             {errorMessage && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                <strong className="font-bold">Lỗi!</strong>
+                <strong className="font-bold">Error!</strong>
                 <span className="block sm:inline"> {errorMessage}</span>
               </div>
             )}
 
             {registrationSuccess && (
               <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-                <strong className="font-bold">Thành công!</strong>
-                <span className="block sm:inline"> Đăng ký tài khoản thành công.</span>
+                <strong className="font-bold">Success!</strong>
+                <span className="block sm:inline"> Account registration successful.</span>
               </div>
             )}
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1 flex items-center"><FaUser className="mr-2 text-gray-500" />UserName</label>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <FaUser className="mr-2 text-gray-500" />Username
+                </label>
                 <input
                   type="text"
                   id="name"
                   className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  placeholder="Nhập tên của bạn"
+                  placeholder="Enter your name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
               </div>
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1 flex items-center"><FaEnvelope className="mr-2 text-gray-500" />Email</label>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <FaEnvelope className="mr-2 text-gray-500" />Email
+                </label>
                 <input
                   type="email"
                   id="email"
                   className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  placeholder="Nhập email của bạn"
+                  placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1 flex items-center"><FaLock className="mr-2 text-gray-500" />Mật khẩu</label>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <FaLock className="mr-2 text-gray-500" />Password
+                </label>
                 <input
                   type="password"
                   id="password"
                   className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  placeholder="Nhập mật khẩu"
+                  placeholder="Enter password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
               <div>
-                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1 flex items-center"><FaPhone className="mr-2 text-gray-500" />Số điện thoại</label>
+                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <FaPhone className="mr-2 text-gray-500" />Phone Number
+                </label>
                 <input
                   type="tel"
                   id="phoneNumber"
                   className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  placeholder="Nhập số điện thoại"
+                  placeholder="Enter phone number"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                 />
               </div>
               <div>
-                <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-1 flex items-center"><FaCalendarAlt className="mr-2 text-gray-500" />Ngày sinh</label>
+                <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <FaCalendarAlt className="mr-2 text-gray-500" />Date of Birth
+                </label>
                 <input
                   type="date"
                   id="dateOfBirth"
@@ -518,96 +611,99 @@ export function TextSummarizer() {
                 className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all flex items-center justify-center"
                 onClick={handleRegister}
               >
-                <FaUserPlus className="mr-2" /> Đăng ký
+                <FaUserPlus className="mr-2" /> Register
               </button>
             </div>
 
             <div className="mt-4 text-sm text-gray-600 text-center">
-              Đã có tài khoản? <button onClick={() => setIsRegisterFormVisible(false)} className="text-blue-500 hover:underline">Đóng đăng ký</button>
+              Already have an account? <button onClick={() => setIsRegisterFormVisible(false)} className="text-blue-500 hover:underline">Close Registration</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Form đăng nhập - Ẩn hiện theo state isLoginFormVisible */}
+      {/* Login Form - Shown/Hidden based on isLoginFormVisible state */}
       {isLoginFormVisible && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
           <div className="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto">
             <div className="text-center mb-6">
               <FaSignInAlt className="mx-auto h-12 w-12 text-blue-500 mb-2" />
-              <h1 className="text-2xl font-bold text-gray-800">Đăng nhập</h1>
-              <p className="text-gray-600">Đăng nhập để sử dụng PDFSmart</p>
+              <h1 className="text-2xl font-bold text-gray-800">Login</h1>
+              <p className="text-gray-600">Login to use PDFSmart</p>
             </div>
 
             {loginErrorMessage && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                <strong className="font-bold">Lỗi!</strong>
+                <strong className="font-bold">Error!</strong>
                 <span className="block sm:inline"> {loginErrorMessage}</span>
               </div>
             )}
 
             {loginSuccess && (
               <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-                <strong className="font-bold">Thành công!</strong>
-                <span className="block sm:inline"> Đăng nhập thành công.</span>
+                <strong className="font-bold">Success!</strong>
+                <span className="block sm:inline"> Login successful.</span>
               </div>
             )}
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="loginUsername" className="block text-sm font-medium text-gray-700 mb-1 flex items-center"><FaUser className="mr-2 text-gray-500" />UserName</label> {/* Changed to UserName */}
+                <label htmlFor="loginUsername" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <FaUser className="mr-2 text-gray-500" />Username
+                </label>
                 <input
                   type="text"
-                  id="loginUsername" // Changed to loginUsername
+                  id="loginUsername"
                   className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  placeholder="Nhập UserName của bạn" // Changed placeholder
-                  value={loginUsername} // Changed to loginUsername
-                  onChange={(e) => setLoginUsername(e.target.value)} // Changed to setLoginUsername
+                  placeholder="Enter your username"
+                  value={loginUsername}
+                  onChange={(e) => setLoginUsername(e.target.value)}
                 />
               </div>
               <div>
-                <label htmlFor="loginPassword" className="block text-sm font-medium text-gray-700 mb-1 flex items-center"><FaLock className="mr-2 text-gray-500" />Mật khẩu</label>
+                <label htmlFor="loginPassword" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <FaLock className="mr-2 text-gray-500" />Password
+                </label>
                 <input
                   type="password"
                   id="loginPassword"
                   className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  placeholder="Nhập mật khẩu"
+                  placeholder="Enter your password"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                 />
               </div>
             </div>
 
-
             <div className="mt-6">
               <button
                 className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all flex items-center justify-center"
                 onClick={handleLogin}
               >
-                <FaSignInAlt className="mr-2" /> Đăng nhập
+                <FaSignInAlt className="mr-2" /> Login
               </button>
             </div>
 
             <div className="mt-4 text-sm text-gray-600 text-center">
-              Chưa có tài khoản? <button onClick={() => setIsLoginFormVisible(false)} className="text-blue-500 hover:underline">Đóng đăng nhập</button>
+              Don't have an account? <button onClick={() => setIsLoginFormVisible(false)} className="text-blue-500 hover:underline">Close Login</button>
             </div>
           </div>
         </div>
       )}
-      {/* Welcome Popup sau đăng nhập */}
+      {/* Welcome Popup after login */}
       {loginWelcomeMessageVisible && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-xl flex items-center space-x-4">
             <FaSmile className="text-green-500 h-10 w-10" /> {/* Welcome Icon */}
             <div>
-              <h2 className="text-lg font-semibold mb-1">Chào mừng đến với PDFSmart!</h2> {/* Welcome message */}
-              <p className="text-gray-700 text-sm">Chúc bạn có những trải nghiệm tuyệt vời với công cụ của chúng tôi.</p>
+              <h2 className="text-lg font-semibold mb-1">Welcome to PDFSmart!</h2> {/* Welcome message */}
+              <p className="text-gray-700 text-sm">We hope you have a great experience with our tool.</p>
             </div>
             <button
               onClick={closeLoginWelcomeMessage}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ml-4"
             >
-              Đóng
+              Close
             </button>
           </div>
         </div>
