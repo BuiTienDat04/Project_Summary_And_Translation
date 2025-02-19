@@ -32,6 +32,7 @@ export function TextSummarizer() {
 
   // State to store logged-in username
   const [loggedInUsername, setLoggedInUsername] = useState(null);
+  const [loginPromptVisible, setLoginPromptVisible] = useState(false);
 
   const navigate = useNavigate();
   const [translatedText, setTranslatedText] = useState("");
@@ -45,11 +46,19 @@ export function TextSummarizer() {
   ]); // Mặc định là tiếng Anh
 
   const summarizeText = () => {
+    // 1. Kiểm tra text có rỗng không
     if (text.trim() === "") {
       alert("Please enter text to summarize.");
       return;
     }
-
+  
+    // 2. Kiểm tra đăng nhập
+    if (!loggedInUsername) {
+      setLoginPromptVisible(true);
+      return;
+    }
+  
+    // 3. Xử lý tóm tắt nếu đã đăng nhập
     let result = "";
     switch (summaryType) {
       case "short":
@@ -64,8 +73,15 @@ export function TextSummarizer() {
       default:
         result = text;
     }
-
+  
     setSummary(result);
+  };
+  
+  // Xóa phần code thừa trong hàm summarizeText cũ
+
+  const closeLoginPrompt = () => {
+    setLoginPromptVisible(false);
+    setIsLoginFormVisible(true);
   };
 
 
@@ -268,6 +284,29 @@ export function TextSummarizer() {
         </div>
       </nav>
 
+       {/* Thông báo đăng nhập ở giữa trang */}
+      {loginPromptVisible && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
+          <div className="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto">
+            <div className="text-center mb-6">
+              <FaSignInAlt className="mx-auto h-12 w-12 text-blue-500 mb-2" />
+              <h1 className="text-2xl font-bold text-gray-800">Please Log In</h1>
+              <p className="text-gray-600">You need to log in to use this feature.</p>
+            </div>
+            <div className="mt-6">
+              <button
+                className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all"
+                onClick={closeLoginPrompt} // Hàm closeLoginPrompt đã được định nghĩa ở đây
+              >
+                Log In
+              </button>
+            </div>
+            <div className="mt-4 text-sm text-gray-600 text-center">
+              Don't have an account? <button onClick={() => setLoginPromptVisible(false)} className="text-blue-500 hover:underline">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Navigation Bar Explanation Text */}
       <div className="bg-blue-100 py-2">
         {/* You can add explanation text here if needed */}
@@ -708,7 +747,10 @@ export function TextSummarizer() {
           </div>
         </div>
       )}
+
     </div>
+
+
   );
 }
 
