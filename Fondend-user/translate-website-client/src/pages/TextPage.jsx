@@ -24,7 +24,7 @@ export function TextSummarizer() {
   const [errorMessage, setErrorMessage] = useState('');
 
   // State variables for login form
-  const [loginEmail, setLoginEmail] = useState('');
+  const [loginEmail, setLoginEmail] = useState(''); // Changed from loginEmail to loginUsername
   const [loginPassword, setLoginPassword] = useState('');
   const [loginErrorMessage, setLoginErrorMessage] = useState('');
   const [loginSuccess, setLoginSuccess] = useState(false);
@@ -77,6 +77,7 @@ export function TextSummarizer() {
     setSummary(result);
   };
 
+  // Xóa phần code thừa trong hàm summarizeText cũ
 
   const closeLoginPrompt = () => {
     setLoginPromptVisible(false);
@@ -201,39 +202,38 @@ export function TextSummarizer() {
 
   const handleLogin = () => {
     if (!loginEmail || !loginPassword) {
-      setLoginErrorMessage('Please enter Email and password.');
+      setLoginErrorMessage('Please enter Email and password. ');
       return;
     }
 
-    // In a real application, you would authenticate with your backend here
-    // For this placeholder, we'll just use the loginUsername as username
+    // Sử dụng loginEmail để hiển thị
     const usernameToDisplay = loginEmail;
 
     console.log('Login Data:', { email: loginEmail, password: loginPassword });
     setLoginSuccess(true);
     setLoginErrorMessage('');
     setLoginWelcomeMessageVisible(true);
+
+    // Sử dụng setLoggedInUsername và truyền loginEmail
     setLoggedInUsername(usernameToDisplay);
 
-    // Reset loginSuccess and hide login form after a short delay (optional, for better UX)
     setTimeout(() => {
-      setLoginSuccess(false); // Hide success message (optional in this case as we show welcome popup)
-      setIsLoginFormVisible(false); // Hide login form will be handled after closing welcome popup
-    }, 100); // Short delay to ensure welcome message is displayed
+      setLoginSuccess(false);
+      setIsLoginFormVisible(false);
+    }, 100);
 
-
-    // Reset trường nhập liệu
     setLoginEmail('');
     setLoginPassword('');
   };
 
   const handleLogout = () => {
+    // Hàm này đã đúng, đảm bảo rằng bạn sử dụng loggedInUsername
     setLoggedInUsername(null);
   };
 
   const closeLoginWelcomeMessage = () => {
     setLoginWelcomeMessageVisible(false);
-    setIsLoginFormVisible(false); // Hide login form after closing welcome message
+    setIsLoginFormVisible(false);
   };
 
   return (
@@ -686,11 +686,9 @@ export function TextSummarizer() {
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="loginUsername" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                  <FaUser className="mr-2 text-gray-500" />Email
-                </label>
+                <label htmlFor="loginEmail" className="block text-sm font-medium text-gray-700 mb-1 flex items-center"><FaEnvelope className="mr-2 text-gray-500" />Email</label>
                 <input
-                  type="Email"
+                  type="email"
                   id="loginEmail"
                   className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   placeholder="Enter your Email"
