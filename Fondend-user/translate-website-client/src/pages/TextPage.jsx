@@ -24,7 +24,7 @@ export function TextSummarizer() {
   const [errorMessage, setErrorMessage] = useState('');
 
   // State variables for login form
-  const [loginUsername, setLoginUsername] = useState(''); // Changed from loginEmail to loginUsername
+  const [loginEmail, setLoginEmail] = useState(''); // Changed from loginEmail to loginUsername
   const [loginPassword, setLoginPassword] = useState('');
   const [loginErrorMessage, setLoginErrorMessage] = useState('');
   const [loginSuccess, setLoginSuccess] = useState(false);
@@ -51,13 +51,13 @@ export function TextSummarizer() {
       alert("Please enter text to summarize.");
       return;
     }
-  
+
     // 2. Kiểm tra đăng nhập
     if (!loggedInUsername) {
       setLoginPromptVisible(true);
       return;
     }
-  
+
     // 3. Xử lý tóm tắt nếu đã đăng nhập
     let result = "";
     switch (summaryType) {
@@ -73,10 +73,10 @@ export function TextSummarizer() {
       default:
         result = text;
     }
-  
+
     setSummary(result);
   };
-  
+
   // Xóa phần code thừa trong hàm summarizeText cũ
 
   const closeLoginPrompt = () => {
@@ -201,40 +201,39 @@ export function TextSummarizer() {
   };
 
   const handleLogin = () => {
-    if (!loginUsername || !loginPassword) { // Changed to loginUsername
-      setLoginErrorMessage('Please enter UserName and password. '); // Changed error message
+    if (!loginEmail || !loginPassword) {
+      setLoginErrorMessage('Please enter Email and password. ');
       return;
     }
 
-    // In a real application, you would authenticate with your backend here
-    // For this placeholder, we'll just use the loginUsername as username
-    const usernameToDisplay = loginUsername; // Use loginUsername for display
+    // Sử dụng loginEmail để hiển thị
+    const usernameToDisplay = loginEmail;
 
-    console.log('Login Data:', { username: loginUsername, password: loginPassword }); // Log username
+    console.log('Login Data:', { email: loginEmail, password: loginPassword });
     setLoginSuccess(true);
     setLoginErrorMessage('');
-    setLoginWelcomeMessageVisible(true); // Show welcome message popup
+    setLoginWelcomeMessageVisible(true);
 
-    setLoggedInUsername(usernameToDisplay); // Set username on login
+    // Sử dụng setLoggedInUsername và truyền loginEmail
+    setLoggedInUsername(usernameToDisplay);
 
-    // Reset loginSuccess and hide login form after a short delay (optional, for better UX)
     setTimeout(() => {
-      setLoginSuccess(false); // Hide success message (optional in this case as we show welcome popup)
-      setIsLoginFormVisible(false); // Hide login form will be handled after closing welcome popup
-    }, 100); // Short delay to ensure welcome message is displayed
+      setLoginSuccess(false);
+      setIsLoginFormVisible(false);
+    }, 100);
 
-
-    setLoginUsername(''); // Reset loginUsername
+    setLoginEmail('');
     setLoginPassword('');
   };
 
   const handleLogout = () => {
+    // Hàm này đã đúng, đảm bảo rằng bạn sử dụng loggedInUsername
     setLoggedInUsername(null);
   };
 
   const closeLoginWelcomeMessage = () => {
     setLoginWelcomeMessageVisible(false);
-    setIsLoginFormVisible(false); // Hide login form after closing welcome message
+    setIsLoginFormVisible(false);
   };
 
   return (
@@ -284,7 +283,7 @@ export function TextSummarizer() {
         </div>
       </nav>
 
-       {/* Thông báo đăng nhập ở giữa trang */}
+      {/* Thông báo đăng nhập ở giữa trang */}
       {loginPromptVisible && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
           <div className="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto">
@@ -580,7 +579,7 @@ export function TextSummarizer() {
             <div className="space-y-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                  <FaUser className="mr-2 text-gray-500" />Username
+                  <FaUser className="mr-2 text-gray-500" />Name
                 </label>
                 <input
                   type="text"
@@ -687,16 +686,14 @@ export function TextSummarizer() {
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="loginUsername" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                  <FaUser className="mr-2 text-gray-500" />Username
-                </label>
+                <label htmlFor="loginEmail" className="block text-sm font-medium text-gray-700 mb-1 flex items-center"><FaEnvelope className="mr-2 text-gray-500" />Email</label>
                 <input
-                  type="text"
-                  id="loginUsername"
+                  type="email"
+                  id="loginEmail"
                   className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  placeholder="Enter your username"
-                  value={loginUsername}
-                  onChange={(e) => setLoginUsername(e.target.value)}
+                  placeholder="Enter your Email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
                 />
               </div>
               <div>
