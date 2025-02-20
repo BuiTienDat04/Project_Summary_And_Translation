@@ -44,13 +44,15 @@ export function TextSummarizer() {
     // Add more languages here as needed
   ]); // Mặc định là tiếng Anh
 
-  const summarizeText = () => {
+  const summarizeText = async () => {
     if (text.trim() === "") {
       alert("Please enter text to summarize.");
       return;
     }
-
+  
     let result = "";
+  
+    // Xử lý tóm tắt văn bản
     switch (summaryType) {
       case "short":
         result = text.slice(0, 150) + "...";
@@ -64,10 +66,45 @@ export function TextSummarizer() {
       default:
         result = text;
     }
-
-    setSummary(result);
+  
+    // Gọi API để tóm tắt văn bản
+    try {
+      const summarizeResponse = await fetch('http://localhost:3000/summarize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: result }),
+      });
+  
+      if (!summarizeResponse.ok) {
+        throw new Error('Failed to summarize text');
+      }
+  
+      const summarizedText = await summarizeResponse.json();
+  
+      // Gọi API để dịch văn bản đã tóm tắt
+      const translateResponse = await fetch('http://localhost:3000/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: summarizedText.summary }), // Giả sử API trả về trường 'summary'
+      });
+  
+      if (!translateResponse.ok) {
+        throw new Error('Failed to translate text');
+      }
+  
+      const translatedText = await translateResponse.json();
+  
+      // Cập nhật kết quả dịch vào state hoặc hiển thị lên giao diện
+      setSummary(translatedText.translation); // Giả sử API trả về trường 'translation'
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred while processing the text.');
+    }
   };
-
 
 
 
@@ -157,6 +194,10 @@ export function TextSummarizer() {
     }
   };
 
+
+
+
+  
   const handleRegister = async () => {
     if (!name || !email || !password || !phoneNumber || !dateOfBirth) {
       setErrorMessage('Please fill in all information.');
