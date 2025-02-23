@@ -1,29 +1,29 @@
+import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import "./App.css";
-import SignInPage from "./pages/SignInPage";
-import SignUpPage from "./pages/SignUpPage";
-import Homepage from "./pages/Homepage";
-import TextPage from "./pages/TextPage";
-import GomePage from "./pages/GomePage";
-import TailieuPage from "./pages/TailieuPage";
-import AdminPage from "./pages/AdminPage";
- // Kiểm tra file này có tồn tại không!
+import LoginPage from "./Pages/LoginPage";
+import RegisterPage from "./Pages/RegisterPage";
+import TextPage from "./Pages/TextPage"
+import DocumentPage from "./Pages/DocumentPage"
+import Navigation from "./Pages/Navigation";
+import Footer from "./Pages/Footer";
+import ServicesSection from "./Pages/ServicesSection";
 
 
-function App() {
+export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<TextPage />} />
-        <Route path="/sign-in" element={<SignInPage />} />
-        <Route path="/sign-up" element={<SignUpPage />} />
-        <Route path="/homepage" element={<Homepage />} />
-        <Route path="/gome" element={<GomePage />} />
-        <Route path="/tailieu" element={<TailieuPage />} />
-        <Route path="/adminadmin" element={<AdminPage />}/>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} /> {/* Route cho RegisterPage */}
+        <Route path="/text" element={<TextPage />} /> {/* Route cho RegisterPage */}
+        <Route path="/" element={<DocumentPage />} /> {/* Route cho RegisterPage */}
+        <Route path="/na" element={<Navigation/>}/>
+        <Route path="/footer" element={<Footer/>}/>
+        <Route path="/service" element={<ServicesSection/>}/>
       </Routes>
     </BrowserRouter>
   );
 }
 
-export default App;
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
