@@ -95,3 +95,39 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 app.listen(PORT, () => {
   console.log(`✅ Server is running on http://localhost:${PORT}`);
 });
+app.post("/suggest-language-by-keyword", async (req, res) => {
+  const { keyword } = req.body;
+
+  if (!keyword) {
+    return res.status(400).json({ error: "Missing keyword parameter" });
+  }
+
+  try {
+    // Gọi Gemini API để gợi ý ngôn ngữ dựa trên từ khóa
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `Gợi ý ngôn ngữ trên thế giới dựa trên từ khóa "${keyword}". Chỉ trả về tên ngôn ngữ.`,
+              },
+            ],
+          },
+        ],
+      }),
+    });
+
+    const data = await response.json();
+    const suggestedLanguage = data.candidates[0]?.content?.parts[0]?.text || "Không tìm thấy ngôn ngữ phù hợp.";
+
+    // Trả về kết quả
+    res.json({ suggestedLanguage });
+  } catch (error) {
+    console.error("Lỗi khi gọi Gemini API:", error);
+    res.status(500).json({ error: "Lỗi khi gợi ý ngôn ngữ" });
+  }
+});
+
