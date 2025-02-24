@@ -15,7 +15,6 @@ function TextPage() {
   const [showRegister, setShowRegister] = useState(false);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [loggedInUsername, setLoggedInUsername] = useState(null);
-  const [loginPromptVisible, setLoginPromptVisible] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [welcomeMessageVisible, setWelcomeMessageVisible] = useState(true);
@@ -128,10 +127,10 @@ function TextPage() {
       </div>
 
       {/* Main Content: Text Summarizer and Translator */}
-      <div className="container mx-auto px-4 pt-20">
-        <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+      <div className="container mx-auto px-4 pt-2">
+        
           <TextSummarizerAndTranslator />
-        </div>
+        
       </div>
 
       {/* About Section */}
