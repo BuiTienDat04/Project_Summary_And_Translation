@@ -177,8 +177,6 @@ const DocumentPage = () => {
     };
 
 
-
-
     return (
         <div className="min-h-screen bg-indigo-200 font-sans">
             <Navigation
