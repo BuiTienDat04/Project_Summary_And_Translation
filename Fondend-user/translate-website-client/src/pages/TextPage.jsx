@@ -42,8 +42,6 @@ function TextPage() {
     setLoggedInUser(null);
   };
 
-  
-
   return (
     <div className="min-h-screen bg-indigo-200 font-sans">
       {/* Popups for Login and Register */}
