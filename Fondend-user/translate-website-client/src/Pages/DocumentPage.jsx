@@ -434,32 +434,7 @@ const DocumentPage = () => {
                     </div>
                 </div>
             )}
-
-            {/* Thông báo đăng nhập ở giữa trang */}
-            {loginPromptVisible && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
-                    <div className="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto">
-                        <div className="text-center mb-6">
-                            <FaSignInAlt className="mx-auto h-12 w-12 text-blue-500 mb-2" />
-                            <h1 className="text-2xl font-bold text-gray-800">Please Log In</h1>
-                            <p className="text-gray-600">You need to log in to use this feature.</p>
-                        </div>
-                        <div className="mt-6">
-                            <button
-                                className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all"
-                                onClick={handleLoginClick}
-                            >
-                                Log In
-                            </button>
-                        </div>
-                        <div className="mt-4 text-sm text-gray-600 text-center">
-                            Don't have an account? <button onClick={() => setLoginPromptVisible(false)} className="text-blue-500 hover:underline">Close</button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
-
     );
 };
 
