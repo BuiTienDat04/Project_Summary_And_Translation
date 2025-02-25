@@ -28,6 +28,7 @@ const DocumentPage = () => {
     const [translatedText, setTranslatedText] = useState("");
     const [targetLanguage, setTargetLanguage] = useState("vi"); // Default to Vietnamese
     const [summary, setSummary] = useState("");
+    const [loggedInUser, setLoggedInUser] = useState(null);
     const availableLanguages = [
         { code: "en", name: "English" },
         { code: "vi", name: "Vietnamese" },
@@ -46,6 +47,15 @@ const DocumentPage = () => {
             setFile(selectedFile);
         }
     };
+
+    useEffect(() => {
+        // Lấy thông tin người dùng từ localStorage khi component DocumentPage được mount
+        const storedUser = localStorage.getItem('loggedInUser');
+        if (storedUser) {
+          setLoggedInUser(JSON.parse(storedUser));
+          setLoggedInUsername(JSON.parse(storedUser).email); // Giả sử email là thuộc tính để hiển thị username
+        }
+      }, []);
 
     /**
      * @function generateSummary
@@ -110,7 +120,7 @@ const DocumentPage = () => {
     const handleRegisterClick = () => {
         setShowRegister(true);
     };
-
+    
     /**
      * @function handleRegistrationSuccess
      * @description Hàm xử lý sự kiện đăng ký thành công.
@@ -201,7 +211,7 @@ const DocumentPage = () => {
             )}
 
             {/* Main Content */}
-            <div className="container mx-auto px-6 pt-16"> 
+            <div className="container mx-auto px-6 pt-16">
 
                 <header className="container mx-auto mt-20 px-6 text-center">
 
@@ -218,135 +228,136 @@ const DocumentPage = () => {
 
 
                 {/* Feature Section */}
-                <section className="mt-10 flex flex-col items-center gap-8">
-                    <div className="flex space-x-6">
-                        <button
-                            onClick={() => navigate("/text")}
-                            className="bg-blue-500 hover:bg-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-blue-200"
-                        >
-                            Summarize Text
-                        </button>
-                        <button
-                            className="bg-green-500 hover:bg-green-600 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-green-200 border-2 border-green-600"
-                        >
-                            Summarize Document
-                        </button>
-
-                    </div>
-                    {/* Help Section */}
-                    <div className="relative group">
-                        <HelpCircle className="w-8 h-8 text-gray-500 hover:text-blue-600 cursor-pointer transition-colors" />
-                        <div className="absolute left-full top-1/2 ml-4 -translate-y-1/2 w-80 bg-white p-6 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
-                            <h3 className="text-lg font-bold text-gray-800 mb-3">Quick Guide</h3>
-                            <ul className="space-y-3 text-gray-600">
-                                <li className="flex items-start">
-                                    <span className="text-blue-500 font-bold mr-2">1.</span>
-                                    Upload a document (PDF, DOCX, TXT)
-                                </li>
-                                <li className="flex items-start">
-                                    <span className="text-blue-500 font-bold mr-2">2.</span>
-                                    Click "Generate Summary"
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Upload & Result Section */}
-                <section className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-10">
-                    {/* Upload Card */}
-                    <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-6">Upload Document</h2>
-                        <div
-                            className={`relative bg-blue-50 p-12 rounded-xl border-3 border-dashed transition-all duration-300 ${dragActive
-                                ? "border-blue-400 bg-blue-100 scale-105"
-                                : "border-gray-300 hover:border-blue-300"
-                                }`}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                        >
-                            <input
-                                type="file"
-                                onChange={handleFileChange}
-                                className="hidden"
-                                id="fileInputDoc"
-                                accept=".pdf,.docx,.txt"
-                            />
-                            <label
-                                htmlFor="fileInputDoc"
-                                className="flex flex-col items-center justify-center cursor-pointer"
+                <div className="max-w-7xl mx-auto p-8"> {/* Thêm div max-w-7xl ở đây */}
+                    <section className="mt-10 flex flex-col items-center gap-8">
+                        <div className="flex space-x-6">
+                            <button
+                                onClick={() => navigate("/")}
+                                className="bg-blue-500 hover:bg-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-blue-200"
                             >
-                                <Upload className="w-20 h-20 text-blue-400 animate-bounce" />
-                                <p className="text-center text-gray-600 text-lg font-medium mt-4">
-                                    Drag and drop file or<br />
-                                    <span className="text-blue-500 underline">browse files</span>
-                                </p>
-                                {file && (
-                                    <div className="mt-6 bg-green-100 px-4 py-2 rounded-md flex items-center">
-                                        <span className="text-green-600 mr-2">✓</span>
-                                        <span className="text-green-700 font-medium">{file.name}</span>
-                                    </div>
-                                )}
-                            </label>
+                                Summarize Text
+                            </button>
+                            <button
+                                className="bg-green-500 hover:bg-green-600 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-green-200 border-2 border-green-600"
+                            >
+                                Summarize Document
+                            </button>
                         </div>
-                    </div>
 
-                    {/* Result Card */}
-                    <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold text-gray-800">Summary Result</h2>
-                            {summaryFile && (
-                                <a
-                                    href={summaryFile}
-                                    download="summary.txt"
-                                    className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg flex items-center transition-all shadow-md hover:shadow-lg"
-                                >
-                                    <Download className="w-5 h-5 mr-2" />
-                                    Download
-                                </a>
-                            )}
-
-                        </div>
-                        <div className="bg-gray-50 p-6 rounded-xl h-96 overflow-y-auto">
-                            {summaryContent ? (
-                                <div className="text-gray-700 leading-relaxed">
-                                    {summaryContent}
-                                </div>
-                            ) : (
-                                <p className="text-gray-400 italic text-center">
-                                    Summary will appear here after processing...
-                                </p>
-                            )}
-                        </div>
-                        <div> {/* Container for select and button */}
-                            <label htmlFor="languageSelect" className="block text-sm font-medium text-gray-700 mb-1">
-                                Translate to:
-                            </label>
-                            <div className="flex items-center">
-                                <select
-                                    id="languageSelect"
-                                    className="block appearance-none w-auto bg-white border border-gray-300 hover:border-blue-400 px-4 py-2 pr-8 rounded leading-tight focus:outline-none focus:shadow-outline"
-                                    value={targetLanguage}
-                                    onChange={(e) => setTargetLanguage(e.target.value)}
-                                >
-                                    {availableLanguages.map((lang) => (
-                                        <option key={lang.code} value={lang.code}>
-                                            {lang.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <button
-                                    onClick={translateSummary}
-                                    className={`ml-2 px-4 py-2 rounded focus:outline-none focus:shadow-outline ${!summary ? 'opacity-50 cursor-not-allowed' : ''} bg-blue-500 hover:bg-blue-700 text-white font-bold`}
-                                    disabled={!summary}
-                                >
-                                    Translate
-                                </button>
+                        {/* Help Section */}
+                        <div className="relative group">
+                            <HelpCircle className="w-8 h-8 text-gray-500 hover:text-blue-600 cursor-pointer transition-colors" />
+                            <div className="absolute left-full top-1/2 ml-4 -translate-y-1/2 w-80 bg-white p-6 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
+                                <h3 className="text-lg font-bold text-gray-800 mb-3">Quick Guide</h3>
+                                <ul className="space-y-3 text-gray-600">
+                                    <li className="flex items-start">
+                                        <span className="text-blue-500 font-bold mr-2">1.</span>
+                                        Upload a document (PDF, DOCX, TXT)
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="text-blue-500 font-bold mr-2">2.</span>
+                                        Click "Generate Summary"
+                                    </li>
+                                </ul>
                             </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
+
+                    {/* Upload & Result Section */}
+                    <section className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-10">
+                        {/* Upload Card */}
+                        <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+                            <h2 className="text-2xl font-bold text-gray-800 mb-6">Upload Document</h2>
+                            <div
+                                className={`relative bg-blue-50 p-12 rounded-xl border-3 border-dashed transition-all duration-300 ${dragActive
+                                    ? "border-blue-400 bg-blue-100 scale-105"
+                                    : "border-gray-300 hover:border-blue-300"
+                                    }`}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                            >
+                                <input
+                                    type="file"
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                    id="fileInputDoc"
+                                    accept=".pdf,.docx,.txt"
+                                />
+                                <label
+                                    htmlFor="fileInputDoc"
+                                    className="flex flex-col items-center justify-center cursor-pointer"
+                                >
+                                    <Upload className="w-20 h-20 text-blue-400 animate-bounce" />
+                                    <p className="text-center text-gray-600 text-lg font-medium mt-4">
+                                        Drag and drop file or<br />
+                                        <span className="text-blue-500 underline">browse files</span>
+                                    </p>
+                                    {file && (
+                                        <div className="mt-6 bg-green-100 px-4 py-2 rounded-md flex items-center">
+                                            <span className="text-green-600 mr-2">✓</span>
+                                            <span className="text-green-700 font-medium">{file.name}</span>
+                                        </div>
+                                    )}
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Result Card */}
+                        <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-bold text-gray-800">Summary Result</h2>
+                                {summaryFile && (
+                                    <a
+                                        href={summaryFile}
+                                        download="summary.txt"
+                                        className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg flex items-center transition-all shadow-md hover:shadow-lg"
+                                    >
+                                        <Download className="w-5 h-5 mr-2" />
+                                        Download
+                                    </a>
+                                )}
+                            </div>
+                            <div className="bg-gray-50 p-6 rounded-xl h-96 overflow-y-auto">
+                                {summaryContent ? (
+                                    <div className="text-gray-700 leading-relaxed">
+                                        {summaryContent}
+                                    </div>
+                                ) : (
+                                    <p className="text-gray-400 italic text-center">
+                                        Summary will appear here after processing...
+                                    </p>
+                                )}
+                            </div>
+                            <div> {/* Container for select and button */}
+                                <label htmlFor="languageSelect" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Translate to:
+                                </label>
+                                <div className="flex items-center">
+                                    <select
+                                        id="languageSelect"
+                                        className="block appearance-none w-auto bg-white border border-gray-300 hover:border-blue-400 px-4 py-2 pr-8 rounded leading-tight focus:outline-none focus:shadow-outline"
+                                        value={targetLanguage}
+                                        onChange={(e) => setTargetLanguage(e.target.value)}
+                                    >
+                                        {availableLanguages.map((lang) => (
+                                            <option key={lang.code} value={lang.code}>
+                                                {lang.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        onClick={translateSummary}
+                                        className={`ml-2 px-4 py-2 rounded focus:outline-none focus:shadow-outline ${!summary ? 'opacity-50 cursor-not-allowed' : ''} bg-blue-500 hover:bg-blue-700 text-white font-bold`}
+                                        disabled={!summary}
+                                    >
+                                        Translate
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div> {/* Đóng div max-w-7xl */}
 
                 {/* Generate Button */}
                 <section className="mt-14 flex justify-center">

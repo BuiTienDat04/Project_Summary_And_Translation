@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import LoginPage from "./LoginPage";
@@ -35,11 +35,24 @@ function TextPage() {
     setLoggedInUser(user);
     setLoggedInUsername(user.email);
     setShowLogin(false);
+
+    localStorage.setItem('loggedInUser', JSON.stringify(user));
   };
 
+  useEffect(() => {
+    // Kiểm tra localStorage khi component được mount
+    const storedUser = localStorage.getItem('loggedInUser');
+    if (storedUser) {
+      setLoggedInUser(JSON.parse(storedUser));
+      setLoggedInUsername(JSON.parse(storedUser).email); // Giả sử email là thuộc tính để hiển thị username
+    }
+  }, []);
+  
   const handleLogout = () => {
     setLoggedInUsername(null);
     setLoggedInUser(null);
+
+    localStorage.removeItem('loggedInUser');
   };
 
   return (
@@ -94,7 +107,7 @@ function TextPage() {
 
           <button
             className="px-10 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-green-200 border-2 border-green-600 bg-green-500 hover:bg-green-600 text-white"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/document")}
           >
             Summarize Document
           </button>
@@ -128,9 +141,9 @@ function TextPage() {
 
       {/* Main Content: Text Summarizer and Translator */}
       <div className="container mx-auto px-4 pt-2">
-        
-          <TextSummarizerAndTranslator />
-        
+
+        <TextSummarizerAndTranslator />
+
       </div>
 
       {/* About Section */}
@@ -197,18 +210,39 @@ function TextPage() {
         </div>
       )}
 
-      {/* Welcome Message */}
       {welcomeMessageVisible && loggedInUser && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-100 border border-green-400 text-green-700 px-6 py-3 rounded-lg z-50 shadow-lg animate-slide-down">
-          <span className="font-medium">👋 Welcome back, {loggedInUser.email}!</span>
+        <div className="fixed top-1/4 left-1/2 transform -translate-x-1/2 bg-white border border-gray-200 text-gray-800 px-8 py-6 rounded-xl shadow-md animate-slide-down text-center w-96 max-w-md">
+          <div className="flex items-center justify-center mb-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 mr-2 text-green-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span className="font-semibold text-lg text-gray-900">
+              Welcome back, {loggedInUser.email.split("@")[0]}!
+            </span>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            Dive back into efficient document summarization. Your files await!
+          </p>
           <button
             onClick={() => setWelcomeMessageVisible(false)}
-            className="ml-4 text-green-700 hover:text-green-800"
+            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md focus:outline-none transition-colors duration-200"
           >
-            ×
+            Let's Summarize!
           </button>
         </div>
       )}
+
     </div>
   );
 }
