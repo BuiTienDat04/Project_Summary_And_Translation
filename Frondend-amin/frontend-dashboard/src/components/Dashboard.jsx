@@ -15,14 +15,18 @@ const Dashboard = () => {
     navigate("/user-management"); // Navigate to the User Management page
   };
 
-  // Function to handle Post Management button click
-  const handlePostManagementClick = () => {
-    navigate("/post-management"); // Navigate to the Post Management page
-  };
-
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Dashboard Overview</h1>
+      {/* Header and User Management Button */}
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">Dashboard Overview</h1>
+        <button
+          onClick={handleUserManagementClick}
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300"
+        >
+          User Management
+        </button>
+      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -50,16 +54,6 @@ const Dashboard = () => {
         <div className="h-64 bg-gray-100 flex items-center justify-center rounded-lg">
           <p className="text-gray-500">Chart will be displayed here</p>
         </div>
-      </div>
-
-      {/* Quick Access Buttons */}
-      <div className="flex space-x-4">
-        <button
-          onClick={handleUserManagementClick}
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300"
-        >
-          User Management
-        </button>
       </div>
     </div>
   );
