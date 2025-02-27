@@ -1,27 +1,15 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
-  const navigate = useNavigate(); // Hook for navigation
-
   // Mock data for demonstration
   const usersCount = 120;
   const postsCount = 450;
   const translatedPostsCount = 300;
   const visitsCount = 1200;
 
-  // Function to handle User Management button click
-  const handleUserManagementClick = () => {
-    navigate("/user-management"); // Navigate to the User Management page
-  };
-
-  // Function to handle Post Management button click
-  const handlePostManagementClick = () => {
-    navigate("/post-management"); // Navigate to the Post Management page
-  };
-
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Header */}
       <h1 className="text-3xl font-bold text-gray-800 mb-8">Dashboard Overview</h1>
 
       {/* Stats Cards */}
@@ -50,16 +38,6 @@ const Dashboard = () => {
         <div className="h-64 bg-gray-100 flex items-center justify-center rounded-lg">
           <p className="text-gray-500">Chart will be displayed here</p>
         </div>
-      </div>
-
-      {/* Quick Access Buttons */}
-      <div className="flex space-x-4">
-        <button
-          onClick={handleUserManagementClick}
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300"
-        >
-          User Management
-        </button>
       </div>
     </div>
   );
