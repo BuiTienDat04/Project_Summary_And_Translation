@@ -2,17 +2,21 @@ const jwt = require("jsonwebtoken");
 
 // ✅ Middleware to verify user token
 const verifyToken = (req, res, next) => {
-  const token = req.header("Authorization")?.split(" ")[1];
-  if (!token) {
+  const authHeader = req.header("Authorization");
+  console.log("Auth Header:", authHeader); // Debug: Kiểm tra token nhận được
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ message: "Unauthorized. Please log in." });
   }
 
+  const token = authHeader.split(" ")[1]; // Lấy token sau chữ "Bearer"
+
   try {
     const verified = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = verified;
+    req.user = verified; // Lưu thông tin user vào request
     next();
   } catch (error) {
-    res.status(400).json({ message: "Invalid token. Please log in again." });
+    return res.status(400).json({ message: "Invalid token. Please log in again." });
   }
 };
 

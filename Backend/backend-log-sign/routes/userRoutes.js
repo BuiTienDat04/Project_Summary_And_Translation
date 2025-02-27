@@ -30,12 +30,30 @@ router.post("/create", verifyToken, verifyAdmin, async (req, res) => {
     });
 
     await newUser.save();
-    res.status(201).json({ message: "User created successfully!", user: newUser });
+
+    // 🛑 Remove password before sending response
+    const userResponse = { ...newUser._doc };
+    delete userResponse.password;
+
+    res.status(201).json({ message: "User created successfully!", user: userResponse });
 
   } catch (error) {
     console.error("Error creating user:", error);
     res.status(500).json({ message: "Internal server error", error: error.message });
   }
 });
+
+router.get("/", verifyToken, async (req, res) => { 
+  console.log("✅ /api/users called");
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
 
 module.exports = router;
