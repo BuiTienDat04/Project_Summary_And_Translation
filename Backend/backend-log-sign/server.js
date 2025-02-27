@@ -1,4 +1,4 @@
-require("dotenv").config(); // Load biến môi trường sớm nhất có thể
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -10,21 +10,20 @@ const authRoutes = require("./routes/auth");
 const adminRoutes = require("./routes/admin");
 const summaryRoutes = require("./routes/summary");
 const uploadRoutes = require("./routes/upload");
+const userRoutes = require("./routes/userRoutes"); // Ensure correct import
 
 const app = express();
 
 // =================== 🔹 MIDDLEWARE 🔹 ===================
-app.use(express.json()); // Xử lý dữ liệu JSON từ request
-app.use(cors()); // Cho phép request từ frontend
-app.use(helmet()); // Bảo vệ HTTP headers
-app.use(morgan("dev")); // Ghi log request vào console
-app.use("/api/summary", summaryRoutes);
-app.use("/api/upload", uploadRoutes);
+app.use(express.json());
+app.use(cors());
+app.use(helmet());
+app.use(morgan("dev"));
 
-// Giới hạn request để tránh tấn công DDoS
+// 🚀 Rate limit: Prevent DDoS attacks
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 phút
-  max: 100, // Tối đa 100 request mỗi IP
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
   message: "Too many requests, please try again later.",
 });
 app.use(limiter);
@@ -32,39 +31,39 @@ app.use(limiter);
 // =================== 🔹 ROUTES 🔹 ===================
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/summary", summaryRoutes);
+app.use("/api/upload", uploadRoutes);
+app.use("/api/users", userRoutes); // ✅ Ensure this is correctly placed
 
-// Route kiểm tra API hoạt động
+// ✅ Health Check Route
 app.get("/", (req, res) => {
   res.status(200).json({ message: "🚀 API is running!" });
 });
 
-// Xử lý route không tồn tại
+// ❌ 404 Not Found Middleware (Place after all routes)
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
 
-// =================== 🔹 KẾT NỐI DATABASE 🔹 ===================
+// =================== 🔹 CONNECT TO DATABASE 🔹 ===================
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(process.env.MONGODB_URI);
     console.log("✅ Connected to MongoDB");
   } catch (error) {
     console.error("❌ MongoDB Connection Error:", error);
-    process.exit(1); // Dừng server nếu kết nối thất bại
+    process.exit(1);
   }
 };
 
-// =================== 🔹 CHẠY SERVER 🔹 ===================
+// =================== 🔹 START SERVER 🔹 ===================
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
 });
 
-// =================== 🔹 XỬ LÝ LỖI TOÀN CỤC 🔹 ===================
+// =================== 🔹 GLOBAL ERROR HANDLING 🔹 ===================
 app.use((err, req, res, next) => {
   console.error("💥 Server Error:", err);
   res.status(500).json({ message: "Internal Server Error" });

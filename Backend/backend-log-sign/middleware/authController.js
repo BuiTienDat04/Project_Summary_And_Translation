@@ -6,23 +6,42 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({ email });
+        console.log("📩 Received login request:", req.body);
 
+        // 🔍 Check if the email exists in the database
+        const user = await User.findOne({ email });
         if (!user) {
-            return res.status(400).json({ message: 'Email không tồn tại' });
+            console.log("❌ Email not found:", email);
+            return res.status(401).json({ message: 'Email does not exist' });
         }
 
+        console.log("🔍 User found:", user);
+
+        // 🔑 Compare the hashed password
         const isMatch = await bcrypt.compare(password, user.password);
+        console.log("🔑 Password match result:", isMatch);
 
         if (!isMatch) {
-            return res.status(400).json({ message: 'Sai mật khẩu' });
+            console.log("❌ Incorrect password for email:", email);
+            return res.status(401).json({ message: 'Incorrect password' });
         }
 
-        const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        // 🎫 Generate JWT token (including role for authorization)
+        const token = jwt.sign(
+            { id: user._id, email: user.email, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
 
-        res.json({ token });
+        console.log("✅ Login successful! Returning token:", token);
+        res.json({ 
+            token, 
+            user: { id: user._id, name: user.name, email: user.email, role: user.role } 
+        });
+
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server' });
+        console.error("💥 Server error during login:", error);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 };
 
