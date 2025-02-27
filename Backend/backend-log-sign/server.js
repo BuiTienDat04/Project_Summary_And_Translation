@@ -33,7 +33,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/summary", summaryRoutes);
 app.use("/api/upload", uploadRoutes);
-app.use("/api/users", userRoutes); // ✅ Ensure this is correctly placed
+app.use("/api/users", userRoutes);
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {
