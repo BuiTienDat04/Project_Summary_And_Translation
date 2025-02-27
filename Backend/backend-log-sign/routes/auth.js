@@ -9,18 +9,15 @@ router.post("/register", async (req, res) => {
   try {
     const { name, email, password, phoneNumber, dateOfBirth, role } = req.body;
 
-    // Kiểm tra tài khoản đã tồn tại chưa
+    // Kiểm tra nếu email đã tồn tại
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ message: "Email already exists" });
 
     // Mã hóa mật khẩu
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Chỉ admin mới có thể tạo tài khoản admin
-    let userRole = "user"; // Mặc định là user
-    if (role && role === "admin") {
-      return res.status(403).json({ message: "Only admin can create an admin account" });
-    }
+    // Kiểm tra role (nếu không có, mặc định là "user")
+    const userRole = role || "user";
 
     // Tạo tài khoản mới
     const newUser = new User({ name, email, password: hashedPassword, phoneNumber, dateOfBirth, role: userRole });
@@ -48,13 +45,16 @@ router.post("/login", async (req, res) => {
   
       // Tạo token JWT
       const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
-  
-      res.status(200).json({ message: "Login successful", token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+
+      res.status(200).json({
+        message: "Login successful",
+        token,
+        user: { id: user._id, name: user.name, email: user.email, role: user.role }
+      });
   
     } catch (error) {
       res.status(500).json({ message: "Server error", error: error.message });
     }
-  });
-  
+});
 
 module.exports = router;

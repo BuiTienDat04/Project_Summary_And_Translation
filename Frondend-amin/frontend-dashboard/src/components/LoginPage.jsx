@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FaSignInAlt, FaEnvelope, FaLock } from "react-icons/fa";
-import axios from "axios"; // Import axios để gọi API
+import axios from "axios";
 
 const LoginPage = ({ onClose, onLoginSuccess }) => {
   const [loginEmail, setLoginEmail] = useState("");
@@ -8,11 +8,9 @@ const LoginPage = ({ onClose, onLoginSuccess }) => {
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
   const [loginSuccess, setLoginSuccess] = useState(false);
 
-  // Xử lý đăng nhập khi người dùng nhấn nút "Đăng nhập"
   const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {
       setLoginErrorMessage("Email and password are required!");
-      setLoginSuccess(false);
       return;
     }
 
@@ -29,20 +27,24 @@ const LoginPage = ({ onClose, onLoginSuccess }) => {
         return;
       }
 
-      localStorage.setItem("token", token); // Lưu token để sử dụng sau này
-      onLoginSuccess(user); // Cập nhật trạng thái người dùng
+      // Lưu token vào localStorage
+      localStorage.setItem("token", token);
 
+      // Cập nhật trạng thái người dùng
+      if (onLoginSuccess && typeof onLoginSuccess === "function") {
+        onLoginSuccess(user);
+      }
+      
       setLoginSuccess(true);
-      setTimeout(() => {
-        setLoginSuccess(false);
-        onClose();
-      }, 2000);
 
-      // 🔥 Nếu là admin, chuyển hướng đến Dashboard
+      // Nếu là admin, chuyển hướng ngay lập tức
       if (user.role === "admin") {
+        window.location.href = "/dashboard";
+      } else {
         setTimeout(() => {
-          window.location.href = "/dashboard";
-        }, 1000);
+          setLoginSuccess(false);
+          onClose();
+        }, 2000);
       }
     } catch (error) {
       console.error("Login error:", error.response?.data || error.message);
@@ -52,11 +54,11 @@ const LoginPage = ({ onClose, onLoginSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
+    <div className="fixed inset-0 bg-gray-300 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto">
         <div className="text-center mb-6">
           <FaSignInAlt className="mx-auto h-12 w-12 text-blue-500 mb-2" />
-          <h1 className="text-2xl font-bold text-gray-800">Login</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Admin Login</h1>
           <p className="text-gray-600">Login to use PDFSmart</p>
         </div>
 
@@ -112,9 +114,6 @@ const LoginPage = ({ onClose, onLoginSuccess }) => {
           >
             <FaSignInAlt className="mr-2" /> Login
           </button>
-        </div>
-        <div className="mt-4 text-sm text-gray-600 text-center">
-          Don't have an account? <button onClick={onClose} className="text-blue-500 hover:underline">Close Login</button>
         </div>
       </div>
     </div>

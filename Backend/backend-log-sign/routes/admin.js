@@ -1,10 +1,10 @@
 const express = require("express");
-const { verifyToken, verifyAdmin } = require("../middleware/authMiddleware");
+const { verifyToken, verifyAdmin } = require("../middleware/authMiddleware"); // Đúng đường dẫn
 const router = express.Router();
 
-// API chỉ Admin có quyền truy cập
+// API dành riêng cho Admin
 router.get("/dashboard", verifyAdmin, (req, res) => {
-  res.json({ message: "Welcome Admin, this is your dashboard!" });
+  res.json({ message: `Welcome Admin ${req.user.name}, this is your dashboard!` });
 });
 
 module.exports = router;
