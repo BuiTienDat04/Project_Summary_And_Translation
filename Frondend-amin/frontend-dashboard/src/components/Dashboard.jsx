@@ -1,9 +1,6 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
-  const navigate = useNavigate();
-
   // Mock data for demonstration
   const usersCount = 120;
   const postsCount = 450;
@@ -12,10 +9,8 @@ const Dashboard = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Header - chỉ giữ tiêu đề */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Dashboard Overview</h1>
-      </div>
+      {/* Header */}
+      <h1 className="text-3xl font-bold text-gray-800 mb-8">Dashboard Overview</h1>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
