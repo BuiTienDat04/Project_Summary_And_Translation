@@ -2,28 +2,40 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 const Navbar = () => {
-  const navigate = useNavigate(); // Hook để điều hướng
+  const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Xóa dữ liệu đăng nhập
-    localStorage.removeItem("token");  // Nếu dùng token JWT
-    localStorage.removeItem("user");   // Nếu lưu thông tin user
-
-    // Chuyển hướng về trang đăng nhập
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     navigate("/login");
   };
 
+  const handleUserManagementClick = () => {
+    navigate("/user-management");
+  };
+
   return (
-    <nav className="bg-gray-800 p-4 shadow-md">
-      <div className="container mx-auto flex justify-between items-center">
-        <Link to="/" className="text-white text-xl font-bold">
-          PDFSmart
-        </Link>
-        <ul className="flex space-x-6">
+    <nav className="bg-gray-800 p-4 shadow-md w-full">
+      <div className="flex items-center">
+        <div className="flex-shrink-0 ml-6">
+          <Link to="/" className="text-white text-2xl font-bold tracking-tight">
+            PDFSmart
+          </Link>
+        </div>
+        <div className="flex-grow" /> {/* Spacer để đẩy các nút sang phải */}
+        <ul className="flex items-center space-x-4 mr-6">
+          <li>
+            <button
+              onClick={handleUserManagementClick}
+              className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition duration-200 text-sm font-medium"
+            >
+              User Management
+            </button>
+          </li>
           <li>
             <button
               onClick={handleLogout}
-              className="text-red-400 hover:text-red-600 transition duration-200"
+              className="bg-red-600 text-white px-3 py-1.5 rounded-md hover:bg-red-700 transition duration-200 text-sm font-medium"
             >
               Logout
             </button>

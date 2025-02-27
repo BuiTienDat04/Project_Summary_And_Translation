@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
-  const navigate = useNavigate(); // Hook for navigation
+  const navigate = useNavigate();
 
   // Mock data for demonstration
   const usersCount = 120;
@@ -10,22 +10,11 @@ const Dashboard = () => {
   const translatedPostsCount = 300;
   const visitsCount = 1200;
 
-  // Function to handle User Management button click
-  const handleUserManagementClick = () => {
-    navigate("/user-management"); // Navigate to the User Management page
-  };
-
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Header and User Management Button */}
-      <div className="flex justify-between items-center mb-8">
+      {/* Header - chỉ giữ tiêu đề */}
+      <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Dashboard Overview</h1>
-        <button
-          onClick={handleUserManagementClick}
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300"
-        >
-          User Management
-        </button>
       </div>
 
       {/* Stats Cards */}
