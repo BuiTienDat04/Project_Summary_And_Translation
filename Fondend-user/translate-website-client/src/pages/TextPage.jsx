@@ -18,6 +18,7 @@ function TextPage() {
   const [showHelp, setShowHelp] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [welcomeMessageVisible, setWelcomeMessageVisible] = useState(true);
+  const [loginPromptVisible, setLoginPromptVisible] = useState(false);
 
   const handleCloseLogin = () => setShowLogin(false);
   const handleCloseRegister = () => setShowRegister(false);
@@ -47,13 +48,19 @@ function TextPage() {
       setLoggedInUsername(JSON.parse(storedUser).email); // Giả sử email là thuộc tính để hiển thị username
     }
   }, []);
-  
+
   const handleLogout = () => {
     setLoggedInUsername(null);
     setLoggedInUser(null);
 
+    // Xóa dữ liệu loggedInUser khỏi localStorage
     localStorage.removeItem('loggedInUser');
+
+    // Điều hướng người dùng về trang đăng nhập (hoặc trang chủ)
+    navigate('/');
   };
+
+  
 
   return (
     <div className="min-h-screen bg-indigo-200 font-sans">
@@ -142,7 +149,7 @@ function TextPage() {
       {/* Main Content: Text Summarizer and Translator */}
       <div className="container mx-auto px-4 pt-2">
 
-        <TextSummarizerAndTranslator />
+        <TextSummarizerAndTranslator loggedInUser={loggedInUser}/>
 
       </div>
 
@@ -243,6 +250,40 @@ function TextPage() {
         </div>
       )}
 
+      {/* Login Required Modal */}
+      {loginPromptVisible && (
+        <div className="fixed inset-0 bg-indigo-100/90 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md transform transition-all scale-95 hover:scale-100 border border-indigo-50 mx-4">
+            {/* Header với hiệu ứng gradient */}
+            <div className="text-center mb-6 space-y-3">
+              <div className="mx-auto bg-gradient-to-br from-indigo-500 to-blue-500 w-fit p-4 rounded-2xl">
+                <FaSignInAlt className="h-8 w-8 text-white animate-bounce" />
+              </div>
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent">
+                Welcome Friend!
+              </h2>
+            </div>
+
+            {/* Nội dung chính */}
+            <div className="space-y-5 text-center">
+              <p className="text-gray-600 text-lg leading-relaxed">
+                To access all features and enjoy a personalized experience, please sign in to your account.
+              </p>
+
+              {/* Nhóm button */}
+              <div className="flex flex-col space-y-3">
+                <button
+                  onClick={() => setLoginPromptVisible(false)}
+                  className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-6 rounded-xl 
+                  transform transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-200"
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
