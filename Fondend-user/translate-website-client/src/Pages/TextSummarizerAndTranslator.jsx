@@ -8,8 +8,6 @@ const TextSummarizerAndTranslator = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [error, setError] = useState("");
-  const [charCount, setCharCount] = useState(0); // Thêm state để đếm ký tự
-  const maxCharLimit = 1000; // Giới hạn 1000 ký tự
 
   const languages = [
     { code: "en", name: "English" },
@@ -45,11 +43,6 @@ const TextSummarizerAndTranslator = () => {
       setTranslation("");
       setError("");
     }
-  }, [text]);
-
-  // Cập nhật số ký tự khi text thay đổi
-  useEffect(() => {
-    setCharCount(text.length);
   }, [text]);
 
   // Handle text summarization
@@ -114,25 +107,18 @@ const TextSummarizerAndTranslator = () => {
             rows="10"
             placeholder="Enter text to summarize and translate..."
             value={text}
-            onChange={(e) => {
-              if (e.target.value.length <= maxCharLimit) {
-                setText(e.target.value);
-              }
-            }}
-            maxLength={maxCharLimit} // Giới hạn ký tự
+            onChange={(e) => setText(e.target.value)}
           />
-          {/* Hiển thị số ký tự còn lại */}
-          <div className="text-sm text-gray-500 text-right">
-            {charCount}/{maxCharLimit} characters
-          </div>
 
           <button
             className="w-full bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg"
             onClick={handleSummarize}
           >
+            {/* Button icon */}
             Generate Summary
           </button>
           {error && <p className="text-red-500">{error}</p>}
+          {/* Error message */}
         </section>
 
         {/* Output Column - Depth and clear separation */}
@@ -176,6 +162,7 @@ const TextSummarizerAndTranslator = () => {
                     onFocus={() => setIsDropdownOpen(true)}
                     onBlur={() => setTimeout(() => setIsDropdownOpen(false), 100)} // Delay blur to allow click
                   />
+                  {/* Dropdown button - Removed, input field itself is the selector */}
                 </div>
                 {/* Dropdown menu */}
                 {isDropdownOpen && filteredLanguages.length > 0 && (
@@ -197,6 +184,7 @@ const TextSummarizerAndTranslator = () => {
                 className="w-full bg-gradient-to-br from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg"
                 onClick={handleTranslate}
               >
+                {/* Button icon */}
                 Translate Now
               </button>
 
