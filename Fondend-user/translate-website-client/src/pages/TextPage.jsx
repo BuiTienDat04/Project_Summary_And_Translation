@@ -58,7 +58,11 @@ function TextPage() {
 
     // Điều hướng người dùng về trang đăng nhập (hoặc trang chủ)
     navigate('/');
+    window.location.reload();
   };
+
+  
+
 
   
 
