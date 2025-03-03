@@ -79,7 +79,7 @@ router.get("/:id", verifyToken, async (req, res) => {
  */
 router.put("/:id", verifyToken, async (req, res) => {
   try {
-    const { name, email, phoneNumber, dateOfBirth, role } = req.body;
+    const { name, email, phoneNumber, dateOfBirth, role, password } = req.body;
 
     // Kiểm tra user tồn tại
     const user = await User.findById(req.params.id);
@@ -97,7 +97,17 @@ router.put("/:id", verifyToken, async (req, res) => {
     user.email = email || user.email;
     user.phoneNumber = phoneNumber || user.phoneNumber;
     user.dateOfBirth = dateOfBirth || user.dateOfBirth;
-    user.role = req.user.role === "admin" ? (role || user.role) : user.role; // Chỉ admin có thể sửa role
+    
+    // Chỉ admin có thể sửa role
+    if (req.user.role === "admin") {
+      user.role = role || user.role;
+    }
+
+    // Nếu có mật khẩu mới, hash và cập nhật
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      user.password = hashedPassword;
+    }
 
     await user.save();
 
