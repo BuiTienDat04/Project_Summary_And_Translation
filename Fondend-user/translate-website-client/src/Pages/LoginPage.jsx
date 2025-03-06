@@ -1,59 +1,54 @@
 import { useState } from "react";
 import { FaSignInAlt, FaEnvelope, FaLock } from "react-icons/fa";
+import axios from "axios"; // Import axios để gọi API
 
-// Component LoginPage xử lý đăng nhập người dùng
 const LoginPage = ({ onClose, onLoginSuccess }) => {
-  // Trạng thái lưu email người dùng nhập vào
   const [loginEmail, setLoginEmail] = useState("");
-
-  // Trạng thái lưu mật khẩu người dùng nhập vào
   const [loginPassword, setLoginPassword] = useState("");
-
-  // Trạng thái lưu thông báo lỗi nếu email hoặc mật khẩu không hợp lệ
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
-
-  // Trạng thái xác nhận đăng nhập thành công hay không
   const [loginSuccess, setLoginSuccess] = useState(false);
 
-  // Lưu thông tin người dùng sau khi đăng nhập thành công
-  const [loggedInUser, setLoggedInUser] = useState(null);
-
-  // Kiểm soát hiển thị thông báo chào mừng sau khi đăng nhập thành công
-  const [welcomeMessageVisible, setWelcomeMessageVisible] = useState(false); 
-
   // Xử lý đăng nhập khi người dùng nhấn nút "Đăng nhập"
-  const handleLogin = () => {
-    // Kiểm tra nếu email hoặc mật khẩu bị bỏ trống
+  const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {
-      setLoginErrorMessage("Email and password are required!"); // Hiển thị lỗi
-      setLoginSuccess(false); // Đặt trạng thái đăng nhập thất bại
-      console.log("onLoginSuccess:", onLoginSuccess); // Debug (nếu cần kiểm tra)
+      setLoginErrorMessage("Email and password are required!");
+      setLoginSuccess(false);
       return;
     }
 
-    // Nếu nhập đúng, xóa thông báo lỗi và đặt trạng thái đăng nhập thành công
-    setLoginErrorMessage("");
-    setLoginSuccess(true);
+    try {
+      const response = await axios.post("http://localhost:5000/api/auth/login", {
+        email: loginEmail,
+        password: loginPassword,
+      });
 
-    // Tạo một đối tượng user chỉ chứa email
-    const user = {
-      email: loginEmail,
-    };
+      const { token, user } = response.data;
 
-    setLoggedInUser(user); // Lưu thông tin người dùng
-    onLoginSuccess(user); // Gọi hàm từ props để thông báo đăng nhập thành công
-    setWelcomeMessageVisible(true); // Hiển thị thông báo chào mừng
+      if (!token || !user) {
+        setLoginErrorMessage("Invalid response from server!");
+        return;
+      }
 
-    // Sau 2 giây, đặt lại trạng thái đăng nhập và đóng popup đăng nhập
-    setTimeout(() => {
+      localStorage.setItem("token", token); // Lưu token để sử dụng sau này
+      onLoginSuccess(user); // Cập nhật trạng thái người dùng
+
+      setLoginSuccess(true);
+      setTimeout(() => {
+        setLoginSuccess(false);
+        onClose();
+      }, 2000);
+
+      // 🔥 Nếu là admin, chuyển hướng đến Dashboard
+      if (user.role === "admin") {
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 1000);
+      }
+    } catch (error) {
+      console.error("Login error:", error.response?.data || error.message);
+      setLoginErrorMessage(error.response?.data?.message || "Login failed!");
       setLoginSuccess(false);
-      onClose(); 
-    }, 2000);
-
-    // Sau 3 giây, ẩn thông báo chào mừng
-    setTimeout(() => {
-      setWelcomeMessageVisible(false);
-    }, 3000);
+    }
   };
 
   return (
@@ -76,17 +71,6 @@ const LoginPage = ({ onClose, onLoginSuccess }) => {
           <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
             <strong className="font-bold">Success!</strong>
             <span className="block sm:inline"> Login successful.</span>
-          </div>
-        )}
-        {welcomeMessageVisible && loggedInUser && (
-          <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-100 border border-green-400 text-green-700 px-6 py-3 rounded-lg z-50 shadow-lg animate-slide-down">
-            <span className="font-medium">👋 Welcome back, {loggedInUser.email}!</span>
-            <button
-              onClick={() => setWelcomeMessageVisible(false)}
-              className="ml-4 text-green-700 hover:text-green-800"
-            >
-              ×
-            </button>
           </div>
         )}
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { FaSignInAlt } from "react-icons/fa";
 
-const TextSummarizerAndTranslator = () => {
+const TextSummarizerAndTranslator = ({ loggedInUser }) => {
   const [text, setText] = useState("");
   const [summary, setSummary] = useState("");
   const [translation, setTranslation] = useState("");
@@ -8,6 +9,11 @@ const TextSummarizerAndTranslator = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [error, setError] = useState("");
+
+  const [charCount, setCharCount] = useState(0);
+  const [loginPromptVisible, setLoginPromptVisible] = useState(false);
+  const maxCharLimit = 1000;
+
 
   const languages = [
     { code: "en", name: "English" },
@@ -36,7 +42,6 @@ const TextSummarizerAndTranslator = () => {
     lang.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Reset summary and translation when text is cleared
   useEffect(() => {
     if (!text) {
       setSummary("");
@@ -46,7 +51,17 @@ const TextSummarizerAndTranslator = () => {
   }, [text]);
 
   // Handle text summarization
+
+  useEffect(() => {
+    setCharCount(text.length);
+  }, [text]);
+
+
   const handleSummarize = async () => {
+    if (!loggedInUser) {
+      setLoginPromptVisible(true);
+      return;
+    }
     if (!text) {
       setError("Please enter text to summarize.");
       return;
@@ -67,7 +82,6 @@ const TextSummarizerAndTranslator = () => {
     }
   };
 
-  // Handle text translation
   const handleTranslate = async () => {
     if (!summary || !targetLang) {
       setError("Please summarize the text first and select a target language.");
@@ -89,115 +103,165 @@ const TextSummarizerAndTranslator = () => {
     }
   };
 
-  // Handle language selection
   const handleLanguageSelect = (code, name) => {
     setTargetLang(code);
     setSearchTerm(name);
     setIsDropdownOpen(false);
   };
 
-  return (
-    <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
-      {/* Title */}
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Summarize and Translate Text</h2>
 
-      {/* Grid layout for input and output */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Left column: Input area */}
-        <div>
+  return (
+    <div className="max-w-7xl mx-auto p-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Input Column - Glassmorphism effect */}
+        <section className="space-y-6 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
+          <h2 className="text-2xl font-semibold text-gray-800 text-center">Text Summarizer & Translator</h2>
           <textarea
-            className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-5 border-2 border-blue-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300 placeholder-gray-400 resize-none text-lg shadow-sm"
             rows="10"
-            placeholder="Enter text to summarize..."
+            placeholder="Enter text to summarize and translate..."
             value={text}
             onChange={(e) => setText(e.target.value)}
-          ></textarea>
+          />
 
-          {/* Summarize button */}
           <button
-            className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors duration-300 mb-4"
+            className="w-full bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg"
             onClick={handleSummarize}
           >
-            Summarize
+            {/* Button icon */}
+            Generate Summary
           </button>
-        </div>
+          {error && <p className="text-red-500">{error}</p>}
+          {/* Error message */}
+        </section>
 
-        {/* Right column: Output area */}
-        <div>
-          {/* Display summary */}
-          {summary && (
-            <div className="p-4 bg-gray-50 rounded-lg mb-6">
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">Summary:</h3>
-              <p className="text-gray-600">{summary}</p>
+        {/* Output Column - Depth and clear separation */}
+        <section className="space-y-6 p-6 bg-gray-50 rounded-2xl border-2 border-gray-100 shadow-inner">
+          {/* Summary Section */}
+          <article className="bg-white rounded-xl border-2 border-gray-200 p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M6 15h.01M6 11h.01M9 11h.01M9 15h.01" />
+                </svg>
+                Summary
+              </h3>
+              {summary && <span className="text-sm text-gray-500 font-medium">{summary.length} chars</span>}
             </div>
-          )}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <textarea
+                className="w-full min-h-[180px] bg-transparent focus:outline-none resize-none text-gray-700 placeholder-gray-400 text-md"
+                value={summary || ""}
+                placeholder="✨ Your summary will appear here..."
+                readOnly
+              />
+            </div>
+          </article>
 
-          {/* Translation section */}
+          {/* Translation Section */}
           {summary && (
-            <>
-              <div className="relative mb-4">
-                <div className="flex items-center border border-gray-300 rounded-lg">
+            <div className="space-y-6">
+              {/* Language selector */}
+              <div className="relative">
+                <div className="flex items-center border-2 border-emerald-200 bg-white rounded-xl pr-3 shadow-sm">
                   <input
                     type="text"
-                    className="w-full p-3 focus:outline-none rounded-lg"
-                    placeholder="Search for a language..."
+                    className="w-full p-4 bg-transparent placeholder-gray-400 focus:outline-none text-lg"
+                    placeholder="Search language..."
                     value={searchTerm}
                     onChange={(e) => {
                       setSearchTerm(e.target.value);
                       setIsDropdownOpen(true);
                     }}
                     onFocus={() => setIsDropdownOpen(true)}
+                    onBlur={() => setTimeout(() => setIsDropdownOpen(false), 100)} // Delay blur to allow click
                   />
-                  <button
-                    className="p-3 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600 transition-colors duration-300"
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  >
-                    ▼
-                  </button>
+                  {/* Dropdown button - Removed, input field itself is the selector */}
                 </div>
-
-                {/* Language dropdown */}
-                {isDropdownOpen && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {filteredLanguages.length > 0 ? (
-                      filteredLanguages.map((lang) => (
-                        <div
-                          key={lang.code}
-                          className="p-3 hover:bg-gray-100 cursor-pointer"
-                          onClick={() => handleLanguageSelect(lang.code, lang.name)}
-                        >
-                          {lang.name}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="p-3 text-gray-500">No languages found.</div>
-                    )}
-                  </div>
+                {/* Dropdown menu */}
+                {isDropdownOpen && filteredLanguages.length > 0 && (
+                  <ul className="absolute z-10 mt-1 w-full bg-white border border-emerald-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                    {filteredLanguages.map((lang) => (
+                      <li
+                        key={lang.code}
+                        className="px-4 py-2 hover:bg-emerald-100 cursor-pointer"
+                        onClick={() => handleLanguageSelect(lang.code, lang.name)}
+                      >
+                        {lang.name}
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
 
-              {/* Translate button */}
               <button
-                className="w-full bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors duration-300 mb-4"
+                className="w-full bg-gradient-to-br from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg"
                 onClick={handleTranslate}
               >
-                Translate
+                {/* Button icon */}
+                Translate Now
               </button>
-            </>
-          )}
 
-          {/* Display translation */}
-          {translation && (
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">Translation:</h3>
-              <p className="text-gray-600">{translation}</p>
+              {translation && (
+                <article className="bg-white rounded-xl border-2 border-gray-200 p-5 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                      <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Translation ({languages.find(lang => lang.code === targetLang)?.name || 'Unknown'})
+                    </h3>
+                    <span className="text-sm text-gray-500 font-medium">{translation.length} chars</span>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <textarea
+                      className="w-full min-h-[180px] bg-transparent focus:outline-none resize-none text-gray-700 text-md"
+                      value={translation}
+                      placeholder="✨ Your translation will appear here..."
+                      readOnly
+                    />
+                  </div>
+                </article>
+              )}
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Display error messages */}
-      {error && <p className="text-red-500 mt-4">{error}</p>}
+          {/* Login Required Modal */}
+          {loginPromptVisible && (
+            <div className="fixed inset-0 bg-indigo-100/90 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300">
+              <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md transform transition-all scale-95 hover:scale-100 border border-indigo-50 mx-4">
+                {/* Header với hiệu ứng gradient */}
+                <div className="text-center mb-6 space-y-3">
+                  <div className="mx-auto bg-gradient-to-br from-indigo-500 to-blue-500 w-fit p-4 rounded-2xl">
+                    <FaSignInAlt className="h-8 w-8 text-white animate-bounce" />
+                  </div>
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent">
+                    Welcome Friend!
+                  </h2>
+                </div>
+
+                {/* Nội dung chính */}
+                <div className="space-y-5 text-center">
+                  <p className="text-gray-600 text-lg leading-relaxed">
+                    To access all features and enjoy a personalized experience, please sign in to your account.
+                  </p>
+
+                  {/* Nhóm button */}
+                  <div className="flex flex-col space-y-3">
+                    <button
+                      onClick={() => setLoginPromptVisible(false)}
+                      className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-6 rounded-xl 
+            transform transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-200"
+                    >
+                      OK
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 };

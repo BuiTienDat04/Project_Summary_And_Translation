@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import LoginPage from "./LoginPage";
@@ -15,10 +15,10 @@ function TextPage() {
   const [showRegister, setShowRegister] = useState(false);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [loggedInUsername, setLoggedInUsername] = useState(null);
-  const [loginPromptVisible, setLoginPromptVisible] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [welcomeMessageVisible, setWelcomeMessageVisible] = useState(true);
+  const [loginPromptVisible, setLoginPromptVisible] = useState(false);
 
   const handleCloseLogin = () => setShowLogin(false);
   const handleCloseRegister = () => setShowRegister(false);
@@ -36,12 +36,31 @@ function TextPage() {
     setLoggedInUser(user);
     setLoggedInUsername(user.email);
     setShowLogin(false);
+
+    localStorage.setItem('loggedInUser', JSON.stringify(user));
   };
+
+  useEffect(() => {
+    // Kiểm tra localStorage khi component được mount
+    const storedUser = localStorage.getItem('loggedInUser');
+    if (storedUser) {
+      setLoggedInUser(JSON.parse(storedUser));
+      setLoggedInUsername(JSON.parse(storedUser).email); // Giả sử email là thuộc tính để hiển thị username
+    }
+  }, []);
 
   const handleLogout = () => {
     setLoggedInUsername(null);
     setLoggedInUser(null);
+
+    // Xóa dữ liệu loggedInUser khỏi localStorage
+    localStorage.removeItem('loggedInUser');
+
+    // Điều hướng người dùng về trang đăng nhập (hoặc trang chủ)
+    navigate('/');
   };
+
+  
 
   return (
     <div className="min-h-screen bg-indigo-200 font-sans">
@@ -95,7 +114,7 @@ function TextPage() {
 
           <button
             className="px-10 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-green-200 border-2 border-green-600 bg-green-500 hover:bg-green-600 text-white"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/document")}
           >
             Summarize Document
           </button>
@@ -128,10 +147,10 @@ function TextPage() {
       </div>
 
       {/* Main Content: Text Summarizer and Translator */}
-      <div className="container mx-auto px-4 pt-20">
-        <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
-          <TextSummarizerAndTranslator />
-        </div>
+      <div className="container mx-auto px-4 pt-2">
+
+        <TextSummarizerAndTranslator loggedInUser={loggedInUser}/>
+
       </div>
 
       {/* About Section */}
@@ -198,16 +217,71 @@ function TextPage() {
         </div>
       )}
 
-      {/* Welcome Message */}
       {welcomeMessageVisible && loggedInUser && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-100 border border-green-400 text-green-700 px-6 py-3 rounded-lg z-50 shadow-lg animate-slide-down">
-          <span className="font-medium">👋 Welcome back, {loggedInUser.email}!</span>
+        <div className="fixed top-1/4 left-1/2 transform -translate-x-1/2 bg-white border border-gray-200 text-gray-800 px-8 py-6 rounded-xl shadow-md animate-slide-down text-center w-96 max-w-md">
+          <div className="flex items-center justify-center mb-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 mr-2 text-green-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span className="font-semibold text-lg text-gray-900">
+              Welcome back, {loggedInUser.email.split("@")[0]}!
+            </span>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            Dive back into efficient document summarization. Your files await!
+          </p>
           <button
             onClick={() => setWelcomeMessageVisible(false)}
-            className="ml-4 text-green-700 hover:text-green-800"
+            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md focus:outline-none transition-colors duration-200"
           >
-            ×
+            Let's Summarize!
           </button>
+        </div>
+      )}
+
+      {/* Login Required Modal */}
+      {loginPromptVisible && (
+        <div className="fixed inset-0 bg-indigo-100/90 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md transform transition-all scale-95 hover:scale-100 border border-indigo-50 mx-4">
+            {/* Header với hiệu ứng gradient */}
+            <div className="text-center mb-6 space-y-3">
+              <div className="mx-auto bg-gradient-to-br from-indigo-500 to-blue-500 w-fit p-4 rounded-2xl">
+                <FaSignInAlt className="h-8 w-8 text-white animate-bounce" />
+              </div>
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent">
+                Welcome Friend!
+              </h2>
+            </div>
+
+            {/* Nội dung chính */}
+            <div className="space-y-5 text-center">
+              <p className="text-gray-600 text-lg leading-relaxed">
+                To access all features and enjoy a personalized experience, please sign in to your account.
+              </p>
+
+              {/* Nhóm button */}
+              <div className="flex flex-col space-y-3">
+                <button
+                  onClick={() => setLoginPromptVisible(false)}
+                  className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-6 rounded-xl 
+                  transform transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-200"
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
