@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LoginPage from "./Pages/LoginPage";
@@ -27,3 +28,17 @@ export default function App() {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
+=======
+import React from "react";
+import LoginForm from "./components/LoginForm";
+
+function App() {
+  return (
+    <div className="App">
+      <LoginForm />
+    </div>
+  );
+}
+
+export default App;
+>>>>>>> Stashed changes
