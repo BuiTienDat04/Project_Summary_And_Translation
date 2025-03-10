@@ -53,51 +53,51 @@ const LoginPage = ({ onClose, onLoginSuccess }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
-      <div className="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto">
-        <div className="text-center mb-6">
-          <FaSignInAlt className="mx-auto h-12 w-12 text-blue-500 mb-2" />
-          <h1 className="text-2xl font-bold text-gray-800">Login</h1>
-          <p className="text-gray-600">Login to use PDFSmart</p>
+      <div className="bg-white rounded-xl shadow-lg p-12 max-w-xl mx-auto"> {/* Tăng padding và max-width */}
+        <div className="text-center mb-10"> {/* Tăng margin bottom */}
+          <FaSignInAlt className="mx-auto h-16 w-16 text-blue-500 mb-4" /> {/* Tăng kích thước icon và margin bottom */}
+          <h1 className="text-4xl font-bold text-gray-800">Login</h1> {/* Tăng kích thước tiêu đề */}
+          <p className="text-lg text-gray-600">Login to use PDFSmart</p> {/* Tăng kích thước đoạn văn bản */}
         </div>
 
         {loginErrorMessage && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6"> {/* Tăng margin bottom */}
             <strong className="font-bold">Error!</strong>
             <span className="block sm:inline"> {loginErrorMessage}</span>
           </div>
         )}
 
         {loginSuccess && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6"> {/* Tăng margin bottom */}
             <strong className="font-bold">Success!</strong>
             <span className="block sm:inline"> Login successful.</span>
           </div>
         )}
 
-        <div className="space-y-4">
+        <div className="space-y-6"> {/* Tăng khoảng cách giữa các phần tử */}
           <div>
-            <label htmlFor="loginEmail" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+            <label htmlFor="loginEmail" className="block text-lg font-medium text-gray-700 mb-2 flex items-center"> {/* Tăng kích thước label và margin bottom */}
               <FaEnvelope className="mr-2 text-gray-500" />
               Email
             </label>
             <input
               type="email"
               id="loginEmail"
-              className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-lg" // Tăng padding và kích thước text
               placeholder="Enter your Email"
               value={loginEmail}
               onChange={(e) => setLoginEmail(e.target.value)}
             />
           </div>
           <div>
-            <label htmlFor="loginPassword" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+            <label htmlFor="loginPassword" className="block text-lg font-medium text-gray-700 mb-2 flex items-center"> {/* Tăng kích thước label và margin bottom */}
               <FaLock className="mr-2 text-gray-500" />
               Password
             </label>
             <input
               type="password"
               id="loginPassword"
-              className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-lg" // Tăng padding và kích thước text
               placeholder="Enter your password"
               value={loginPassword}
               onChange={(e) => setLoginPassword(e.target.value)}
@@ -105,15 +105,16 @@ const LoginPage = ({ onClose, onLoginSuccess }) => {
           </div>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-8"> {/* Tăng margin top */}
           <button
-            className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all flex items-center justify-center"
+            className="w-full px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all flex items-center justify-center text-lg" // Tăng padding, kích thước text
             onClick={handleLogin}
           >
             <FaSignInAlt className="mr-2" /> Login
           </button>
         </div>
-        <div className="mt-4 text-sm text-gray-600 text-center">
+
+        <div className="mt-6 text-lg text-gray-600 text-center"> {/* Tăng kích thước text và margin top */}
           Don't have an account? <button onClick={onClose} className="text-blue-500 hover:underline">Close Login</button>
         </div>
       </div>
