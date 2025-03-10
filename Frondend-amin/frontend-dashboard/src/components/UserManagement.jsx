@@ -4,8 +4,9 @@ import { FaEdit, FaTrash } from "react-icons/fa";
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
-  const [newUser, setNewUser] = useState({ name: "", email: "", phoneNumber: "", dateOfBirth: "", password: "", role: "user", status: "Active" });
+  const [newUser, setNewUser] = useState({ name: "", email: "", phoneNumber: "", dateOfBirth: "", password: "", role: "user" });
   const [editingUser, setEditingUser] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -13,6 +14,8 @@ const UserManagement = () => {
 
   const fetchUsers = async () => {
     try {
+      setLoading(true);
+      setError("");
       const token = localStorage.getItem("token");
       if (!token) {
         setError("You are not logged in!");
@@ -28,30 +31,34 @@ const UserManagement = () => {
       const data = await response.json();
       setUsers(data);
     } catch (error) {
-      console.error("Error fetching users:", error);
-      setError("Failed to fetch users.");
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleAddUser = async () => {
     try {
+      setLoading(true);
+      setError("");
       const token = localStorage.getItem("token");
+
       const response = await fetch("http://localhost:5000/api/users/create", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(newUser),
       });
 
       if (!response.ok) throw new Error("Failed to add user");
       const addedUser = await response.json();
 
-      setUsers((prevUsers) => [...prevUsers, addedUser.user]); // Cập nhật danh sách
-      setNewUser({ name: "", email: "", phoneNumber: "", dateOfBirth: "", password: "", role: "user", status: "Active" });
+      // Update UI only on success
+      setUsers((prevUsers) => [...prevUsers, addedUser.user]); 
+      setNewUser({ name: "", email: "", phoneNumber: "", dateOfBirth: "", password: "", role: "user" });
     } catch (error) {
-      console.error("Error adding user:", error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -59,11 +66,18 @@ const UserManagement = () => {
     if (!editingUser) return;
 
     try {
+      setLoading(true);
+      setError("");
       const token = localStorage.getItem("token");
+
+      // Remove password if empty (to avoid unnecessary updates)
+      const updatedData = { ...editingUser };
+      if (!updatedData.password) delete updatedData.password;
+
       const response = await fetch(`http://localhost:5000/api/users/${editingUser._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(editingUser),
+        body: JSON.stringify(updatedData),
       });
 
       if (!response.ok) throw new Error("Failed to update user");
@@ -72,16 +86,21 @@ const UserManagement = () => {
       setUsers((prevUsers) => prevUsers.map((user) => (user._id === updatedUser.user._id ? updatedUser.user : user)));
       setEditingUser(null);
     } catch (error) {
-      console.error("Error updating user:", error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDeleteUser = async (user) => {
-    const confirmDelete = window.confirm(`Bạn có chắc chắn muốn xóa người dùng "${user.name}" không?`);
+    const confirmDelete = window.confirm(`Are you sure you want to delete "${user.name}"?`);
     if (!confirmDelete) return;
 
     try {
+      setLoading(true);
+      setError("");
       const token = localStorage.getItem("token");
+
       const response = await fetch(`http://localhost:5000/api/users/${user._id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -90,7 +109,9 @@ const UserManagement = () => {
       if (!response.ok) throw new Error("Failed to delete user");
       setUsers((prevUsers) => prevUsers.filter((u) => u._id !== user._id));
     } catch (error) {
-      console.error("Error deleting user:", error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -281,7 +302,6 @@ const UserManagement = () => {
               <th className="p-3 text-left">Phone Number</th>
               <th className="p-3 text-left">Date of Birth</th>
               <th className="p-3 text-left">Role</th>
-              <th className="p-3 text-left">Status</th>
               <th className="p-3 text-left">Actions</th>
             </tr>
           </thead>
@@ -293,7 +313,6 @@ const UserManagement = () => {
                 <td className="p-3">{user.phoneNumber}</td>
                 <td className="p-3">{user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString("vi-VN") : "N/A"}</td>
                 <td className="p-3">{user.role}</td>
-                <td className="p-3">{user.status}</td>
                 <td className="p-3 flex space-x-2">
                   <button onClick={() => setEditingUser(user)} className="text-blue-600"><FaEdit /></button>
                   <button onClick={() => handleDeleteUser(user)} className="text-red-600"><FaTrash /></button>
