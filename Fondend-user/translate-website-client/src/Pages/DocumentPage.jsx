@@ -97,7 +97,7 @@ const DocumentPage = () => {
                     <section className="mt-10 flex flex-col items-center gap-8">
                         <div className="flex space-x-6">
                             <button
-                                onClick={() => navigate("/")}
+                                onClick={() => navigate("/text")}
                                 className="bg-blue-500 hover:bg-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-blue-200"
                             >
                                 Summarize Text

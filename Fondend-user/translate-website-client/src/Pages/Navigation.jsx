@@ -1,6 +1,8 @@
 import React from "react";
 
 const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout }) => {
+
+    
     return (
         <nav className="fixed top-0 left-0 w-full bg-white shadow-md py-3 z-50 min-h-[64px]">
             <div className="container mx-auto flex justify-between items-center px-4">

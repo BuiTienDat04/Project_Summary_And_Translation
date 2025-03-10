@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { FaSignInAlt } from "react-icons/fa";
+import { Trash2 } from 'lucide-react';
 
-const TextSummarizerAndTranslator = ({ loggedInUser }) => {
+const TextSummarizerAndTranslator = ({ loggedInUser  }) => {
   const [text, setText] = useState("");
   const [summary, setSummary] = useState("");
   const [translation, setTranslation] = useState("");
@@ -115,7 +116,23 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Input Column - Glassmorphism effect */}
         <section className="space-y-6 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
-          <h2 className="text-2xl font-semibold text-gray-800 text-center">Text Summarizer & Translator</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-semibold text-gray-800 flex-grow">Text Summarizer & Translator</h2>
+            {(text || error) && (
+              <button
+                onClick={() => {
+                  setText('');    // Xóa text
+                  setError('');   // Xóa thông báo lỗi
+                  // Thêm các state khác cần xóa ở đây
+                }}
+                className="text-red-500 hover:text-red-700 transition-colors"
+                title="Clear all"
+              >
+                <Trash2 className="w-7 h-7" />
+              </button>
+            )}
+          </div>
+
           <textarea
             className="w-full p-5 border-2 border-blue-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300 placeholder-gray-400 resize-none text-lg shadow-sm"
             rows="10"
@@ -128,11 +145,9 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
             className="w-full bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg"
             onClick={handleSummarize}
           >
-            {/* Button icon */}
             Generate Summary
           </button>
           {error && <p className="text-red-500">{error}</p>}
-          {/* Error message */}
         </section>
 
         {/* Output Column - Depth and clear separation */}
