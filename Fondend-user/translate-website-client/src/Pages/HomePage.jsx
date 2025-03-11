@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navigation from './Navigation';
 import LoginPage from './LoginPage';
 import RegisterPage from './RegisterPage';
@@ -9,6 +9,7 @@ import microsoftLogo from './images/microsoft.png';
 import openaiLogo from './images/openai.png';
 import amazonLogo from './images/amazon.png';
 import homeLogo from './images/logo.png'
+import NavFeatures from "../components/ui/navFeatures";
 import { BookOpen, Lightbulb, Rocket, ShieldCheck } from 'lucide-react'; // Import các icon từ lucide-react
 
 const Homepage = () => {
@@ -16,10 +17,8 @@ const Homepage = () => {
     const [showRegister, setShowRegister] = useState(false);
     const [isPopupVisible, setIsPopupVisible] = useState(false);
     const [loggedInUsername, setLoggedInUsername] = useState(null);
-    const [showHelp, setShowHelp] = useState(false);
     const [loggedInUser, setLoggedInUser] = useState(null);
-    const [welcomeMessageVisible, setWelcomeMessageVisible] = useState(true);
-    const [loginPromptVisible, setLoginPromptVisible] = useState(false);
+    const navFeaturesRef = useRef(null);
 
     const handleCloseLogin = () => setShowLogin(false);
     const handleCloseRegister = () => setShowRegister(false);
@@ -49,13 +48,13 @@ const Homepage = () => {
         }
     }, []);
 
-    const handleLogout = () => {
-        setLoggedInUsername(null);
-        setLoggedInUser(null);
-        localStorage.removeItem('loggedInUser');
-        navigate('/');
-        window.location.reload();
+
+    const handleScrollToFeatures = () => {
+        if (navFeaturesRef.current) {
+            navFeaturesRef.current.scrollIntoView({ behavior: "smooth" });
+        }
     };
+
 
     return (
         <div className="min-h-screen bg-indigo-200 font-sans">
@@ -67,11 +66,8 @@ const Homepage = () => {
                             <span className="text-2xl font-bold text-blue-600">PDFSmart</span>
                         </div>
                         {/* Navigation Bar */}
-                        <div className="bg-indigo-100 py-2">
-                            <Navigation
-                                onLoginClick={handleLoginClick}
-                                onRegisterClick={handleRegisterClick}
-                            />
+                        <div className="bg-indigo-100 py-2" onClick={handleScrollToFeatures}>
+                                <Navigation onLoginClick={handleLoginClick} onRegisterClick={handleRegisterClick} />
                         </div>
 
                         {/* Popups for Login and Register */}
@@ -123,6 +119,22 @@ const Homepage = () => {
                                     <div className="text-3xl font-bold text-green-600">1M+</div>
                                     <div className="text-sm text-gray-600">Docs Processed</div>
                                 </div>
+                            </div>
+
+                            {/* Login/Register Buttons */}
+                            <div className="flex justify-center mt-6 space-x-6">
+                                <button
+                                    onClick={handleLoginClick}
+                                    className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-12 py-5 rounded-2xl font-bold text-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg hover:shadow-green-300/50 active:scale-95 uppercase tracking-wide"
+                                >
+                                    Login
+                                </button>
+                                <button
+                                    onClick={handleRegisterClick}
+                                    className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-12 py-5 rounded-2xl font-bold text-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg hover:shadow-blue-300/50 active:scale-95 uppercase tracking-wide"
+                                >
+                                    Register
+                                </button>
                             </div>
                         </div>
 
@@ -217,6 +229,10 @@ const Homepage = () => {
                 </div>
             </section>
 
+            <div ref={navFeaturesRef}>
+                <NavFeatures />
+            </div>
+            
 
 
 
