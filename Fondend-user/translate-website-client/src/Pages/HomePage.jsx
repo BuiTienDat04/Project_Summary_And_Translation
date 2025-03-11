@@ -55,7 +55,7 @@ const Homepage = () => {
         setLoggedInUsername(user.email);
         setShowLogin(false);
         localStorage.setItem('loggedInUser', JSON.stringify(user));
-        navigate('/text'); // Chuyển hướng đến TextPage sau khi đăng nhập thành công
+        navigate('/text'); 
     };
 
     useEffect(() => {
