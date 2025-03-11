@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navigation from './Navigation';
 import LoginPage from './LoginPage';
 import RegisterPage from './RegisterPage';
@@ -9,18 +9,28 @@ import microsoftLogo from './images/microsoft.png';
 import openaiLogo from './images/openai.png';
 import amazonLogo from './images/amazon.png';
 import homeLogo from './images/logo.png'
-import { BookOpen, Lightbulb, Rocket, ShieldCheck } from 'lucide-react'; // Import các icon từ lucide-react
+import NavFeatures from "../components/ui/navFeatures";
+import NaContact  from '../components/ui/naContact'; 
+import { BookOpen, Lightbulb, Rocket, ShieldCheck, } from 'lucide-react'; // Import các icon từ lucide-react
+import {
+    PhoneIcon,
+    EnvelopeIcon,
+    MapPinIcon,
+    ClockIcon,
+    UserCircleIcon,
+    ChatBubbleLeftIcon,
+} from '@heroicons/react/24/solid';
 
 const Homepage = () => {
     const [showLogin, setShowLogin] = useState(false);
     const [showRegister, setShowRegister] = useState(false);
     const [isPopupVisible, setIsPopupVisible] = useState(false);
     const [loggedInUsername, setLoggedInUsername] = useState(null);
-    const [showHelp, setShowHelp] = useState(false);
     const [loggedInUser, setLoggedInUser] = useState(null);
-    const [welcomeMessageVisible, setWelcomeMessageVisible] = useState(true);
-    const [loginPromptVisible, setLoginPromptVisible] = useState(false);
-
+    const navFeaturesRef = useRef(null);
+    const contactRef = useRef(null);
+    const [showContact, setShowContact] = useState(false);
+    const [showFeatures, setShowFeatures] = useState(false);
     const handleCloseLogin = () => setShowLogin(false);
     const handleCloseRegister = () => setShowRegister(false);
     const navigate = useNavigate();
@@ -49,13 +59,29 @@ const Homepage = () => {
         }
     }, []);
 
-    const handleLogout = () => {
-        setLoggedInUsername(null);
-        setLoggedInUser(null);
-        localStorage.removeItem('loggedInUser');
-        navigate('/');
-        window.location.reload();
+
+    const handleFeaturesClick = () => {
+        setShowFeatures(true);
+        if (navFeaturesRef.current) {
+            navFeaturesRef.current.scrollIntoView({ behavior: "smooth" });
+        }
     };
+
+    const handleContactClick = () => {
+        setShowContact(true);
+        // Sử dụng setTimeout để đảm bảo component đã render
+        setTimeout(() => {
+            if (contactRef.current) {
+                contactRef.current.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+            }
+        }, 100);
+    };
+
+    
+
 
     return (
         <div className="min-h-screen bg-indigo-200 font-sans">
@@ -67,11 +93,12 @@ const Homepage = () => {
                             <span className="text-2xl font-bold text-blue-600">PDFSmart</span>
                         </div>
                         {/* Navigation Bar */}
-                        <div className="bg-indigo-100 py-2">
+                        <div className="bg-indigo-100 py-2" >
                             <Navigation
                                 onLoginClick={handleLoginClick}
                                 onRegisterClick={handleRegisterClick}
-                            />
+                                onContactClick={handleContactClick}
+                                onFeaturesClick={handleFeaturesClick} />
                         </div>
 
                         {/* Popups for Login and Register */}
@@ -123,6 +150,22 @@ const Homepage = () => {
                                     <div className="text-3xl font-bold text-green-600">1M+</div>
                                     <div className="text-sm text-gray-600">Docs Processed</div>
                                 </div>
+                            </div>
+
+                            {/* Login/Register Buttons */}
+                            <div className="flex justify-center mt-6 space-x-6">
+                                <button
+                                    onClick={handleLoginClick}
+                                    className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-12 py-5 rounded-2xl font-bold text-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg hover:shadow-green-300/50 active:scale-95 uppercase tracking-wide"
+                                >
+                                    Login
+                                </button>
+                                <button
+                                    onClick={handleRegisterClick}
+                                    className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-12 py-5 rounded-2xl font-bold text-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg hover:shadow-blue-300/50 active:scale-95 uppercase tracking-wide"
+                                >
+                                    Register
+                                </button>
                             </div>
                         </div>
 
@@ -218,6 +261,12 @@ const Homepage = () => {
             </section>
 
 
+            <div ref={navFeaturesRef}>
+                <NavFeatures />
+            </div>
+
+
+
 
 
             {/* Trusted By Section - Nâng cấp */}
@@ -244,6 +293,16 @@ const Homepage = () => {
                     </section>
                 </div>
             </section>
+
+
+            <div ref={contactRef}> {/* Thêm ref vào đây */}
+            <NaContact />
+
+            </div>
+
+
+
+
 
 
             {/* Footer */}

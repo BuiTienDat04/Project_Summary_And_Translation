@@ -26,6 +26,8 @@ export default function App() {
         <Route path="/footer" element={<Footer/>}/>
         <Route path="/service" element={<ServicesSection/>}/>
         <Route path="/" element={<Homepage/>}/>
+        <Route path="/naf" element={<navFeatures />} />
+
       </Routes>
     </BrowserRouter>
   );
