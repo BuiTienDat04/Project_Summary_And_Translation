@@ -10,6 +10,7 @@ import openaiLogo from './images/openai.png';
 import amazonLogo from './images/amazon.png';
 import homeLogo from './images/logo.png'
 import NavFeatures from "../components/ui/navFeatures";
+import NaContact  from '../components/ui/naContact'; 
 import { BookOpen, Lightbulb, Rocket, ShieldCheck, } from 'lucide-react'; // Import các icon từ lucide-react
 import {
     PhoneIcon,
@@ -79,15 +80,7 @@ const Homepage = () => {
         }, 100);
     };
 
-    const ContactInfo = ({ icon, title, content }) => (
-        <div className="flex items-center space-x-4 bg-gray-50 p-4 rounded-lg shadow-sm hover:scale-105 transition-transform">
-            <div className="p-3 bg-white rounded-lg shadow-md">{icon}</div>
-            <div>
-                <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-                <p className="text-gray-600">{content}</p>
-            </div>
-        </div>
-    );
+    
 
 
     return (
@@ -267,11 +260,11 @@ const Homepage = () => {
                 </div>
             </section>
 
-            {showFeatures && (
-                <div ref={navFeaturesRef}>
-                    <NavFeatures />
-                </div>
-            )}
+
+            <div ref={navFeaturesRef}>
+                <NavFeatures />
+            </div>
+
 
 
 
@@ -301,44 +294,12 @@ const Homepage = () => {
                 </div>
             </section>
 
-            {showContact && (
-                <div ref={contactRef}> {/* Thêm ref vào đây */}
-                    {/* Nội dung contact */}
-                    <div className="text-center py-8 max-w-3xl mx-auto">
-                        <div className="text-center py-8 max-w-3xl mx-auto">
-                            <h2 className="text-3xl font-bold text-gray-900">Kết nối cùng chúng tôi</h2>
-                            <p className="text-gray-600 mt-3 text-lg">
-                                Bạn cần hỗ trợ tóm tắt văn bản hoặc dịch thuật tài liệu một cách nhanh chóng và chính xác?
-                                Hãy liên hệ ngay với chúng tôi để được tư vấn và hỗ trợ tận tình!
-                            </p>
-                        </div>
-                        < div className="max-w-7xl mx-auto px-4 py-16 pt-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                                <ContactInfo
-                                    icon={<PhoneIcon className="h-7 w-7 text-blue-600" />}
-                                    title="Hotline"
-                                    content="+84 123 456 789"
-                                />
-                                <ContactInfo
-                                    icon={<EnvelopeIcon className="h-7 w-7 text-green-600" />}
-                                    title="Email"
-                                    content="support@pdfsmart.com"
-                                />
-                                <ContactInfo
-                                    icon={<MapPinIcon className="h-7 w-7 text-purple-600" />}
-                                    title="Văn phòng"
-                                    content="Hà Nội, Việt Nam"
-                                />
-                                <ContactInfo
-                                    icon={<ClockIcon className="h-7 w-7 text-orange-600" />}
-                                    title="Giờ làm việc"
-                                    content="Mon - Fri: 8:00 - 17:00"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+
+            <div ref={contactRef}> {/* Thêm ref vào đây */}
+            <NaContact />
+
+            </div>
+
 
 
 
