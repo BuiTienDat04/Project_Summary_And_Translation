@@ -3,17 +3,43 @@ import { Upload, Download, Trash2 } from "lucide-react";
 
 export default function DocumentSummarySection() {
     const [file, setFile] = useState(null);
+    const [originalContent, setOriginalContent] = useState("");
     const [summaryContent, setSummaryContent] = useState("");
+    const [translatedContent, setTranslatedContent] = useState("");
     const [summaryFile, setSummaryFile] = useState(null);
     const [dragActive, setDragActive] = useState(false);
-    const [targetLanguage, setTargetLanguage] = useState("en");
+    const [targetLang, setTargetLang] = useState("en");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     const availableLanguages = [
         { code: "en", name: "English" },
+        { code: "vi", name: "Vietnamese" },
         { code: "fr", name: "French" },
         { code: "es", name: "Spanish" },
-        { code: "de", name: "German" }
+        { code: "de", name: "German" },
+        { code: "zh", name: "Chinese" },
+        { code: "ja", name: "Japanese" },
+        { code: "ko", name: "Korean" },
+        { code: "ru", name: "Russian" },
+        { code: "it", name: "Italian" },
+        { code: "pt", name: "Portuguese" },
+        { code: "ar", name: "Arabic" },
+        { code: "hi", name: "Hindi" },
+        { code: "tr", name: "Turkish" },
+        { code: "nl", name: "Dutch" },
+        { code: "pl", name: "Polish" },
+        { code: "th", name: "Thai" },
+        { code: "sv", name: "Swedish" },
+        { code: "fi", name: "Finnish" },
+        { code: "no", name: "Norwegian" },
     ];
+
+    const filteredLanguages = availableLanguages.filter((lang) =>
+        lang.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     // Cleanup object URLs
     useEffect(() => {
@@ -27,6 +53,12 @@ export default function DocumentSummarySection() {
     const handleFileChange = (event) => {
         if (event.target.files.length > 0) {
             setFile(event.target.files[0]);
+            setOriginalContent("");
+            setSummaryContent("");
+            setTranslatedContent("");
+            setError(null);
+            setSearchTerm("");
+            setTargetLang("en");
         }
     };
 
@@ -44,38 +76,130 @@ export default function DocumentSummarySection() {
         setDragActive(false);
         if (event.dataTransfer.files.length > 0) {
             setFile(event.dataTransfer.files[0]);
+            setOriginalContent("");
+            setSummaryContent("");
+            setTranslatedContent("");
+            setError(null);
+            setSearchTerm("");
+            setTargetLang("en");
         }
     };
 
     const handleRemoveFile = () => {
         setFile(null);
+        setOriginalContent("");
         setSummaryContent("");
+        setTranslatedContent("");
         setSummaryFile(null);
+        setError(null);
+        setSearchTerm("");
+        setTargetLang("en");
     };
 
-    const generateSummary = () => {
+    const handleLanguageSelect = (code, name) => {
+        setTargetLang(code);
+        setSearchTerm(name);
+        setIsDropdownOpen(false);
+    };
+
+    const cleanText = (text) => {
+        return text
+            .replace(/[^\w\s.,!?]/g, " ") // Loại bỏ ký tự đặc biệt, thay bằng khoảng trắng
+            .replace(/\s+/g, " ") // Thay nhiều khoảng trắng bằng một khoảng trắng
+            .trim();
+    };
+
+    const generateSummary = async () => {
         if (!file) return;
 
-        const content = `File Name: ${file.name}\n\nSummary:\n${'This is a detailed summary of the document. '.repeat(10)}`;
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
+        setIsLoading(true);
+        setError(null);
 
-        setSummaryContent(content);
-        setSummaryFile(url);
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const response = await fetch("http://localhost:5001/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Lỗi khi xử lý file.");
+            }
+
+            const data = await response.json();
+            setOriginalContent(data.originalText || "Không thể trích xuất nội dung.");
+            setSummaryContent(data.summary || "Không thể tóm tắt nội dung.");
+            setTranslatedContent(""); // Reset bản dịch để người dùng chọn lại ngôn ngữ
+
+            // Tạo file tải xuống với tóm tắt
+            const content = `File Name: ${file.name}\n\nOriginal Text:\n${data.originalText || "Không có nội dung"}\n\nSummary:\n${data.summary || "Không có tóm tắt"}`;
+            const blob = new Blob([content], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            setSummaryFile(url);
+            setError("");
+        } catch (err) {
+            setError(err.message);
+            console.error("Lỗi generateSummary:", err);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const translateSummary = () => {
-        setSummaryContent(prev => `[Translated to ${targetLanguage}] ${prev}`);
+    const translateSummary = async () => {
+        if (!summaryContent || !targetLang) {
+            setError("Please summarize the text first and select a target language.");
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        const cleanedSummary = cleanText(summaryContent);
+        console.log("Dữ liệu gửi đi:", { text: cleanedSummary, targetLang }); // Debug dữ liệu gửi đi
+
+        try {
+            const response = await fetch("http://localhost:5001/translate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    text: cleanedSummary,
+                    targetLang,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Lỗi khi dịch văn bản.");
+            }
+
+            const data = await response.json();
+            console.log("Response từ /translate:", data); // Debug response
+            setTranslatedContent(data.translation || "Không thể dịch nội dung.");
+            setError("");
+
+            // Cập nhật file tải xuống với bản dịch
+            const content = `File Name: ${file?.name || "document"}\n\nOriginal Text:\n${originalContent}\n\nSummary:\n${summaryContent}\n\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}):\n${data.translation || "Không có bản dịch"}`;
+            const blob = new Blob([content], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            setSummaryFile(url);
+        } catch (err) {
+            setError(err.message);
+            console.error("Lỗi translateSummary:", err);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
-        <div>
-            {/* Upload & Result Section */}
-            <section className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-10">
-                {/* Upload Card */}
-                <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
-                    <div className="flex items-center justify-start mb-6">
-                        <h2 className="text-2xl font-bold text-gray-800 flex-grow">Upload Document</h2>
+        <div className="max-w-7xl mx-auto p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Input Column */}
+                <section className="space-y-6 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-2xl font-semibold text-gray-800 flex-grow">Upload Document</h2>
                         {file && (
                             <button
                                 onClick={handleRemoveFile}
@@ -87,10 +211,9 @@ export default function DocumentSummarySection() {
                         )}
                     </div>
                     <div
-                        className={`relative bg-blue-50 p-12 rounded-xl border-3 border-dashed transition-all duration-300 ${dragActive
-                            ? "border-blue-400 bg-blue-100 scale-105"
-                            : "border-gray-300 hover:border-blue-300"
-                            }`}
+                        className={`relative bg-blue-50 p-12 rounded-xl border-3 border-dashed transition-all duration-300 ${
+                            dragActive ? "border-blue-400 bg-blue-100 scale-105" : "border-gray-300 hover:border-blue-300"
+                        }`}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
@@ -100,37 +223,57 @@ export default function DocumentSummarySection() {
                             onChange={handleFileChange}
                             className="hidden"
                             id="fileInputDoc"
-                            accept=".pdf,.docx,.txt"
+                            accept=".pdf"
                         />
-                        <label
-                            htmlFor="fileInputDoc"
-                            className="flex flex-col items-center justify-center cursor-pointer"
-                        >
-                            <Upload className="w-20 h-20 text-blue-400 animate-bounce" />
-                            <p className="text-center text-gray-600 text-lg font-medium mt-4">
-                                Drag and drop file or<br />
-                                <span className="text-blue-500 underline">browse files</span>
-                            </p>
-                            {file && (
-                                <div className="mt-6 bg-green-100 px-4 py-2 rounded-md flex items-center justify-between w-full">
-                                    <div className="flex items-center">
-                                        <span className="text-green-600 mr-2">✓</span>
-                                        <span className="text-green-700 font-medium">{file.name}</span>
+                        <label htmlFor="fileInputDoc" className="flex flex-col items-center justify-center cursor-pointer w-full">
+                            {!file ? (
+                                <>
+                                    <Upload className="w-20 h-20 text-blue-400 animate-bounce" />
+                                    <p className="text-center text-gray-600 text-lg font-medium mt-4">
+                                        Drag and drop file or<br />
+                                        <span className="text-blue-500 underline">browse files</span>
+                                    </p>
+                                </>
+                            ) : (
+                                <div className="mt-6 w-full">
+                                    <div className="bg-green-100 px-4 py-2 rounded-md flex items-center justify-between mb-4">
+                                        <div className="flex items-center">
+                                            <span className="text-green-600 mr-2">✓</span>
+                                            <span className="text-green-700 font-medium">{file.name}</span>
+                                        </div>
                                     </div>
+                                    {originalContent && (
+                                        <div className="bg-gray-50 p-4 rounded-md h-64 overflow-y-auto text-gray-700 leading-relaxed whitespace-pre-wrap w-full">
+                                            <strong>Original Content:</strong>
+                                            <br />
+                                            {originalContent}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </label>
                     </div>
-                </div>
 
-                {/* Result Card */}
-                <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+                    <button
+                        onClick={generateSummary}
+                        disabled={!file || isLoading}
+                        className={`w-full bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg ${
+                            !file || isLoading ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                    >
+                        {isLoading ? "Processing..." : "Generate Summary"}
+                    </button>
+                    {error && <p className="text-red-500">{error}</p>}
+                </section>
+
+                {/* Output Column */}
+                <section className="space-y-6 p-6 bg-gray-50 rounded-2xl border-2 border-gray-100 shadow-inner">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-bold text-gray-800">Summary Result</h2>
                         {summaryFile && (
                             <a
                                 href={summaryFile}
-                                download={`summary_${new Date().getTime()}.txt`}
+                                download={`summary_${file?.name || "document"}.txt`}
                                 className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg flex items-center transition-all shadow-md hover:shadow-lg"
                             >
                                 <Download className="w-5 h-5 mr-2" />
@@ -138,60 +281,105 @@ export default function DocumentSummarySection() {
                             </a>
                         )}
                     </div>
-                    <div className="bg-gray-50 p-6 rounded-xl h-96 overflow-y-auto">
-                        {summaryContent ? (
-                            <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                                {summaryContent}
+
+                    {/* Summary Section */}
+                    {summaryContent && (
+                        <article className="bg-white rounded-xl border-2 border-gray-200 p-5 shadow-sm">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                                    <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M6 15h.01M6 11h.01M9 11h.01M9 15h.01" />
+                                    </svg>
+                                    Summary
+                                </h3>
+                                <span className="text-sm text-gray-500 font-medium">{summaryContent.length} chars</span>
                             </div>
-                        ) : (
-                            <p className="text-gray-400 italic text-center">
-                                Summary will appear here after processing...
-                            </p>
-                        )}
-                    </div>
-                    <div className="mt-4">
-                        <label htmlFor="languageSelect" className="block text-sm font-medium text-gray-700 mb-1">
-                            Translate to:
-                        </label>
-                        <div className="flex items-center">
-                            <select
-                                id="languageSelect"
-                                className="block appearance-none w-auto bg-white border border-gray-300 hover:border-blue-400 px-4 py-2 pr-8 rounded leading-tight focus:outline-none focus:shadow-outline"
-                                value={targetLanguage}
-                                onChange={(e) => setTargetLanguage(e.target.value)}
-                            >
-                                {availableLanguages.map((lang) => (
-                                    <option key={lang.code} value={lang.code}>
-                                        {lang.name}
-                                 SS   </option>
-                                ))}
-                            </select>
+                            <div className="bg-gray-50 rounded-lg p-4">
+                                <textarea
+                                    className="w-full min-h-[180px] bg-transparent focus:outline-none resize-none text-gray-700 placeholder-gray-400 text-md"
+                                    value={summaryContent || ""}
+                                    placeholder="✨ Your summary will appear here..."
+                                    readOnly
+                                />
+                            </div>
+                        </article>
+                    )}
+
+                    {/* Translation Section */}
+                    {summaryContent && (
+                        <div className="space-y-6">
+                            {/* Language selector */}
+                            <div className="relative">
+                                <div className="flex items-center border-2 border-emerald-200 bg-white rounded-xl pr-3 shadow-sm">
+                                    <input
+                                        type="text"
+                                        className="w-full p-4 bg-transparent placeholder-gray-400 focus:outline-none text-lg"
+                                        placeholder="Search language..."
+                                        value={searchTerm}
+                                        onChange={(e) => {
+                                            setSearchTerm(e.target.value);
+                                            setIsDropdownOpen(true);
+                                        }}
+                                        onFocus={() => setIsDropdownOpen(true)}
+                                        onBlur={() => setTimeout(() => setIsDropdownOpen(false), 100)}
+                                    />
+                                </div>
+                                {isDropdownOpen && filteredLanguages.length > 0 && (
+                                    <ul className="absolute z-10 mt-1 w-full bg-white border border-emerald-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                        {filteredLanguages.map((lang) => (
+                                            <li
+                                                key={lang.code}
+                                                className="px-4 py-2 hover:bg-emerald-100 cursor-pointer"
+                                                onClick={() => handleLanguageSelect(lang.code, lang.name)}
+                                            >
+                                                {lang.name}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+
                             <button
                                 onClick={translateSummary}
-                                className={`ml-2 px-4 py-2 rounded focus:outline-none focus:shadow-outline ${!summaryContent ? 'opacity-50 cursor-not-allowed' : ''
-                                    } bg-blue-500 hover:bg-blue-700 text-white font-bold`}
-                                disabled={!summaryContent}
+                                className="w-full bg-gradient-to-br from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg"
+                                disabled={isLoading}
                             >
-                                Translate
+                                {isLoading ? "Translating..." : "Translate Now"}
                             </button>
-                        </div>
-                    </div>
-                </div>
-            </section>
 
-            {/* Generate Button */}
-            <section className="mt-14 flex justify-center">
-                <button
-                    onClick={generateSummary}
-                    disabled={!file}
-                    className={`px-12 py-3 rounded-xl font-bold text-lg transition-all ${file
-                        ? "bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-blue-200 transform hover:scale-105"
-                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        }`}
-                >
-                    Generate Summary
-                </button>
-            </section>
+                            {translatedContent && (
+                                <article className="bg-white rounded-xl border-2 border-gray-200 p-5 shadow-sm">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                                            <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Translation ({availableLanguages.find((l) => l.code === targetLang)?.name || "English"})
+                                        </h3>
+                                        <span className="text-sm text-gray-500 font-medium">{translatedContent.length} chars</span>
+                                    </div>
+                                    <div className="bg-gray-50 rounded-lg p-4">
+                                        <textarea
+                                            className="w-full min-h-[180px] bg-transparent focus:outline-none resize-none text-gray-700 text-md"
+                                            value={translatedContent}
+                                            placeholder="✨ Your translation will appear here..."
+                                            readOnly
+                                        />
+                                    </div>
+                                </article>
+                            )}
+                        </div>
+                    )}
+
+                    {error && <p className="text-red-500">{error}</p>}
+                    {!summaryContent && !error && !isLoading && (
+                        <p className="text-gray-400 italic text-center">
+                            Summary will appear here after processing...
+                        </p>
+                    )}
+                    {isLoading && !error && <p className="text-gray-600 text-center">Processing...</p>}
+                </section>
+            </div>
         </div>
     );
 }
