@@ -10,7 +10,7 @@ import openaiLogo from './images/openai.png';
 import amazonLogo from './images/amazon.png';
 import homeLogo from './images/logo.png'
 import NavFeatures from "../components/ui/navFeatures";
-import NaContact  from '../components/ui/naContact'; 
+import NaContact from '../components/ui/naContact';
 import { BookOpen, Lightbulb, Rocket, ShieldCheck, } from 'lucide-react'; // Import các icon từ lucide-react
 import {
     PhoneIcon,
@@ -38,10 +38,17 @@ const Homepage = () => {
     const handleLoginClick = () => setShowLogin(true);
     const handleRegisterClick = () => setShowRegister(true);
 
+    const handleOpenRegister = () => {
+        setShowLogin(false); // Ẩn modal đăng nhập
+        setShowRegister(true); // Hiển thị form đăng ký
+      };
+    
+
     const handleRegistrationSuccess = () => {
         setIsPopupVisible(true);
         setShowRegister(false);
     };
+
 
     const handleLoginSuccess = (user) => {
         setLoggedInUser(user);
@@ -80,7 +87,7 @@ const Homepage = () => {
         }, 100);
     };
 
-    
+
 
 
     return (
@@ -104,13 +111,18 @@ const Homepage = () => {
                         {/* Popups for Login and Register */}
                         {showLogin && (
                             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[1000]">
-                                <LoginPage onClose={handleCloseLogin} onLoginSuccess={handleLoginSuccess} />
+                                <LoginPage onClose={handleCloseLogin} 
+                                onLoginSuccess={handleLoginSuccess}
+                                onOpenRegister={handleOpenRegister} />
                             </div>
                         )}
 
                         {showRegister && (
                             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[1000]">
-                                <RegisterPage onClose={handleCloseRegister} onRegistrationSuccess={handleRegistrationSuccess} />
+                                <RegisterPage
+                                    onClose={handleCloseRegister}
+                                    onRegistrationSuccess={handleRegistrationSuccess}
+                                />
                             </div>
                         )}
                     </div>
@@ -296,7 +308,7 @@ const Homepage = () => {
 
 
             <div ref={contactRef}> {/* Thêm ref vào đây */}
-            <NaContact />
+                <NaContact />
 
             </div>
 

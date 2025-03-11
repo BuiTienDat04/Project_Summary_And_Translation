@@ -1,12 +1,24 @@
 import { useState } from "react";
 import { FaSignInAlt, FaEnvelope, FaLock } from "react-icons/fa";
 import axios from "axios"; // Import axios để gọi API
+import RegisterPage from "./RegisterPage";
 
-const LoginPage = ({ onClose, onLoginSuccess }) => {
+const LoginPage = ({ onClose, onLoginSuccess, onOpenRegister }) => {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
   const [loginSuccess, setLoginSuccess] = useState(false);
+  const [showLogin, setShowLogin] = useState(true);
+  const [showRegister, setShowRegister] = useState(false);
+
+  const handleOpenRegister = () => {
+    setShowLogin(false); // Ẩn modal đăng nhập
+    setShowRegister(true); // Hiển thị form đăng ký
+  };
+
+  const handleCloseRegister = () => {
+    setShowRegister(false); // Ẩn form đăng ký
+  };
 
   // Xử lý đăng nhập khi người dùng nhấn nút "Đăng nhập"
   const handleLogin = async () => {
@@ -114,8 +126,16 @@ const LoginPage = ({ onClose, onLoginSuccess }) => {
           </button>
         </div>
 
-        <div className="mt-6 text-lg text-gray-600 text-center"> {/* Tăng kích thước text và margin top */}
-          Don't have an account? <button onClick={onClose} className="text-blue-500 hover:underline">Close Login</button>
+        <div className="mt-6 text-lg text-gray-600 text-center">
+          Don't have an account?
+          <button onClick={onOpenRegister} className="text-blue-500 hover:underline"> {/* Gọi onOpenRegister */}
+            Register Now
+          </button>
+        </div>
+        <div className="mt-4 text-center"> {/* Add a div to center the button */}
+          <button onClick={onClose} className="text-blue-600 hover:underline">
+            Close Login
+          </button>
         </div>
       </div>
     </div>

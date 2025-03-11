@@ -3,9 +3,6 @@ import React, { useRef } from "react";
 const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout, onContactClick, onFeaturesClick }) => {
     const featuresRef = useRef(null); // Tạo ref trỏ đến PDFSmartFeatures
 
-
-
-
     return (
         <nav className="fixed top-0 left-0 w-full bg-white shadow-md py-3 z-50 min-h-[64px]">
             <div className="container mx-auto flex justify-between items-center px-6">
@@ -14,20 +11,24 @@ const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout,
 
                 {/* Menu */}
                 <div className="flex gap-6">
-                    <a href="/" className="text-blue-600 hover:bg-blue-100 py-2 px-4 rounded-lg text-base min-w-[100px] text-center">
-                        Home
-                    </a>
-                    <button className="text-blue-600 hover:bg-blue-100 py-2 px-4 rounded-lg text-base min-w-[100px]">
-                        About Us
-                    </button>
-                    <button className="text-blue-600 hover:bg-blue-100 py-2 px-4 rounded-lg text-base min-w-[100px]"
-                        onClick={onFeaturesClick}>
-                        Features
-                    </button>
-                    <button className="text-blue-600 hover:bg-blue-100 py-2 px-4 rounded-lg text-base min-w-[100px]"
-                        onClick={onContactClick}>
-                        Contact
-                    </button>
+                    {!loggedInUsername && ( // Chỉ render menu khi chưa đăng nhập
+                        <>
+                            <a href="/" className="text-blue-600 hover:bg-blue-100 py-2 px-4 rounded-lg text-base min-w-[100px] text-center">
+                                Home
+                            </a>
+                            <button className="text-blue-600 hover:bg-blue-100 py-2 px-4 rounded-lg text-base min-w-[100px]">
+                                About Us
+                            </button>
+                            <button className="text-blue-600 hover:bg-blue-100 py-2 px-4 rounded-lg text-base min-w-[100px]"
+                                onClick={onFeaturesClick}>
+                                Features
+                            </button>
+                            <button className="text-blue-600 hover:bg-blue-100 py-2 px-4 rounded-lg text-base min-w-[100px]"
+                                onClick={onContactClick}>
+                                Contact
+                            </button>
+                        </>
+                    )}
                 </div>
 
                 {/* Nút điều hướng */}
@@ -57,7 +58,6 @@ const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout,
                 </div>
             </div>
         </nav>
-
     );
 };
 
