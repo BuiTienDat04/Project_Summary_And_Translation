@@ -14,6 +14,8 @@ export default function DocumentSummarySection() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
+
     const availableLanguages = [
         { code: "en", name: "English" },
         { code: "vi", name: "Vietnamese" },
@@ -41,7 +43,6 @@ export default function DocumentSummarySection() {
         lang.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Cleanup object URLs
     useEffect(() => {
         return () => {
             if (summaryFile) {
@@ -51,8 +52,13 @@ export default function DocumentSummarySection() {
     }, [summaryFile]);
 
     const handleFileChange = (event) => {
-        if (event.target.files.length > 0) {
-            setFile(event.target.files[0]);
+        const selectedFile = event.target.files[0];
+        if (selectedFile && selectedFile.type !== "application/pdf") {
+            setError("Chỉ hỗ trợ file PDF!");
+            return;
+        }
+        if (selectedFile) {
+            setFile(selectedFile);
             setOriginalContent("");
             setSummaryContent("");
             setTranslatedContent("");
@@ -74,8 +80,13 @@ export default function DocumentSummarySection() {
     const handleDrop = (event) => {
         event.preventDefault();
         setDragActive(false);
-        if (event.dataTransfer.files.length > 0) {
-            setFile(event.dataTransfer.files[0]);
+        const droppedFile = event.dataTransfer.files[0];
+        if (droppedFile && droppedFile.type !== "application/pdf") {
+            setError("Chỉ hỗ trợ file PDF!");
+            return;
+        }
+        if (droppedFile) {
+            setFile(droppedFile);
             setOriginalContent("");
             setSummaryContent("");
             setTranslatedContent("");
@@ -90,6 +101,7 @@ export default function DocumentSummarySection() {
         setOriginalContent("");
         setSummaryContent("");
         setTranslatedContent("");
+        if (summaryFile) URL.revokeObjectURL(summaryFile); // Dọn URL cũ
         setSummaryFile(null);
         setError(null);
         setSearchTerm("");
@@ -104,44 +116,54 @@ export default function DocumentSummarySection() {
 
     const cleanText = (text) => {
         return text
-            .replace(/[^\w\s.,!?]/g, " ") // Loại bỏ ký tự đặc biệt, thay bằng khoảng trắng
-            .replace(/\s+/g, " ") // Thay nhiều khoảng trắng bằng một khoảng trắng
+            .replace(/[^\w\s.,!?]/g, " ")
+            .replace(/\s+/g, " ")
             .trim();
+    };
+
+    const updateSummaryFile = (content) => {
+        if (summaryFile) URL.revokeObjectURL(summaryFile); // Dọn URL cũ
+        const blob = new Blob([content], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        setSummaryFile(url);
     };
 
     const generateSummary = async () => {
         if (!file) return;
-
+    
         setIsLoading(true);
         setError(null);
-
+    
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+    
         const formData = new FormData();
         formData.append("file", file);
-
+    
         try {
-            const response = await fetch("http://localhost:5001/upload", {
+            const response = await fetch(`${API_BASE_URL}/upload`, {
                 method: "POST",
                 body: formData,
+                signal: controller.signal,
             });
-
+    
+            clearTimeout(timeoutId);
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || "Lỗi khi xử lý file.");
             }
-
+    
             const data = await response.json();
+            console.log("📥 Full Response từ /upload:", JSON.stringify(data, null, 2));
+            console.log("📜 Original content from PDF:", data.originalText.slice(0, 200)); // Log nội dung gốc
             setOriginalContent(data.originalText || "Không thể trích xuất nội dung.");
             setSummaryContent(data.summary || "Không thể tóm tắt nội dung.");
-            setTranslatedContent(""); // Reset bản dịch để người dùng chọn lại ngôn ngữ
-
-            // Tạo file tải xuống với tóm tắt
+            setTranslatedContent("");
+    
             const content = `File Name: ${file.name}\n\nOriginal Text:\n${data.originalText || "Không có nội dung"}\n\nSummary:\n${data.summary || "Không có tóm tắt"}`;
-            const blob = new Blob([content], { type: "text/plain" });
-            const url = URL.createObjectURL(blob);
-            setSummaryFile(url);
-            setError("");
+            updateSummaryFile(content);
         } catch (err) {
-            setError(err.message);
+            setError(err.name === "AbortError" ? "Yêu cầu quá thời gian." : err.message);
             console.error("Lỗi generateSummary:", err);
         } finally {
             setIsLoading(false);
@@ -150,43 +172,44 @@ export default function DocumentSummarySection() {
 
     const translateSummary = async () => {
         if (!summaryContent || !targetLang) {
-            setError("Please summarize the text first and select a target language.");
+            setError("Vui lòng tóm tắt văn bản trước và chọn ngôn ngữ mục tiêu.");
             return;
         }
 
         setIsLoading(true);
         setError(null);
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
         const cleanedSummary = cleanText(summaryContent);
-        console.log("Dữ liệu gửi đi:", { text: cleanedSummary, targetLang }); // Debug dữ liệu gửi đi
+        console.log("📤 Dữ liệu gửi đi /translate:", { text: cleanedSummary, targetLang });
 
         try {
-            const response = await fetch("http://localhost:5001/translate", {
+            const response = await fetch(`${API_BASE_URL}/translate`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     text: cleanedSummary,
                     targetLang,
                 }),
+                signal: controller.signal,
             });
 
+            clearTimeout(timeoutId);
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || "Lỗi khi dịch văn bản.");
             }
 
             const data = await response.json();
-            console.log("Response từ /translate:", data); // Debug response
+            console.log("📥 Response từ /translate:", data);
             setTranslatedContent(data.translation || "Không thể dịch nội dung.");
-            setError("");
 
-            // Cập nhật file tải xuống với bản dịch
             const content = `File Name: ${file?.name || "document"}\n\nOriginal Text:\n${originalContent}\n\nSummary:\n${summaryContent}\n\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}):\n${data.translation || "Không có bản dịch"}`;
-            const blob = new Blob([content], { type: "text/plain" });
-            const url = URL.createObjectURL(blob);
-            setSummaryFile(url);
+            updateSummaryFile(content);
         } catch (err) {
-            setError(err.message);
+            setError(err.name === "AbortError" ? "Yêu cầu quá thời gian." : err.message);
             console.error("Lỗi translateSummary:", err);
         } finally {
             setIsLoading(false);
@@ -308,7 +331,6 @@ export default function DocumentSummarySection() {
                     {/* Translation Section */}
                     {summaryContent && (
                         <div className="space-y-6">
-                            {/* Language selector */}
                             <div className="relative">
                                 <div className="flex items-center border-2 border-emerald-200 bg-white rounded-xl pr-3 shadow-sm">
                                     <input
@@ -377,7 +399,14 @@ export default function DocumentSummarySection() {
                             Summary will appear here after processing...
                         </p>
                     )}
-                    {isLoading && !error && <p className="text-gray-600 text-center">Processing...</p>}
+                    {isLoading && !error && (
+                        <div className="text-center">
+                            <svg className="animate-spin h-5 w-5 text-gray-600 inline-block mr-2" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            </svg>
+                            <p className="text-gray-600 inline">Processing...</p>
+                        </div>
+                    )}
                 </section>
             </div>
         </div>
