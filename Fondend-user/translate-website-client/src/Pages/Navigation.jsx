@@ -1,7 +1,9 @@
 import React, { useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout, onContactClick, onFeaturesClick }) => {
-    const featuresRef = useRef(null); // Tạo ref trỏ đến PDFSmartFeatures
+    const navigate = useNavigate();
+    const location = useLocation(); // Lấy đường dẫn hiện tại
 
     return (
         <nav className="fixed top-0 left-0 w-full bg-white shadow-md py-3 z-50 min-h-[64px]">
@@ -11,22 +13,29 @@ const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout,
 
                 {/* Menu */}
                 <div className="flex gap-6">
-                    {!loggedInUsername && ( // Chỉ render menu khi chưa đăng nhập
+                    {!loggedInUsername && (
                         <>
                             <a href="/" className="text-blue-600 hover:bg-blue-100 py-2 px-4 rounded-lg text-base min-w-[100px] text-center">
                                 Home
                             </a>
-                            <button className="text-blue-600 hover:bg-blue-100 py-2 px-4 rounded-lg text-base min-w-[100px]">
+                            <button className="text-blue-600 hover:bg-blue-100 py-2 px-4 rounded-lg text-base min-w-[100px]"
+                                onClick={() => navigate("/aboutus")}>
                                 About Us
                             </button>
-                            <button className="text-blue-600 hover:bg-blue-100 py-2 px-4 rounded-lg text-base min-w-[100px]"
-                                onClick={onFeaturesClick}>
-                                Features
-                            </button>
-                            <button className="text-blue-600 hover:bg-blue-100 py-2 px-4 rounded-lg text-base min-w-[100px]"
-                                onClick={onContactClick}>
-                                Contact
-                            </button>
+
+                            {/* Ẩn Contact & Features nếu đang ở trang About Us */}
+                            {location.pathname !== "/aboutus" && (
+                                <>
+                                    <button className="text-blue-600 hover:bg-blue-100 py-2 px-4 rounded-lg text-base min-w-[100px]"
+                                        onClick={onFeaturesClick}>
+                                        Features
+                                    </button>
+                                    <button className="text-blue-600 hover:bg-blue-100 py-2 px-4 rounded-lg text-base min-w-[100px]"
+                                        onClick={onContactClick}>
+                                        Contact
+                                    </button>
+                                </>
+                            )}
                         </>
                     )}
                 </div>
