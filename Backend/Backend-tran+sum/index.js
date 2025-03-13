@@ -11,7 +11,7 @@ const NodeCache = require("node-cache");
 const morgan = require("morgan");
 
 const app = express();
-const PORT = process.env.PORT || 5001; // Đảm bảo port khớp với frontend
+const PORT = process.env.PORT || 5001;
 const API_KEY = process.env.API_KEY;
 
 // Kiểm tra API_KEY
@@ -63,8 +63,8 @@ app.use((err, req, res, next) => {
 // Hàm làm sạch văn bản
 const cleanText = (text) => {
     return text
-        .replace(/[^\w\s.,!?]/g, " ") // Loại bỏ ký tự đặc biệt, thay bằng khoảng trắng
-        .replace(/\s+/g, " ") // Thay nhiều khoảng trắng bằng một khoảng trắng
+        .replace(/[^\w\s.,!?]/g, " ") // Loại bỏ ký tự đặc biệt
+        .replace(/\s+/g, " ") // Thay nhiều khoảng trắng bằng một
         .trim();
 };
 
@@ -76,21 +76,20 @@ const filterIrrelevantContent = (text) => {
         return (
             trimmedLine.length > 0 &&
             !trimmedLine.match(/^\d+$/) && // Bỏ dòng chỉ có số
-            !trimmedLine.match(/^(http|www)/i) && // Bỏ dòng bắt đầu bằng URL
-            !trimmedLine.match(/^\s*[-–—]\s*$/) // Bỏ dòng chỉ có ký tự gạch ngang
+            !trimmedLine.match(/^(http|www)/i) && // Bỏ URL
+            !trimmedLine.match(/^\s*[-–—]\s*$/) // Bỏ dòng chỉ có gạch ngang
         );
     });
     return filteredLines.join("\n").trim();
 };
 
-// Hàm gọi API Gemini
-const callGeminiAPI = async (prompt) => {
-    const cacheKey = `gemini_${prompt.slice(0, 50)}`; // Tạo key cache từ prompt
-    const cachedResult = cache.get(cacheKey);
-    if (cachedResult) {
-        return cachedResult;
-    }
+// Hàm gọi API Gemini với type để phân biệt document/text
+const callGeminiAPI = async (prompt, type = "text") => {
+    const requestId = Date.now(); // Thêm timestamp làm unique identifier
+    const cacheKey = `${type}_${requestId}_${prompt}`; // Đảm bảo cacheKey luôn khác biệt
+    console.log(`Cache key for ${type}: ${cacheKey}`);
 
+    // Không dùng cache cho các request khác nhau
     try {
         const response = await fetch(API_URL, {
             method: "POST",
@@ -112,10 +111,9 @@ const callGeminiAPI = async (prompt) => {
 
         const data = await response.json();
         const result = data.candidates[0]?.content?.parts[0]?.text;
-        if (!result) {
-            throw new Error("Không nhận được kết quả từ API Gemini.");
-        }
+        if (!result) throw new Error("Không nhận được kết quả từ API Gemini.");
 
+        console.log(`API response for ${type}: ${result}`);
         cache.set(cacheKey, result);
         return result;
     } catch (error) {
@@ -124,17 +122,19 @@ const callGeminiAPI = async (prompt) => {
 };
 
 // Hàm tóm tắt văn bản
-const summarizeText = async (text, lang = "tiếng Việt") => {
+const summarizeText = async (text, lang = "tiếng Việt", type = "text") => {
     const cleanedText = cleanText(text);
     const prompt = `Summarize the following text in ${lang}, in 3-5 sentences:\n\n${cleanedText}`;
-    return await callGeminiAPI(prompt);
+    const result = await callGeminiAPI(prompt, type);
+    return result; // Trả về kết quả thuần túy, không thêm tiền tố
 };
 
 // Hàm dịch văn bản
-const translateText = async (text, targetLang) => {
+const translateText = async (text, targetLang, type = "text") => {
     const cleanedText = cleanText(text);
     const prompt = `Translate the following text to ${targetLang}:\n\n${cleanedText}`;
-    return await callGeminiAPI(prompt);
+    const result = await callGeminiAPI(prompt, type);
+    return result; // Không thêm tiền tố cho dịch
 };
 
 // API tóm tắt văn bản
@@ -145,10 +145,10 @@ app.post("/summarize", async (req, res) => {
     }
 
     try {
-        const summary = await summarizeText(text, language || "tiếng Việt");
+        const summary = await summarizeText(text, language || "tiếng Việt", "text");
         res.json({ summary });
     } catch (error) {
-        console.error("Lỗi khi tóm tắt:", error.message);
+        console.error("Lỗi khi tóm tắt (text):", error.message);
         res.status(500).json({ error: `Lỗi khi tóm tắt văn bản: ${error.message}` });
     }
 });
@@ -161,7 +161,7 @@ app.post("/translate", async (req, res) => {
     }
 
     try {
-        const translation = await translateText(text, targetLang);
+        const translation = await translateText(text, targetLang, "text");
         res.json({ translation });
     } catch (error) {
         console.error("Lỗi khi dịch:", error.message);
@@ -169,7 +169,7 @@ app.post("/translate", async (req, res) => {
     }
 });
 
-// API upload file PDF và xử lý (chỉ tóm tắt, không dịch ngay)
+// API upload file PDF
 app.post("/upload", upload.single("file"), async (req, res) => {
     let filePath;
     try {
@@ -178,38 +178,33 @@ app.post("/upload", upload.single("file"), async (req, res) => {
         }
         filePath = req.file.path;
 
-        // Đọc nội dung PDF
         const dataBuffer = await fs.readFile(filePath);
         const pdfResult = await pdfParse(dataBuffer);
         let rawText = pdfResult.text;
 
-        // Lọc nội dung không liên quan
         const filteredText = filterIrrelevantContent(rawText);
         if (!filteredText) {
             return res.status(400).json({ error: "Không thể trích xuất nội dung có ý nghĩa từ PDF." });
         }
 
-        // Giới hạn độ dài văn bản
         const maxTextLength = 10000;
-        const truncatedContent =
-            filteredText.length > maxTextLength
-                ? filteredText.substring(0, maxTextLength) + "... [Đã cắt ngắn]"
-                : filteredText;
+        const truncatedContent = filteredText.length > maxTextLength
+            ? filteredText.substring(0, maxTextLength) + "... [Đã cắt ngắn]"
+            : filteredText;
 
-        // Tóm tắt văn bản
-        const summary = await summarizeText(truncatedContent);
+        const summary = await summarizeText(truncatedContent, "tiếng Việt", "document");
 
         res.json({
             originalText: truncatedContent,
             summary,
         });
     } catch (error) {
-        console.error("Lỗi khi xử lý file:", error.message);
+        console.error("Lỗi khi xử lý file (document):", error.message);
         res.status(500).json({ error: `Lỗi khi xử lý file: ${error.message}` });
     } finally {
         if (filePath) {
             try {
-                await fs.unlink(filePath); // Xóa file tạm thời
+                await fs.unlink(filePath);
             } catch (err) {
                 console.error("Lỗi khi xóa file tạm:", err.message);
             }
