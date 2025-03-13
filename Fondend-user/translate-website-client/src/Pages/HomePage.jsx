@@ -19,7 +19,7 @@ import {
     ClockIcon,
     UserCircleIcon,
     ChatBubbleLeftIcon,
-} from '@heroicons/react/24/solid';
+} from '@heroicons/react';
 
 const Homepage = () => {
     const [showLogin, setShowLogin] = useState(false);
