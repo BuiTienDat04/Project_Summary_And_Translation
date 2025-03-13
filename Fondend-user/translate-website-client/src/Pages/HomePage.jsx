@@ -15,17 +15,6 @@ import naAboutus from '../components/ui/naAboutus';
 import HomeLogo from './images/logo1.png'
 import { BookOpen, Lightbulb, Rocket, ShieldCheck, } from 'lucide-react'; // Import các icon từ lucide-react
 
-import {
-    PhoneIcon,
-    EnvelopeIcon,
-    MapPinIcon,
-    ClockIcon,
-    UserCircleIcon,
-    ChatBubbleLeftIcon,
-} from '@heroicons/react';
-
-
-
 
 const Homepage = () => {
     const [showLogin, setShowLogin] = useState(false);
