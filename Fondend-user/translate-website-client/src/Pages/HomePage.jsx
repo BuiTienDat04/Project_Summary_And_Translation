@@ -11,7 +11,10 @@ import amazonLogo from './images/amazon.png';
 import homeLogo from './images/logo.png'
 import NavFeatures from "../components/ui/navFeatures";
 import NaContact from '../components/ui/naContact';
+import naAboutus from '../components/ui/naAboutus';
+import HomeLogo from './images/logo1.png'
 import { BookOpen, Lightbulb, Rocket, ShieldCheck, } from 'lucide-react'; // Import các icon từ lucide-react
+
 import {
     PhoneIcon,
     EnvelopeIcon,
@@ -20,6 +23,9 @@ import {
     UserCircleIcon,
     ChatBubbleLeftIcon,
 } from '@heroicons/react';
+
+
+
 
 const Homepage = () => {
     const [showLogin, setShowLogin] = useState(false);
@@ -144,7 +150,7 @@ const Homepage = () => {
                             <p className="text-xl text-gray-600">
                                 Transform documents with dual capabilities:
                                 <span className="font-semibold text-blue-600"> Instant Translation </span>
-                                across 20+ languages and
+                                across 50+ languages and
                                 <span className="font-semibold text-indigo-600"> Intelligent Summarization</span>
                             </p>
 
@@ -155,7 +161,7 @@ const Homepage = () => {
                                     <div className="text-sm text-gray-600">Supported Formats</div>
                                 </div>
                                 <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                                    <div className="text-3xl font-bold text-purple-600">20</div>
+                                    <div className="text-3xl font-bold text-purple-600">50</div>
                                     <div className="text-sm text-gray-600">Languages</div>
                                 </div>
                                 <div className="text-center p-4 bg-white rounded-lg shadow-sm">
@@ -184,7 +190,7 @@ const Homepage = () => {
                         <div className="md:w-1/2 relative">
                             <div className="relative max-w-xl">
                                 <img
-                                    src={homeLogo}
+                                    src={HomeLogo}
                                     alt="Translation & Summary Demo"
                                     className=" w-172 h-172 rounded-xl shadow-2xl border-8 border-white transform rotate-2 hover:rotate-0 transition-transform"
                                 />
@@ -311,10 +317,6 @@ const Homepage = () => {
                 <NaContact />
 
             </div>
-
-
-
-
 
 
             {/* Footer */}

@@ -8,11 +8,12 @@ import Navigation from "./Pages/Navigation";
 import Footer from "./Pages/Footer";
 import ServicesSection from "./Pages/ServicesSection";
 import Homepage from "./Pages/HomePage";
+import NaAboutus from "./components/ui/naAboutus";
 
 
 
 export default function App() {
-
+  <Navigation/>
   
   return (
     
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/service" element={<ServicesSection/>}/>
         <Route path="/" element={<Homepage/>}/>
         <Route path="/naf" element={<navFeatures />} />
+        <Route path="aboutus" element={<NaAboutus />}/>
 
       </Routes>
     </BrowserRouter>
