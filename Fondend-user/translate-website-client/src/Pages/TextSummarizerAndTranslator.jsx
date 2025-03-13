@@ -69,7 +69,7 @@ const TextSummarizerAndTranslator = ({ loggedInUser  }) => {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/summarize", {
+      const response = await fetch("http://localhost:5001/summarize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
@@ -90,7 +90,7 @@ const TextSummarizerAndTranslator = ({ loggedInUser  }) => {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/translate", {
+      const response = await fetch("http://localhost:5001/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: summary, targetLang }),
