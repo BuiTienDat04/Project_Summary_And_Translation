@@ -46,9 +46,16 @@ const DocumentPage = () => {
     };
 
     const handleLogout = () => {
-        setLoggedInUsername("");
-        localStorage.removeItem("loggedInUser");
-    };
+        setLoggedInUsername(null);
+        setLoggedInUser(null);
+    
+        // Xóa dữ liệu loggedInUser khỏi localStorage
+        localStorage.removeItem('loggedInUser');
+    
+        // Điều hướng người dùng về trang đăng nhập (hoặc trang chủ)
+        navigate('/');
+        window.location.reload();
+      };
 
 
 
