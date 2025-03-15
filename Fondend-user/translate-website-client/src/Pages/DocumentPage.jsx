@@ -94,7 +94,7 @@ const DocumentPage = () => {
                         <FaFileAlt className="inline-block ml-4 text-blue-500 animate-pulse" />
                     </h1>
                     <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                        Transform complex documents into concise summaries with advanced AI technology. Supports various formats: PDF, DOCX, TXT.
+                        Transform complex documents into concise summaries with advanced AI technology. Supports various formats: PDF.
                     </p>
                 </header>
 
@@ -124,7 +124,7 @@ const DocumentPage = () => {
                                 <ul className="space-y-3 text-gray-600">
                                     <li className="flex items-start">
                                         <span className="text-blue-500 font-bold mr-2">1.</span>
-                                        Upload a document (PDF, DOCX, TXT)
+                                        Upload a document (PDF)
                                     </li>
                                     <li className="flex items-start">
                                         <span className="text-blue-500 font-bold mr-2">2.</span>

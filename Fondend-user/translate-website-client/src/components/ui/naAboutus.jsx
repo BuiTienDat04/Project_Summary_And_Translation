@@ -12,7 +12,7 @@ import AboutusLogo from '../../Pages/images/aboutus.png'
 import LogoPower from '../../Pages/images/logo2.png'
 import LogoPower1 from '../../Pages/images/logo3.png'
 import LogoPower2 from '../../Pages/images/logo3.png'
-
+import LogoPower3 from '../../Pages/images/logo5.png'
 
 
 const NaAboutus = () => {  // ✅ Renamed to start with an uppercase letter
@@ -114,7 +114,7 @@ const NaAboutus = () => {  // ✅ Renamed to start with an uppercase letter
                         </div>
                         <div className="relative overflow-hidden rounded-3xl shadow-xl transform transition-all duration-300 group-hover:-rotate-2"> {/* Increased rounded corners and rotation */}
                             <img
-                                src={AboutusLogo}
+                                src={LogoPower3}
                                 alt="Translation & Summary Demo"
                                 className=" w-full h-full object-cover rounded-3xl shadow-2xl border-8 border-white transform rotate-3 hover:rotate-0 transition-transform duration-500" // Increased rounded corners, smoother transition
                             />

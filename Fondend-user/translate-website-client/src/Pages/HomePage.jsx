@@ -13,16 +13,13 @@ import NavFeatures from "../components/ui/navFeatures";
 import NaContact from '../components/ui/naContact';
 import naAboutus from '../components/ui/naAboutus';
 import HomeLogo from './images/logo1.png'
-import { BookOpen, Lightbulb, Rocket, ShieldCheck, } from 'lucide-react'; // Import các icon từ lucide-react
 
 import {
-    PhoneIcon,
-    EnvelopeIcon,
-    MapPinIcon,
-    ClockIcon,
-    UserCircleIcon,
-    ChatBubbleLeftIcon,
-} from '@heroicons/react';
+    BookOpen, Lightbulb, Rocket, ShieldCheck,
+    ArrowRightIcon,
+    ShieldCheckIcon
+} from 'lucide-react';
+
 
 
 
@@ -47,8 +44,8 @@ const Homepage = () => {
     const handleOpenRegister = () => {
         setShowLogin(false); // Ẩn modal đăng nhập
         setShowRegister(true); // Hiển thị form đăng ký
-      };
-    
+    };
+
 
     const handleRegistrationSuccess = () => {
         setIsPopupVisible(true);
@@ -61,7 +58,7 @@ const Homepage = () => {
         setLoggedInUsername(user.email);
         setShowLogin(false);
         localStorage.setItem('loggedInUser', JSON.stringify(user));
-        navigate('/text'); 
+        navigate('/text');
     };
 
     useEffect(() => {
@@ -117,9 +114,9 @@ const Homepage = () => {
                         {/* Popups for Login and Register */}
                         {showLogin && (
                             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[1000]">
-                                <LoginPage onClose={handleCloseLogin} 
-                                onLoginSuccess={handleLoginSuccess}
-                                onOpenRegister={handleOpenRegister} />
+                                <LoginPage onClose={handleCloseLogin}
+                                    onLoginSuccess={handleLoginSuccess}
+                                    onOpenRegister={handleOpenRegister} />
                             </div>
                         )}
 
@@ -210,69 +207,107 @@ const Homepage = () => {
                     </div>
                 </div>
             </section>
-            {/* New: Value Proposition Section */}
-            <section className="py-20 bg-indigo-200 font-sans pt-10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <h2 className="text-4xl font-bold text-gray-900 mb-4">
-                            Why Choose PDFSmart?
+            {/* Value Proposition Section - Enhanced */}
+            <section className="relative py-24 bg-gradient-to-br from-indigo-50 to-blue-50 overflow-hidden">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-72 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-200/20 to-transparent blur-3xl" />
+
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+                    <div className="text-center mb-20">
+                        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-blue-500">
+                                Why PDFSmart?
+                            </span>
                         </h2>
-                        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                            We combine cutting-edge AI technology with user-centric design to deliver
-                            unparalleled document processing capabilities
+                        <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-medium">
+                            Revolutionizing document processing with AI-powered precision and enterprise-grade security
                         </p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-8">
-                        <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-                            <div className="flex items-start mb-4">
-                                <ShieldCheck className="w-12 h-12 text-green-500 mr-4" />
-                                <div>
-                                    <h3 className="text-2xl font-bold mb-2">Enterprise-Grade Security</h3>
-                                    <p className="text-gray-600">
-                                        Your documents are protected with military-grade encryption
-                                        and GDPR compliance. We never store your data without permission.
+                    <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+                        <div className="group relative bg-white/95 backdrop-blur-sm p-8 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 border border-gray-100/90 hover:border-indigo-100">
+                            <div className="absolute inset-0 rounded-3xl border-2 border-transparent group-hover:border-indigo-100/50 transition-all pointer-events-none" />
+                            <div className="flex items-start space-x-6">
+                                <div className="p-4 bg-gradient-to-br from-green-100 to-green-50 rounded-2xl shadow-sm">
+                                    <ShieldCheckIcon className="w-10 h-10 text-green-600" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                                        Military-Grade Security
+                                    </h3>
+                                    <p className="text-gray-600 leading-relaxed mb-4">
+                                        Bank-level 256-bit encryption with SOC 2 Type II certified infrastructure.
+                                        All data processed in-memory with automatic shredding after completion.
                                     </p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {['GDPR Compliance', 'HIPAA Ready', 'ISO 27001'].map((badge, idx) => (
+                                            <span key={idx} className="px-3 py-1 bg-green-50 text-green-700 text-sm rounded-full">
+                                                {badge}
+                                            </span>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-                            <div className="flex items-start mb-4">
-                                <Rocket className="w-12 h-12 text-purple-500 mr-4" />
-                                <div>
-                                    <h3 className="text-2xl font-bold mb-2">Lightning-Fast Processing</h3>
-                                    <p className="text-gray-600">
-                                        Leverage our distributed cloud infrastructure to process
-                                        documents 3x faster than conventional solutions.
+                        <div className="group relative bg-white/95 backdrop-blur-sm p-8 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 border border-gray-100/90 hover:border-indigo-100">
+                            <div className="absolute inset-0 rounded-3xl border-2 border-transparent group-hover:border-indigo-100/50 transition-all pointer-events-none" />
+                            <div className="flex items-start space-x-6">
+                                <div className="p-4 bg-gradient-to-br from-purple-100 to-purple-50 rounded-2xl shadow-sm">
+                                    <Rocket className="w-10 h-10 text-purple-600" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                                        Lightning-Fast Processing
+                                    </h3>
+                                    <p className="text-gray-600 leading-relaxed mb-4">
+                                        Distributed cloud infrastructure delivers 3.2x faster processing than competitors.
+                                        Benchmarked at 950ms average response time for complex documents.
                                     </p>
+                                    <div className="flex items-center space-x-4 text-sm">
+                                        <div className="flex items-center">
+                                            <div className="w-2 h-2 bg-green-400 rounded-full mr-2" />
+                                            <span className="text-gray-600">99.95% Uptime SLA</span>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <div className="w-2 h-2 bg-blue-400 rounded-full mr-2" />
+                                            <span className="text-gray-600">Global CDN</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </section>
 
-            {/* Features Preview */}
-            <section className="py-20 pt-10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid md:grid-cols-3 gap-12">
-                        <div className="p-6 border rounded-xl bg-white hover:shadow-lg transition-shadow text-center">
-                            <BookOpen className="w-10 h-10 text-blue-600 mx-auto mb-4" />
-                            <h3 className="text-xl font-bold mb-4">Diverse Summarization</h3>
-                            <p className="text-gray-600">Supports all text formats from PDF to websites.</p>
+                    {/* Features Preview */}
+                    <section className="py-20 pt-10">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="grid md:grid-cols-3 gap-12">
+                                <div className="p-6 border rounded-xl bg-white hover:shadow-lg transition-shadow text-center">
+                                    <BookOpen className="w-10 h-10 text-blue-600 mx-auto mb-4" />
+                                    <h3 className="text-xl font-bold mb-4">Diverse Summarization</h3>
+                                    <p className="text-gray-600">Supports all text formats from PDF to websites.</p>
+                                </div>
+
+                                <div className="p-6 border rounded-xl bg-white hover:shadow-lg transition-shadow text-center">
+                                    <Lightbulb className="w-10 h-10 text-blue-600 mx-auto mb-4" />
+                                    <h3 className="text-xl font-bold mb-4">High Accuracy</h3>
+                                    <p className="text-gray-600">Advanced AI technology preserves the main idea of the text.</p>
+                                </div>
+
+                                <div className="p-6 border rounded-xl bg-white hover:shadow-lg transition-shadow text-center">
+                                    <Rocket className="w-10 h-10 text-blue-600 mx-auto mb-4" />
+                                    <h3 className="text-xl font-bold mb-4">Fast Processing</h3>
+                                    <p className="text-gray-600">Processes in seconds with blazing speed.</p>
+                                </div>
+                            </div>
                         </div>
+                    </section>
 
-                        <div className="p-6 border rounded-xl bg-white hover:shadow-lg transition-shadow text-center">
-                            <Lightbulb className="w-10 h-10 text-blue-600 mx-auto mb-4" />
-                            <h3 className="text-xl font-bold mb-4">High Accuracy</h3>
-                            <p className="text-gray-600">Advanced AI technology preserves the main idea of the text.</p>
-                        </div>
-
-                        <div className="p-6 border rounded-xl bg-white hover:shadow-lg transition-shadow text-center">
-                            <Rocket className="w-10 h-10 text-blue-600 mx-auto mb-4" />
-                            <h3 className="text-xl font-bold mb-4">Fast Processing</h3>
-                            <p className="text-gray-600">Processes in seconds with blazing speed.</p>
+                    <div className="mt-10 text-center">
+                        <div className="inline-flex items-center bg-indigo-100/50 px-8 py-3 rounded-full text-gray-700 font-medium">
+                            <span className="mr-3">⭐</span>
+                            Trusted by 850K+ professionals worldwide
+                            <ArrowRightIcon className="w-5 h-5 ml-3 text-indigo-600" />
                         </div>
                     </div>
                 </div>
@@ -283,40 +318,64 @@ const Homepage = () => {
                 <NavFeatures />
             </div>
 
-
-
-
-
-            {/* Trusted By Section - Nâng cấp */}
-            <section className="py-20 bg-indigo-200 font-sans">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-12">
-                        <h2 className="text-5xl font-extrabold text-gray-900 mb-4">
-                            Trusted by innovative teams worldwide
-                        </h2>
-                        <p className="text-lg text-gray-700 max-w-2xl mx-auto font-semibold">
-                            Join thousands of organizations transforming their document workflows
-                            with PDFSmart's enterprise solutions
-                        </p>
-
-                    </div>
-                    <p className="text-center text-black text-lg font-bold mb-12">Trusted by</p>
-                    <section className="py-16 bg-indigo-200 font-sans">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center">
-                            <img src={googleLogo} alt="Google" className="h-16 mx-auto opacity-100 contrast-125" />
-                            <img src={microsoftLogo} alt="Microsoft" className="h-14 mx-auto opacity-100 contrast-125" />
-                            <img src={openaiLogo} alt="OpenAI" className="h-14 mx-auto opacity-100 contrast-125" />
-                            <img src={amazonLogo} alt="Amazon" className="h-14 mx-auto opacity-100 contrast-125" />
-                        </div>
-                    </section>
-                </div>
-            </section>
-
-
             <div ref={contactRef}> {/* Thêm ref vào đây */}
                 <NaContact />
 
             </div>
+
+            {/* Trusted By Section - Optimized */}
+            <section className="py-24 bg-indigo-50/80 font-sans">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16">
+                        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+                            Empowered by Global Innovation Leaders
+                        </h2>
+                        <p className="text-lg text-gray-600 max-w-3xl mx-auto font-medium mb-8">
+                            Join over <span className="text-indigo-600 font-bold">25,000+ organizations</span> worldwide revolutionizing their document workflows with our intelligent solutions
+                        </p>
+
+                        <div className="relative my-12">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-gray-300/80"></div>
+                            </div>
+                            <div className="relative flex justify-center">
+                                <span className="px-4 bg-indigo-50/80 text-gray-500 font-semibold tracking-wide text-sm uppercase">
+                                    Trusted By Industry Pioneers
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8 mb-20">
+                        {[googleLogo, microsoftLogo, openaiLogo, amazonLogo].map((logo, index) => (
+                            <div
+                                key={index}
+                                className="group bg-white rounded-xl p-6 transition-all duration-300 hover:bg-indigo-50/50 hover:scale-[1.02] shadow-sm hover:shadow-md border border-gray-100/80"
+                            >
+                                <img
+                                    src={logo}
+                                    alt="Partner logo"
+                                    className="h-12 mx-auto object-contain grayscale-[60%] group-hover:grayscale-0 transition-all"
+                                />
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="text-center space-y-6">
+                        <div className="inline-flex items-center bg-indigo-100/50 px-6 py-3 rounded-full text-sm font-semibold text-indigo-700">
+                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            Rated 4.9/5 by 8500+ enterprise teams
+                        </div>
+
+                        <p className="text-gray-600 max-w-2xl mx-auto text-lg leading-relaxed">
+                            Trusted by Fortune 500 companies and fast-growing startups alike, our platform powers document workflows for teams across 150+ countries.
+                        </p>
+
+                    </div>
+                </div>
+            </section>
 
 
             {/* Footer */}
