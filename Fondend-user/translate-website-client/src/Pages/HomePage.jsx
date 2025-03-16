@@ -138,12 +138,23 @@ const Homepage = () => {
                     <div className="flex flex-col md:flex-row items-center justify-between gap-12">
                         <div className="md:w-1/2 space-y-8">
                             <h1 className="text-5xl font-bold text-gray-900 leading-[1.2]">
-                                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-                                    Smart Translation<br />
+                                <span className="animate-gradient bg-clip-text text-transparent bg-[length:400%] bg-gradient-to-r from-red-400 via-green-400 to-blue-400 block">
+                                    Smart Translation
                                 </span>
-                                & AI-Powered Summaries
+                                <span className="animate-gradient bg-clip-text text-transparent bg-[length:400%] bg-gradient-to-r from-red-400 via-green-400 to-blue-400 block">
+                                    & AI-Powered Summaries
+                                </span>
                             </h1>
-
+                            <style jsx global>{`
+                                @keyframes gradient-wave {
+                                0% { background-position: 0% 50%; }
+                                50% { background-position: 100% 50%; }
+                                100% { background-position: 0% 50%; }
+                               }
+                                  .animate-gradient {
+                                 animation: gradient-wave 6s ease infinite;
+                             }
+                           `}</style>
                             <p className="text-xl text-gray-600">
                                 Transform documents with dual capabilities:
                                 <span className="font-semibold text-blue-600"> Instant Translation </span>
@@ -214,13 +225,24 @@ const Homepage = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
                     <div className="text-center mb-20">
                         <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-blue-500">
+                            <span className="animate-gradient bg-clip-text text-transparent bg-[length:400%] bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600">
                                 Why PDFSmart?
                             </span>
                         </h2>
-                        <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-medium">
+                        <p className="text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-medium">
                             Revolutionizing document processing with AI-powered precision and enterprise-grade security
                         </p>
+
+                        <style jsx global>{`
+                              @keyframes gradient-wave {
+                              0% { background-position: 0% 50%; }
+                              50% { background-position: 100% 50%; }
+                             100% { background-position: 0% 50%; }
+                            }
+                           .animate-gradient {
+                         animation: gradient-wave 6s ease infinite;
+                          }
+                        `}</style>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
@@ -318,7 +340,7 @@ const Homepage = () => {
                 <NavFeatures />
             </div>
 
-            <div ref={contactRef}> {/* Thêm ref vào đây */}
+            <div ref={contactRef}>
                 <NaContact />
 
             </div>

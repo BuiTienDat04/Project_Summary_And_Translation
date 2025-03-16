@@ -20,24 +20,38 @@ import {
 
 const PDFSmartFeatures = () => {
   return (
-    <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 bg-gradient-to-b from-white to-blue-50/30">
-      <div className="text-center mb-20 space-y-6">
+    <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 bg-indigo-200 font-sans">
+      <div className="text-center mb-12 space-y-6">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-500">
-            PDFSmart
-          </span> - Intelligent Document Processing Suite
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
+            <span className="animate-gradient bg-clip-text text-transparent bg-[length:400%] bg-gradient-to-r from-purple-500 to-pink-500 block">
+              PDFSmart  - Intelligent Document Processing Suite
+            </span>
+          </h1>
         </h1>
 
-        <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
+        <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
           PDFSmart revolutionizes document workflows with AI-powered tools for content summarization,
           intelligent data extraction, and multilingual translation. Our advanced platform helps professionals
           and organizations save 15+ hours weekly on document processing while maintaining 99.8% accuracy.
         </p>
 
-        <div className="inline-flex items-center bg-blue-100/50 px-6 py-2 rounded-full text-sm font-semibold text-blue-700 mt-8">
+        <div className="inline-flex items-center bg-blue-100/50 px-6 py-2 rounded-full text-base font-semibold text-blue-700 mt-8">
           <ShieldCheckIcon className="w-5 h-5 mr-2" />
           Trusted by 850K+ users worldwide
         </div>
+
+        <style jsx global>{`
+          @keyframes gradient-wave {
+           0% { background-position: 0% 50%; }
+           50% { background-position: 100% 50%; }
+           100% { background-position: 0% 50%; }
+           }
+          .animate-gradient {
+           animation: gradient-wave 6s ease infinite;
+         }
+        `}</style>
+
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 xl:gap-8">
@@ -114,11 +128,11 @@ const PDFSmartFeatures = () => {
         />
       </div>
 
-      <div className="mt-24 py-16 bg-gradient-to-br from-blue-50/40 to-indigo-50/30">
+      <div className="mt-18 py-16">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center space-y-2 mb-14">
+          <div className="text-center space-y-2 mb-10">
             <h2 className="text-4xl font-bold text-gray-900">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-500">
+              <span className="animate-gradient bg-clip-text text-transparent bg-[length:400%] bg-gradient-to-r from-red-400 via-green-400 to-blue-400">
                 The PDFSmart Advantage
               </span>
             </h2>
@@ -225,7 +239,7 @@ const PDFSmartFeatures = () => {
                     GDPR/CCPA compliant • PCI DSS Level 1 certified <br />
                     Trusted by 850K+ teams including:
                   </p>
-                  
+
                 </div>
               </div>
             </div>
