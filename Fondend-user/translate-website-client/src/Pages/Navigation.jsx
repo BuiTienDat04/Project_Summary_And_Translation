@@ -10,7 +10,10 @@ const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout,
             <div className="container mx-auto flex justify-between items-center px-6">
                 {/* Logo với hiệu ứng RGB */}
                 <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-green-400 to-blue-500 animate-[rgb_6s_linear_infinite] bg-[length:400%_100%]">
-                    PDFSmart
+                    <a href="/" className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-green-400 to-blue-500 animate-[rgb_6s_linear_infinite] bg-[length:400%_100%]">
+                        PDFSmart
+                    </a>
+
                 </div>
 
                 {/* Menu */}
