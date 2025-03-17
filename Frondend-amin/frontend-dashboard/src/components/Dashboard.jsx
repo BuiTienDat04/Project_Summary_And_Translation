@@ -18,10 +18,6 @@ const Dashboard = () => {
           <h2 className="text-lg font-semibold">Total Users</h2>
           <p className="text-4xl font-bold">{usersCount}</p>
         </div>
-        <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-lg shadow-lg text-white">
-          <h2 className="text-lg font-semibold">Total Posts</h2>
-          <p className="text-4xl font-bold">{postsCount}</p>
-        </div>
         <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6 rounded-lg shadow-lg text-white">
           <h2 className="text-lg font-semibold">Translated Posts</h2>
           <p className="text-4xl font-bold">{translatedPostsCount}</p>
