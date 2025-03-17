@@ -5,9 +5,12 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    // Xóa token và user khỏi localStorage
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    navigate("/login");
+
+    // Điều hướng về trang login
+    navigate("/login", { replace: true }); // Sử dụng replace để không lưu lịch sử trước đó
   };
 
   const handleUserManagementClick = () => {

@@ -18,6 +18,7 @@ function TextPage() {
   const [showHelp, setShowHelp] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [welcomeMessageVisible, setWelcomeMessageVisible] = useState(true);
+  const [loginPromptVisible, setLoginPromptVisible] = useState(false);
 
   const handleCloseLogin = () => setShowLogin(false);
   const handleCloseRegister = () => setShowRegister(false);
@@ -47,13 +48,20 @@ function TextPage() {
       setLoggedInUsername(JSON.parse(storedUser).email); // Giả sử email là thuộc tính để hiển thị username
     }
   }, []);
-  
+
   const handleLogout = () => {
     setLoggedInUsername(null);
     setLoggedInUser(null);
 
+    // Xóa dữ liệu loggedInUser khỏi localStorage
     localStorage.removeItem('loggedInUser');
+
+    // Điều hướng người dùng về trang đăng nhập (hoặc trang chủ)
+    navigate('/');
+    window.location.reload();
   };
+  
+  
 
   return (
     <div className="min-h-screen bg-indigo-200 font-sans">
@@ -142,7 +150,7 @@ function TextPage() {
       {/* Main Content: Text Summarizer and Translator */}
       <div className="container mx-auto px-4 pt-2">
 
-        <TextSummarizerAndTranslator />
+        <TextSummarizerAndTranslator loggedInUser={loggedInUser}/>
 
       </div>
 
@@ -207,39 +215,6 @@ function TextPage() {
               Close
             </button>
           </div>
-        </div>
-      )}
-
-      {welcomeMessageVisible && loggedInUser && (
-        <div className="fixed top-1/4 left-1/2 transform -translate-x-1/2 bg-white border border-gray-200 text-gray-800 px-8 py-6 rounded-xl shadow-md animate-slide-down text-center w-96 max-w-md">
-          <div className="flex items-center justify-center mb-4">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 mr-2 text-green-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span className="font-semibold text-lg text-gray-900">
-              Welcome back, {loggedInUser.email.split("@")[0]}!
-            </span>
-          </div>
-          <p className="text-sm text-gray-600 mb-4">
-            Dive back into efficient document summarization. Your files await!
-          </p>
-          <button
-            onClick={() => setWelcomeMessageVisible(false)}
-            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md focus:outline-none transition-colors duration-200"
-          >
-            Let's Summarize!
-          </button>
         </div>
       )}
 

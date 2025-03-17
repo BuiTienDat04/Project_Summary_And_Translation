@@ -4,6 +4,7 @@ import Dashboard from "./components/Dashboard";
 import Navbar from "./components/Navbar";
 import LoginPage from "./components/LoginPage";
 import UserManagement from "./components/UserManagement";
+import LoginPage from "./components/LoginPage";
 
 function App() {
   return (
