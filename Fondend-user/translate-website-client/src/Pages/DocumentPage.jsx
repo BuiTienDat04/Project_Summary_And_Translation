@@ -114,6 +114,12 @@ const DocumentPage = () => {
                             >
                                 Summarize Document
                             </button>
+                            <button
+                                className="bg-green-500 hover:bg-green-600 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-green-200 border-2 border-green-600"
+                                onClick={() => navigate("/link")}>
+                                Summarize Link
+                            </button>
+                            
                         </div>
 
                         {/* Help Section */}
