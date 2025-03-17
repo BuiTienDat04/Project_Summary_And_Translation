@@ -21,7 +21,7 @@ const Navbar = () => {
     <nav className="bg-gray-800 p-4 shadow-md w-full">
       <div className="flex items-center">
         <div className="flex-shrink-0 ml-6">
-          <Link to="/" className="text-white text-2xl font-bold tracking-tight">
+          <Link to="/dashboard" className="text-white text-2xl font-bold tracking-tight">
             PDFSmart
           </Link>
         </div>

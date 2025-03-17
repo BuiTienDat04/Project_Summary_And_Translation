@@ -7,14 +7,18 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const multer = require("multer");
 const fs = require("fs").promises;
-const path = require("path");
 const pdfParse = require("pdf-parse");
 const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
 const NodeCache = require("node-cache");
 
+// Import models
+const User = require("./models/User");
+const Visit = require("./models/Visit");
+
 // Import routes
 const authRoutes = require("./routes/auth");
 const adminRoutes = require("./routes/admin");
+const dashboardRoutes = require("./routes/dashboard");
 const summaryRoutes = require("./routes/summary");
 const uploadRoutes = require("./routes/upload");
 const userRoutes = require("./routes/userRoutes");
@@ -23,14 +27,13 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 const API_KEY = process.env.API_KEY;
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
-
-// ✅ Kiểm tra API_KEY
+// ✅ Ensure API_KEY is provided
 if (!API_KEY) {
-    console.error("❌ API_KEY không được cung cấp trong file .env");
+    console.error("❌ API_KEY is missing in the .env file");
     process.exit(1);
 }
 
-// ✅ Khởi tạo cache (10 phút)
+// ✅ Initialize cache (10 minutes)
 const cache = new NodeCache({ stdTTL: 600 });
 
 // =================== 🔹 MIDDLEWARE 🔹 ===================
@@ -39,7 +42,7 @@ app.use(cors());
 app.use(helmet());
 app.use(morgan("combined"));
 
-// 🚀 Rate limiting để ngăn DDoS
+// 🚀 Rate limiting to prevent DDoS
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
@@ -47,46 +50,37 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// ✅ Cấu hình Multer để upload file PDF
+// ✅ Multer configuration for PDF file uploads
 const upload = multer({
     dest: "uploads/",
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
     fileFilter: (req, file, cb) => {
         if (file.mimetype === "application/pdf") cb(null, true);
-        else cb(new Error("Chỉ hỗ trợ file PDF!"), false);
+        else cb(new Error("Only PDF files are supported!"), false);
     },
 });
 
-// ✅ Middleware xử lý lỗi Multer
+// ✅ Middleware to handle Multer errors
 app.use((err, req, res, next) => {
     if (err instanceof multer.MulterError) {
-        return res.status(400).json({ error: "File quá lớn hoặc lỗi upload." });
+        return res.status(400).json({ error: "File is too large or upload error." });
     } else if (err) {
         return res.status(400).json({ error: err.message });
     }
     next();
 });
 
-// =================== 🔹 HELPER FUNCTIONS 🔹 ===================
-
-// 🔹 Hàm làm sạch văn bản
+// =================== 🔹 UTILITY FUNCTIONS 🔹 ===================
 const cleanText = (text) => {
-    return text
-        .replace(/[^\w\s.,!?]/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
+    return text.replace(/[^\w\s.,!?]/g, " ").replace(/\s+/g, " ").trim();
 };
 
-// 🔹 Lọc nội dung không liên quan từ PDF
 const filterIrrelevantContent = (text) => {
     const lines = text.split("\n");
     return lines.filter(line => !/^\s*$/.test(line)).join("\n").trim();
 };
 
-// 🔹 Gọi API Gemini
-const callGeminiAPI = async (prompt, type = "text") => {
-    const cacheKey = `${type}_${Date.now()}_${prompt}`;
-    
+const callGeminiAPI = async (prompt) => {
     try {
         const response = await fetch(API_URL, {
             method: "POST",
@@ -97,32 +91,50 @@ const callGeminiAPI = async (prompt, type = "text") => {
             }),
         });
 
-        if (!response.ok) throw new Error("Lỗi từ API Gemini.");
+        const responseText = await response.text();  // 🛑 Lấy raw response
+        console.log("🔹 API Response:", responseText);  // ✅ Log nội dung phản hồi từ API
 
-        const data = await response.json();
-        const result = data.candidates[0]?.content?.parts[0]?.text;
-        if (!result) throw new Error("Không nhận được kết quả từ API Gemini.");
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
 
-        cache.set(cacheKey, result);
+        const data = JSON.parse(responseText);
+        console.log("✅ Parsed JSON Response:", data);
+
+        const result = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!result) throw new Error("No valid response from Gemini API");
+
         return result;
     } catch (error) {
-        throw new Error(`Lỗi API Gemini: ${error.message}`);
+        console.error("❌ Gemini API Error:", error.message);
+        throw new Error(`Gemini API Error: ${error.message}`);
     }
 };
 
-// 🔹 Tóm tắt văn bản
-const summarizeText = async (text, lang = "tiếng Việt", type = "text") => {
+
+const summarizeText = async (text, lang = "English") => {
     const cleanedText = cleanText(text);
     const prompt = `Summarize the following text in ${lang}, in 3-5 sentences:\n\n${cleanedText}`;
-    return await callGeminiAPI(prompt, type);
+    return await callGeminiAPI(prompt);
 };
 
-// 🔹 Dịch văn bản
-const translateText = async (text, targetLang, type = "text") => {
+const translateText = async (text, targetLang) => {
     const cleanedText = cleanText(text);
     const prompt = `Translate the following text to ${targetLang}:\n\n${cleanedText}`;
-    return await callGeminiAPI(prompt, type);
+    return await callGeminiAPI(prompt);
 };
+
+// =================== 🔹 DASHBOARD API 🔹 ===================
+app.use("/api/dashboard", dashboardRoutes);
+app.get("/api/dashboard", async (req, res) => {
+    try {
+        const visitData = await Visit.findOne();
+        console.log("🔹 Dashboard Data:", visitData);
+        res.status(200).json(visitData);
+    } catch (error) {
+        console.error("❌ Dashboard Error:", error.message);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
 
 // =================== 🔹 ROUTES 🔹 ===================
 app.use("/api/auth", authRoutes);
@@ -131,37 +143,58 @@ app.use("/api/summary", summaryRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/users", userRoutes);
 
-// ✅ API tóm tắt văn bản
+// ✅ API to summarize text
 app.post("/summarize", async (req, res) => {
     const { text, language } = req.body;
     if (!text || text.trim().length < 10) {
-        return res.status(400).json({ error: "Văn bản quá ngắn hoặc không hợp lệ." });
+        return res.status(400).json({ error: "Text is too short or invalid." });
     }
 
     try {
-        const summary = await summarizeText(text, language || "tiếng Việt", "text");
+        const summary = await summarizeText(text, language || "English");
+
+        // 🔹 Cập nhật số bài tóm tắt trong MongoDB
+        const updateResult = await Visit.findOneAndUpdate(
+            {},
+            { $inc: { translatedPosts: 1 } },
+            { upsert: true, new: true }
+        );
+
+        console.log("✅ Summarized Posts Updated:", updateResult);
         res.json({ summary });
     } catch (error) {
-        res.status(500).json({ error: `Lỗi khi tóm tắt: ${error.message}` });
+        console.error("❌ Summarization Error:", error.message);
+        res.status(500).json({ error: `Error summarizing: ${error.message}` });
     }
 });
 
-// ✅ API dịch văn bản
+
+
+// ✅ API to translate text
 app.post("/translate", async (req, res) => {
     const { text, targetLang } = req.body;
     if (!text || !targetLang || text.trim().length < 10) {
-        return res.status(400).json({ error: "Thiếu hoặc không hợp lệ text/targetLang." });
+        return res.status(400).json({ error: "Missing or invalid text/targetLang." });
     }
 
     try {
-        const translation = await translateText(text, targetLang, "text");
+        const translation = await translateText(text, targetLang);
+
+        // 🔹 Cập nhật số bài dịch trong MongoDB
+        const updateResult = await Visit.findOneAndUpdate(
+            {},
+            { $inc: { translatedPosts: 1 } },
+            { upsert: true, new: true }
+        );
+
+        console.log("✅ Translated Posts Updated:", updateResult);
         res.json({ translation });
     } catch (error) {
-        res.status(500).json({ error: `Lỗi khi dịch: ${error.message}` });
+        console.error("❌ Translation Error:", error.message);
+        res.status(500).json({ error: `Error translating: ${error.message}` });
     }
 });
 
-// ✅ API upload file PDF
 app.post("/upload", upload.single("file"), async (req, res) => {
     let filePath;
     try {
@@ -176,11 +209,24 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
         const summary = await summarizeText(filteredText, "tiếng Việt", "document");
 
+        // 🔹 Cập nhật số bài tải lên trong MongoDB
+        const updateResult = await Visit.findOneAndUpdate(
+            {},
+            { $inc: { translatedPosts: 1 } },
+            { upsert: true, new: true }
+        );
+
+        console.log("✅ Uploaded Posts Updated:", updateResult);
         res.json({ originalText: filteredText, summary });
+    } catch (error) {
+        console.error("❌ Upload Error:", error.message);
+        res.status(500).json({ error: `Lỗi khi xử lý file: ${error.message}` });
     } finally {
         if (filePath) await fs.unlink(filePath);
     }
 });
+
+
 
 // ✅ Health Check
 app.get("/", (req, res) => {
