@@ -60,8 +60,8 @@ function TextPage() {
     navigate('/');
     window.location.reload();
   };
-  
-  
+
+
 
   return (
     <div className="min-h-screen bg-indigo-200 font-sans">
@@ -119,6 +119,12 @@ function TextPage() {
           >
             Summarize Document
           </button>
+
+          <button
+            className="px-10 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-green-200 border-2 border-green-600 bg-green-500 hover:bg-green-600 text-white"
+            onClick={() => navigate("/link")}>
+            Summarize Link
+          </button>
         </div>
 
         {/* Help Icon */}
@@ -150,7 +156,7 @@ function TextPage() {
       {/* Main Content: Text Summarizer and Translator */}
       <div className="container mx-auto px-4 pt-2">
 
-        <TextSummarizerAndTranslator loggedInUser={loggedInUser}/>
+        <TextSummarizerAndTranslator loggedInUser={loggedInUser} />
 
       </div>
 
