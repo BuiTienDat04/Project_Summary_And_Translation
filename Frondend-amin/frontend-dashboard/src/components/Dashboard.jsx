@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
 
 const Dashboard = () => {
-  const [data, setData] = useState(null);
+  const [data, setData] = useState({ totalUsers: 0, translatedPosts: 0, totalVisits: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch Dashboard Data
+  // 🟢 Fetch Dashboard Data (Cập nhật liên tục)
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch("http://localhost:5001/api/dashboard");
         if (!response.ok) throw new Error("Failed to fetch data");
-        
+
         const result = await response.json();
         setData(result);
       } catch (err) {
@@ -21,10 +21,15 @@ const Dashboard = () => {
       }
     };
 
-    fetchData();
+    fetchData(); // Gọi API ngay khi component load
+
+    // 🔄 Cập nhật dữ liệu mỗi 5 giây
+    const interval = setInterval(fetchData, 5000);
+
+    return () => clearInterval(interval); // Clear interval khi rời khỏi trang
   }, []);
 
-  // Loading State
+  // 🔴 Loading State
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-screen">
@@ -33,7 +38,7 @@ const Dashboard = () => {
     );
   }
 
-  // Error State
+  // 🔴 Error State
   if (error) {
     return (
       <div className="p-6 flex items-center justify-center min-h-screen">
