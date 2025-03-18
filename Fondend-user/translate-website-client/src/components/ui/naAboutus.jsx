@@ -326,13 +326,12 @@ const NaAboutus = () => {  // ✅ Renamed to start with an uppercase letter
         animation: fade-in-up 0.6s ease-out forwards;
     }
 `}</style>
-                {/* Section 3 - PDFSmart Power */}
                 <section className="py-20">
                     <div className="container mx-auto px-4">
-                        <div className="grid lg:grid-cols-2 gap-16 items-center">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center"> {/* Thêm grid-cols-1 */}
                             {/* Feature List */}
                             <div className="space-y-12 relative z-10">
-                                <h2 className="text-5xl font-bold mb-12 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 bg-clip-text text-transparent animate-gradient-x text-center whitespace-nowrap">
+                                <h2 className="text-5xl font-bold mb-12 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 bg-clip-text text-transparent animate-gradient-x text-center whitespace-nowrap lg:text-left"> {/* Căn trái tiêu đề trên màn hình lớn */}
                                     ⚡ PDFSmart Superpowers
                                 </h2>
 
@@ -404,7 +403,7 @@ const NaAboutus = () => {  // ✅ Renamed to start with an uppercase letter
                             </div>
 
                             {/* Image Container */}
-                            <div className="relative group h-[600px] perspective-2000">
+                            <div className="relative group h-auto lg:h-[600px] perspective-2000"> {/* Thay h-[600px] bằng h-auto trên màn hình nhỏ */}
                                 <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-400 rounded-[3rem] transform rotate-3 scale-105 blur-3xl opacity-20 animate-pulse" />
 
                                 <div className="relative h-full overflow-hidden rounded-[2.5rem] shadow-2xl border-8 border-white transform transition-all duration-700 hover:rotate-0 group-hover:scale-95">
@@ -416,17 +415,17 @@ const NaAboutus = () => {  // ✅ Renamed to start with an uppercase letter
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
                                     {/* Floating Elements */}
-                                    <div className="absolute top-8 left-8 p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg w-64">
-                                        <div className="flex items-center space-x-3">
-                                            <FaMagic className="text-purple-600 w-6 h-6" />
-                                            <span className="font-semibold">Smart Formatting</span>
+                                    <div className="absolute top-4 left-4 lg:top-8 lg:left-8 p-4 lg:p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg w-32 lg:w-64"> {/* Giảm kích thước và padding trên màn hình nhỏ */}
+                                        <div className="flex items-center space-x-2 lg:space-x-3">
+                                            <FaMagic className="text-purple-600 w-4 h-4 lg:w-6 lg:h-6" />
+                                            <span className="font-semibold text-sm lg:text-base">Smart Formatting</span> {/* Giảm kích thước chữ */}
                                         </div>
                                     </div>
 
-                                    <div className="absolute bottom-8 right-8 p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg w-64">
-                                        <div className="flex items-center space-x-3">
-                                            <FaRobot className="text-pink-600 w-6 h-6" />
-                                            <span className="font-semibold">AI Analysis</span>
+                                    <div className="absolute bottom-4 right-4 lg:bottom-8 lg:right-8 p-4 lg:p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg w-32 lg:w-64"> {/* Giảm kích thước và padding trên màn hình nhỏ */}
+                                        <div className="flex items-center space-x-2 lg:space-x-3">
+                                            <FaRobot className="text-pink-600 w-4 h-4 lg:w-6 lg:h-6" />
+                                            <span className="font-semibold text-sm lg:text-base">AI Analysis</span> {/* Giảm kích thước chữ */}
                                         </div>
                                     </div>
                                 </div>
