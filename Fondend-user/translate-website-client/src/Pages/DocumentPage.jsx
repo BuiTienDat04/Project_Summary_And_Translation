@@ -174,7 +174,7 @@ const DocumentPage = () => {
                             </div>
                         </div>
                     </section>
-                    
+
 
                     {/* Upload & Result Section */}
                     <DocumentSummarySection />
