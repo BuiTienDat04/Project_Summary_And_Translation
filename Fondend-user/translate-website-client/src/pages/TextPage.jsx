@@ -9,6 +9,8 @@ import TextSummarizerAndTranslator from "./TextSummarizerAndTranslator";
 import Footer from "./Footer";
 
 import { FaFileAlt, FaSignInAlt, FaCheckCircle } from "react-icons/fa";
+import { motion } from "framer-motion";
+import { FaFilePdf, FaLink } from "react-icons/fa";
 
 function TextPage() {
   const [showLogin, setShowLogin] = useState(false);
@@ -108,24 +110,52 @@ function TextPage() {
       {/* Features and Help Section */}
       <div className="flex items-center space-x-8 justify-center mt-12">
         <div className="flex space-x-4">
-          <button
-            className="bg-blue-500 hover:bg-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-blue-200"
-          >
-            Summarize Text
-          </button>
-
-          <button
-            className="px-10 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-green-200 border-2 border-green-600 bg-green-500 hover:bg-green-600 text-white"
-            onClick={() => navigate("/document")}
-          >
-            Summarize Document
-          </button>
-
-          <button
-            className="px-10 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-green-200 border-2 border-green-600 bg-green-500 hover:bg-green-600 text-white"
-            onClick={() => navigate("/link")}>
-            Summarize Link
-          </button>
+          <motion.button
+                                          whileHover={{ scale: 1.05 }}
+                                          whileTap={{ scale: 0.95 }}
+                                          className="relative bg-gradient-to-r from-blue-500 to-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 overflow-hidden group"
+                                          onClick={() => navigate("/text")}
+                                      >
+                                          {/* Gradient Animation */}
+                                          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          
+                                          {/* Button Content */}
+                                          <div className="relative flex items-center justify-center gap-2">
+                                              <span className="group-hover:scale-110 transition-transform duration-300">Summarize Text</span>
+                                              <FaFileAlt className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
+                                          </div>
+                                      </motion.button>
+          
+                                      <motion.button
+                                          whileHover={{ scale: 1.05 }}
+                                          whileTap={{ scale: 0.95 }}
+                                          className="relative bg-gradient-to-r from-green-500 to-green-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 overflow-hidden group"
+                                          onClick={() => navigate("/document")}
+                                      >
+                                          {/* Gradient Animation */}
+                                          <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          
+                                          {/* Button Content */}
+                                          <div className="relative flex items-center justify-center gap-2">
+                                              <span className="group-hover:scale-110 transition-transform duration-300">Summarize Document</span>
+                                              <FaFilePdf className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
+                                          </div>
+                                      </motion.button>
+          
+                                      <motion.button
+                                          whileHover={{ scale: 1.05 }}
+                                          whileTap={{ scale: 0.95 }}
+                                          className="relative bg-gradient-to-r from-purple-500 to-purple-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 overflow-hidden group"
+                                          onClick={() => navigate("/link")}>
+                                          {/* Gradient Animation */}
+                                          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          
+                                          {/* Button Content */}
+                                          <div className="relative flex items-center justify-center gap-2">
+                                              <span className="group-hover:scale-110 transition-transform duration-300">Summarize Link</span>
+                                              <FaLink className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
+                                          </div>
+                                      </motion.button>
         </div>
 
         {/* Help Icon */}
@@ -135,22 +165,30 @@ function TextPage() {
             onMouseEnter={() => setShowHelp(true)}
             onMouseLeave={() => setShowHelp(false)}
           />
-          {showHelp && (
-            <div className="absolute left-full top-1/2 ml-3 w-64 transform -translate-y-1/2 bg-white shadow-md p-4 rounded-md border border-gray-200 text-gray-700 z-10">
-              <h3 className="font-semibold text-gray-800 mb-2">Quick Guide:</h3>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>
-                  <span className="font-semibold text-gray-600">1.</span> Enter text in the input box.
-                </li>
-                <li>
-                  <span className="font-semibold text-gray-600">2.</span> Click "Summarize" to get a summary.
-                </li>
-                <li>
-                  <span className="font-semibold text-gray-600">3.</span> Select a language and click "Translate" to translate the summary.
-                </li>
-              </ul>
-            </div>
-          )}
+{showHelp && (
+    <motion.div
+        initial={{ opacity: 0, x: 10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="absolute left-full top-1/2 ml-3 w-64 transform -translate-y-1/2 bg-gradient-to-br from-white to-gray-50 shadow-lg p-4 rounded-lg border border-gray-100 text-gray-700 z-10"
+    >
+        <h3 className="font-semibold text-gray-800 mb-3 text-lg">Quick Guide:</h3>
+        <ul className="list-disc pl-5 space-y-2">
+            <li className="flex items-start">
+                <span className="font-semibold text-blue-500 mr-2">1.</span>
+                Enter text in the input box.
+            </li>
+            <li className="flex items-start">
+                <span className="font-semibold text-blue-500 mr-2">2.</span>
+                Click "Summarize" to get a summary.
+            </li>
+            <li className="flex items-start">
+                <span className="font-semibold text-blue-500 mr-2">3.</span>
+                Select a language and click "Translate" to translate the summary.
+            </li>
+        </ul>
+    </motion.div>
+)}
         </div>
       </div>
 
