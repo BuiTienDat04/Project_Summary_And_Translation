@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import StatisticsChart from "../components/StatisticsChart";
 
 const Dashboard = () => {
   const [data, setData] = useState({ totalUsers: 0, translatedPosts: 0, totalVisits: 0 });
@@ -68,13 +69,20 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Chart Placeholder */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Statistics Chart</h2>
-        <div className="h-64 bg-gray-100 flex items-center justify-center rounded-lg">
-          <p className="text-gray-500">Chart will be displayed here</p>
-        </div>
+      {/* Statistics Chart */}
+      <div className="bg-gradient-to-br from-gray-100 to-white p-6 rounded-xl shadow-lg border border-gray-200 mb-8">
+        <h2 className="text-2xl font-semibold text-gray-800 flex items-center gap-2 mb-4">
+          📊 Statistics Overview
+        </h2>
+        <StatisticsChart
+          data={[
+            { name: "Total Users", value: data.totalUsers },
+            { name: "Translated Posts", value: data.translatedPosts },
+            { name: "Total Visits", value: data.totalVisits },
+          ]}
+        />
       </div>
+
     </div>
   );
 };
