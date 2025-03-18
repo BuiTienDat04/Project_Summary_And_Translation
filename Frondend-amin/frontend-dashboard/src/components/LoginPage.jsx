@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaSignInAlt, FaEnvelope, FaLock } from "react-icons/fa";
+import { FaSignInAlt, FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import axios from "axios";
 
 const LoginPage = ({ onClose, onLoginSuccess }) => {
@@ -7,6 +7,7 @@ const LoginPage = ({ onClose, onLoginSuccess }) => {
   const [loginPassword, setLoginPassword] = useState("");
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
   const [loginSuccess, setLoginSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // Toggle password visibility
 
   const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {
@@ -15,7 +16,7 @@ const LoginPage = ({ onClose, onLoginSuccess }) => {
     }
 
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/login", {
+      const response = await axios.post("http://localhost:5001/api/auth/login", {
         email: loginEmail,
         password: loginPassword,
       });
@@ -60,7 +61,7 @@ const LoginPage = ({ onClose, onLoginSuccess }) => {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mt-4">Admin Login</h1>
-          <p className="text-gray-600">Welcome back! Please login to continue.</p>
+          <p className="text-gray-600">Welcome back! Please log in to continue.</p>
         </div>
 
         {loginErrorMessage && (
@@ -100,14 +101,21 @@ const LoginPage = ({ onClose, onLoginSuccess }) => {
             </label>
             <div className="relative">
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 id="loginPassword"
-                className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full p-3 pl-10 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 placeholder="Enter your password"
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
               />
               <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
             </div>
           </div>
         </div>
@@ -120,8 +128,6 @@ const LoginPage = ({ onClose, onLoginSuccess }) => {
             <FaSignInAlt className="mr-2" /> Login
           </button>
         </div>
-
-        
       </div>
     </div>
   );

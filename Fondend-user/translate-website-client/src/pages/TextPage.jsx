@@ -50,6 +50,7 @@ function TextPage() {
       setLoggedInUsername(JSON.parse(storedUser).email); // Giả sử email là thuộc tính để hiển thị username
     }
   }, []);
+  
 
   const handleLogout = () => {
     setLoggedInUsername(null);
