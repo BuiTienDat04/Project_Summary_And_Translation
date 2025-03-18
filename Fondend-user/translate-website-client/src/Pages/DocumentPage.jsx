@@ -154,10 +154,6 @@ const DocumentPage = () => {
                                 </div>
                             </motion.button>
 
-                                Summarize Link
-                            </button>
-
-
                         </div>
 
                         {/* Help Section */}
