@@ -83,8 +83,7 @@ const DocumentPage = () => {
             )}
 
             {/* Main Content */}
-            <div className="container mx-auto px-6 pt-16">
-
+            <div className="container mx-auto px-6 pt-16 min-h-screen">
                 <header className="container mx-auto mt-20 px-6 text-center">
 
                     <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6">
@@ -97,7 +96,6 @@ const DocumentPage = () => {
                         Transform complex documents into concise summaries with advanced AI technology. Supports various formats: PDF.
                     </p>
                 </header>
-
 
                 {/* Feature Section */}
                 <div className="max-w-7xl mx-auto p-8"> {/* Thêm div max-w-7xl ở đây */}
@@ -140,18 +138,27 @@ const DocumentPage = () => {
                             </div>
                         </div>
                     </section>
+                    
 
                     {/* Upload & Result Section */}
                     <DocumentSummarySection />
+
+
                 </div> {/* Đóng div max-w-7xl */}
-                <section className="w-full mt-20 px-0 py-16 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-2xl transform transition duration-500 hover:shadow-3xl">
-                    <div className="max-w-screen-xl mx-auto px-6">
+
+            </div>
+
+
+
+            <div className="flex flex-col items-center">
+                <section className="w-full min-h-screen flex flex-col items-center px-0 bg-white">
+                    <div className="relative w-full max-w-none flex flex-col items-center py-24">
                         {/* Animated Header Section */}
-                        <div className="text-center mb-20 animate-fade-in-up"> {/* Tăng mb từ 16 lên 20 */}
-                            <h2 className="px-10 text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 mb-8 animate-gradient-flow"> {/* Thêm hiệu ứng gradient động */}
+                        <div className="text-center mb-20 w-full max-w-none px-4 animate-fade-in-up">
+                            <h2 className="text-4xl xl:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 mb-8 animate-gradient-flow px-4">
                                 📑 Revolutionize Your Reading with AI-Powered Summarization
                             </h2>
-                            <p className="text-gray-700 text-xl mb-12 leading-relaxed max-w-3xl mx-auto"> {/* Tăng mb từ 8 lên 12 */}
+                            <p className="text-gray-700 text-xl mb-12 leading-relaxed w-full max-w-none px-4">
                                 Discover the future of document processing with <span className="font-semibold text-blue-600">PDFSmart</span>'s cutting-edge AI technology that transforms lengthy documents into
                                 <span className="highlight-text"> concise, meaningful summaries </span>
                                 in seconds
@@ -159,7 +166,7 @@ const DocumentPage = () => {
                         </div>
 
                         {/* Enhanced Feature Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20 bg-gradient-to-r from-blue-100 to-blue-300 p-8 rounded-xl shadow-md">
                             {[
                                 {
                                     icon: '⏱️',
@@ -179,7 +186,7 @@ const DocumentPage = () => {
                             ].map((feature, index) => (
                                 <div
                                     key={index}
-                                    className="bg-white p-6 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-2 animate-fade-in-up"
+                                    className="bg-red p-6 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-2 animate-fade-in-up"
                                     style={{ animationDelay: `${index * 0.2}s` }}
                                 >
                                     <div className="text-4xl mb-4 animate-bounce-slow">{feature.icon}</div>
@@ -192,7 +199,7 @@ const DocumentPage = () => {
                         {/* Detailed Explanation Section */}
                         <div className="space-y-10 animate-fade-in-up">
                             {/* Workflow Process - Enhanced */}
-                            <div className="bg-white p-10 rounded-3xl shadow-2xl border-l-6 border-gradient-to-r from-blue-500 to-purple-500 transition-shadow duration-500 hover:shadow-xl">
+                            <div className="bg-purple-50 p-10 rounded-3xl shadow-2xl border-l-6 border-gradient-to-r from-blue-500 to-purple-500 transition-shadow duration-500 hover:shadow-xl">
                                 <h3 className="text-3xl font-extrabold text-gray-900 mb-8 flex items-center gap-4 animate__animated animate__fadeInDown">
                                     <span className="text-blue-600 animate__animated animate__pulse animate__infinite">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -236,7 +243,8 @@ const DocumentPage = () => {
                             </div>
 
                             {/* Benefits Section - Enhanced */}
-                            <div className="bg-gradient-to-br from-blue-700 to-indigo-700 p-10 rounded-3xl text-white shadow-2xl transition-shadow duration-500 hover:shadow-xl mt-12">
+                            <div className="bg-gradient-to-br from-teal-500 to-purple-600 p-10 rounded-3xl text-white shadow-2xl transition-shadow duration-500 hover:shadow-xl mt-12">
+
                                 <h3 className="text-3xl font-extrabold mb-8 flex items-center gap-4 animate__animated animate__fadeInDown">
                                     <span className="bg-white/20 p-3 rounded-xl animate__animated animate__bounce animate__infinite">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -339,7 +347,6 @@ const DocumentPage = () => {
         }
     `}</style>
                 </section>
-
             </div>
 
 
