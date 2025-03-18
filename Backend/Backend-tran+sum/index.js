@@ -129,16 +129,19 @@ app.use("/api/auth", authRoutes(visitCountObj));
 // ✅ API to summarize text
 app.post("/summarize", async (req, res) => {
     const { text, language } = req.body;
-    if (!text || text.trim().length < 10) return res.status(400).json({ error: "Text is too short or invalid." });
+    if (!text || text.trim().length < 10) {
+        return res.status(400).json({ error: "Text is too short or invalid." });
+    }
 
     try {
         const summary = await summarizeText(text, language || "English");
-        await Visit.findOneAndUpdate({}, { $inc: { summarizedPosts: 1 } }, { upsert: true, new: true });
+        await Visit.findOneAndUpdate({}, { $inc: { translatedPosts: 1 }}, { upsert: true, new: true });
         res.json({ summary });
     } catch (error) {
         res.status(500).json({ error: `Error summarizing: ${error.message}` });
     }
 });
+
 
 // ✅ API to translate text
 app.post("/translate", async (req, res) => {
