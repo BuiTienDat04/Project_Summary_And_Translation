@@ -5,7 +5,7 @@ import LoginPage from "./LoginPage";
 import RegisterPage from "./RegisterPage";
 import Navigation from "./Navigation";
 import ServicesSection from "./ServicesSection";
-import TextSummarizerAndTranslator from "./TextSummarizerAndTranslator";
+import TextSummarizerAndTranslator from "../Pages/TextSummarizerAndTranslator";
 import Footer from "./Footer";
 
 import { FaFileAlt, FaSignInAlt, FaCheckCircle } from "react-icons/fa";

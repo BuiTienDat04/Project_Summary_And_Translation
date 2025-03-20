@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { FaSignInAlt } from "react-icons/fa";
 import { Trash2 } from 'lucide-react';
+import ChatBox from "../Pages/ChatBox"; // Import the ChatBox component
 
-const TextSummarizerAndTranslator = ({ loggedInUser  }) => {
+const TextSummarizerAndTranslator = ({ loggedInUser }) => {
   const [text, setText] = useState("");
   const [summary, setSummary] = useState("");
   const [translation, setTranslation] = useState("");
@@ -10,11 +11,9 @@ const TextSummarizerAndTranslator = ({ loggedInUser  }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [error, setError] = useState("");
-
   const [charCount, setCharCount] = useState(0);
   const [loginPromptVisible, setLoginPromptVisible] = useState(false);
   const maxCharLimit = 1000;
-
 
   const languages = [
     { code: "en", name: "English" },
@@ -51,12 +50,9 @@ const TextSummarizerAndTranslator = ({ loggedInUser  }) => {
     }
   }, [text]);
 
-  // Handle text summarization
-
   useEffect(() => {
     setCharCount(text.length);
   }, [text]);
-
 
   const handleSummarize = async () => {
     if (!loggedInUser) {
@@ -110,7 +106,6 @@ const TextSummarizerAndTranslator = ({ loggedInUser  }) => {
     setIsDropdownOpen(false);
   };
 
-
   return (
     <div className="max-w-7xl mx-auto p-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -121,9 +116,8 @@ const TextSummarizerAndTranslator = ({ loggedInUser  }) => {
             {(text || error) && (
               <button
                 onClick={() => {
-                  setText('');    // Xóa text
-                  setError('');   // Xóa thông báo lỗi
-                  // Thêm các state khác cần xóa ở đây
+                  setText('');
+                  setError('');
                 }}
                 className="text-red-500 hover:text-red-700 transition-colors"
                 title="Clear all"
@@ -189,9 +183,8 @@ const TextSummarizerAndTranslator = ({ loggedInUser  }) => {
                       setIsDropdownOpen(true);
                     }}
                     onFocus={() => setIsDropdownOpen(true)}
-                    onBlur={() => setTimeout(() => setIsDropdownOpen(false), 100)} // Delay blur to allow click
+                    onBlur={() => setTimeout(() => setIsDropdownOpen(false), 100)}
                   />
-                  {/* Dropdown button - Removed, input field itself is the selector */}
                 </div>
                 {/* Dropdown menu */}
                 {isDropdownOpen && filteredLanguages.length > 0 && (
@@ -213,7 +206,6 @@ const TextSummarizerAndTranslator = ({ loggedInUser  }) => {
                 className="w-full bg-gradient-to-br from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg"
                 onClick={handleTranslate}
               >
-                {/* Button icon */}
                 Translate Now
               </button>
 
@@ -245,7 +237,6 @@ const TextSummarizerAndTranslator = ({ loggedInUser  }) => {
           {loginPromptVisible && (
             <div className="fixed inset-0 bg-indigo-100/90 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300">
               <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md transform transition-all scale-95 hover:scale-100 border border-indigo-50 mx-4">
-                {/* Header với hiệu ứng gradient */}
                 <div className="text-center mb-6 space-y-3">
                   <div className="mx-auto bg-gradient-to-br from-indigo-500 to-blue-500 w-fit p-4 rounded-2xl">
                     <FaSignInAlt className="h-8 w-8 text-white animate-bounce" />
@@ -254,19 +245,14 @@ const TextSummarizerAndTranslator = ({ loggedInUser  }) => {
                     Welcome Friend!
                   </h2>
                 </div>
-
-                {/* Nội dung chính */}
                 <div className="space-y-5 text-center">
                   <p className="text-gray-600 text-lg leading-relaxed">
                     To access all features and enjoy a personalized experience, please sign in to your account.
                   </p>
-
-                  {/* Nhóm button */}
                   <div className="flex flex-col space-y-3">
                     <button
                       onClick={() => setLoginPromptVisible(false)}
-                      className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-6 rounded-xl 
-            transform transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-200"
+                      className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-6 rounded-xl transform transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-200"
                     >
                       OK
                     </button>
@@ -277,6 +263,9 @@ const TextSummarizerAndTranslator = ({ loggedInUser  }) => {
           )}
         </section>
       </div>
+
+      {/* Add the ChatBox component here */}
+      <ChatBox loggedInUser={loggedInUser} />
     </div>
   );
 };

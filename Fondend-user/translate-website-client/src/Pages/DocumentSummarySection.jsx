@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Upload, Download, Trash2 } from "lucide-react";
+import ChatBox from "./ChatBox"; // Import the ChatBox component
 
 export default function DocumentSummarySection() {
     const [file, setFile] = useState(null);
@@ -217,198 +218,203 @@ export default function DocumentSummarySection() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto p-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Input Column */}
-                <section className="space-y-6 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-2xl font-semibold text-gray-800 flex-grow">Upload Document</h2>
-                        {file && (
-                            <button
-                                onClick={handleRemoveFile}
-                                className="text-red-500 hover:text-red-700 transition-colors"
-                                title="Remove file"
-                            >
-                                <Trash2 className="w-7 h-7" />
-                            </button>
-                        )}
-                    </div>
-                    <div
-                        className={`relative bg-blue-50 p-12 rounded-xl border-3 border-dashed transition-all duration-300 ${
-                            dragActive ? "border-blue-400 bg-blue-100 scale-105" : "border-gray-300 hover:border-blue-300"
-                        }`}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                    >
-                        <input
-                            type="file"
-                            onChange={handleFileChange}
-                            className="hidden"
-                            id="fileInputDoc"
-                            accept=".pdf"
-                        />
-                        <label htmlFor="fileInputDoc" className="flex flex-col items-center justify-center cursor-pointer w-full">
-                            {!file ? (
-                                <>
-                                    <Upload className="w-20 h-20 text-blue-400 animate-bounce" />
-                                    <p className="text-center text-gray-600 text-lg font-medium mt-4">
-                                        Drag and drop file or<br />
-                                        <span className="text-blue-500 underline">browse files</span>
-                                    </p>
-                                </>
-                            ) : (
-                                <div className="mt-6 w-full">
-                                    <div className="bg-green-100 px-4 py-2 rounded-md flex items-center justify-between mb-4">
-                                        <div className="flex items-center">
-                                            <span className="text-green-600 mr-2">✓</span>
-                                            <span className="text-green-700 font-medium">{file.name}</span>
-                                        </div>
-                                    </div>
-                                    {originalContent && (
-                                        <div className="bg-gray-50 p-4 rounded-md h-64 overflow-y-auto text-gray-700 leading-relaxed whitespace-pre-wrap w-full">
-                                            <strong>Original Content:</strong>
-                                            <br />
-                                            {originalContent}
-                                        </div>
-                                    )}
-                                </div>
+        <div className="relative">
+            <div className="max-w-7xl mx-auto p-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Input Column */}
+                    <section className="space-y-6 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-2xl font-semibold text-gray-800 flex-grow">Upload Document</h2>
+                            {file && (
+                                <button
+                                    onClick={handleRemoveFile}
+                                    className="text-red-500 hover:text-red-700 transition-colors"
+                                    title="Remove file"
+                                >
+                                    <Trash2 className="w-7 h-7" />
+                                </button>
                             )}
-                        </label>
-                    </div>
+                        </div>
+                        <div
+                            className={`relative bg-blue-50 p-12 rounded-xl border-3 border-dashed transition-all duration-300 ${
+                                dragActive ? "border-blue-400 bg-blue-100 scale-105" : "border-gray-300 hover:border-blue-300"
+                            }`}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                        >
+                            <input
+                                type="file"
+                                onChange={handleFileChange}
+                                className="hidden"
+                                id="fileInputDoc"
+                                accept=".pdf"
+                            />
+                            <label htmlFor="fileInputDoc" className="flex flex-col items-center justify-center cursor-pointer w-full">
+                                {!file ? (
+                                    <>
+                                        <Upload className="w-20 h-20 text-blue-400 animate-bounce" />
+                                        <p className="text-center text-gray-600 text-lg font-medium mt-4">
+                                            Drag and drop file or<br />
+                                            <span className="text-blue-500 underline">browse files</span>
+                                        </p>
+                                    </>
+                                ) : (
+                                    <div className="mt-6 w-full">
+                                        <div className="bg-green-100 px-4 py-2 rounded-md flex items-center justify-between mb-4">
+                                            <div className="flex items-center">
+                                                <span className="text-green-600 mr-2">✓</span>
+                                                <span className="text-green-700 font-medium">{file.name}</span>
+                                            </div>
+                                        </div>
+                                        {originalContent && (
+                                            <div className="bg-gray-50 p-4 rounded-md h-64 overflow-y-auto text-gray-700 leading-relaxed whitespace-pre-wrap w-full">
+                                                <strong>Original Content:</strong>
+                                                <br />
+                                                {originalContent}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </label>
+                        </div>
 
-                    <button
-                        onClick={generateSummary}
-                        disabled={!file || isLoading}
-                        className={`w-full bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg ${
-                            !file || isLoading ? "opacity-50 cursor-not-allowed" : ""
-                        }`}
-                    >
-                        {isLoading ? "Processing..." : "Generate Summary"}
-                    </button>
-                    {error && <p className="text-red-500">{error}</p>}
-                </section>
+                        <button
+                            onClick={generateSummary}
+                            disabled={!file || isLoading}
+                            className={`w-full bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg ${
+                                !file || isLoading ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
+                        >
+                            {isLoading ? "Processing..." : "Generate Summary"}
+                        </button>
+                        {error && <p className="text-red-500">{error}</p>}
+                    </section>
 
-                {/* Output Column */}
-                <section className="space-y-6 p-6 bg-gray-50 rounded-2xl border-2 border-gray-100 shadow-inner">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold text-gray-800">Summary Result</h2>
-                        {summaryFile && (
-                            <a
-                                href={summaryFile}
-                                download={`summary_${file?.name || "document"}.txt`}
-                                className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg flex items-center transition-all shadow-md hover:shadow-lg"
-                            >
-                                <Download className="w-5 h-5 mr-2" />
-                                Download
-                            </a>
-                        )}
-                    </div>
+                    {/* Output Column */}
+                    <section className="space-y-6 p-6 bg-gray-50 rounded-2xl border-2 border-gray-100 shadow-inner">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-gray-800">Summary Result</h2>
+                            {summaryFile && (
+                                <a
+                                    href={summaryFile}
+                                    download={`summary_${file?.name || "document"}.txt`}
+                                    className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg flex items-center transition-all shadow-md hover:shadow-lg"
+                                >
+                                    <Download className="w-5 h-5 mr-2" />
+                                    Download
+                                </a>
+                            )}
+                        </div>
 
-                    {/* Summary Section */}
-                    {summaryContent && (
-                        <article className="bg-white rounded-xl border-2 border-gray-200 p-5 shadow-sm">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                                    <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M6 15h.01M6 11h.01M9 11h.01M9 15h.01" />
-                                    </svg>
-                                    Summary
-                                </h3>
-                                <span className="text-sm text-gray-500 font-medium">{summaryContent.length} chars</span>
-                            </div>
-                            <div className="bg-gray-50 rounded-lg p-4">
-                                <textarea
-                                    className="w-full min-h-[180px] bg-transparent focus:outline-none resize-none text-gray-700 placeholder-gray-400 text-md"
-                                    value={summaryContent || ""}
-                                    placeholder="✨ Your summary will appear here..."
-                                    readOnly
-                                />
-                            </div>
-                        </article>
-                    )}
-
-                    {/* Translation Section */}
-                    {summaryContent && (
-                        <div className="space-y-6">
-                            <div className="relative">
-                                <div className="flex items-center border-2 border-emerald-200 bg-white rounded-xl pr-3 shadow-sm">
-                                    <input
-                                        type="text"
-                                        className="w-full p-4 bg-transparent placeholder-gray-400 focus:outline-none text-lg"
-                                        placeholder="Search language..."
-                                        value={searchTerm}
-                                        onChange={(e) => {
-                                            setSearchTerm(e.target.value);
-                                            setIsDropdownOpen(true);
-                                        }}
-                                        onFocus={() => setIsDropdownOpen(true)}
-                                        onBlur={() => setTimeout(() => setIsDropdownOpen(false), 100)}
+                        {/* Summary Section */}
+                        {summaryContent && (
+                            <article className="bg-white rounded-xl border-2 border-gray-200 p-5 shadow-sm">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                                        <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M6 15h.01M6 11h.01M9 11h.01M9 15h.01" />
+                                        </svg>
+                                        Summary
+                                    </h3>
+                                    <span className="text-sm text-gray-500 font-medium">{summaryContent.length} chars</span>
+                                </div>
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <textarea
+                                        className="w-full min-h-[180px] bg-transparent focus:outline-none resize-none text-gray-700 placeholder-gray-400 text-md"
+                                        value={summaryContent || ""}
+                                        placeholder="✨ Your summary will appear here..."
+                                        readOnly
                                     />
                                 </div>
-                                {isDropdownOpen && filteredLanguages.length > 0 && (
-                                    <ul className="absolute z-10 mt-1 w-full bg-white border border-emerald-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                        {filteredLanguages.map((lang) => (
-                                            <li
-                                                key={lang.code}
-                                                className="px-4 py-2 hover:bg-emerald-100 cursor-pointer"
-                                                onClick={() => handleLanguageSelect(lang.code, lang.name)}
-                                            >
-                                                {lang.name}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
+                            </article>
+                        )}
 
-                            <button
-                                onClick={translateSummary}
-                                className="w-full bg-gradient-to-br from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg"
-                                disabled={isLoading}
-                            >
-                                {isLoading ? "Translating..." : "Translate Now"}
-                            </button>
-
-                            {translatedContent && (
-                                <article className="bg-white rounded-xl border-2 border-gray-200 p-5 shadow-sm">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                                            <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            Translation ({availableLanguages.find((l) => l.code === targetLang)?.name || "English"})
-                                        </h3>
-                                        <span className="text-sm text-gray-500 font-medium">{translatedContent.length} chars</span>
-                                    </div>
-                                    <div className="bg-gray-50 rounded-lg p-4">
-                                        <textarea
-                                            className="w-full min-h-[180px] bg-transparent focus:outline-none resize-none text-gray-700 text-md"
-                                            value={translatedContent}
-                                            placeholder="✨ Your translation will appear here..."
-                                            readOnly
+                        {/* Translation Section */}
+                        {summaryContent && (
+                            <div className="space-y-6">
+                                <div className="relative">
+                                    <div className="flex items-center border-2 border-emerald-200 bg-white rounded-xl pr-3 shadow-sm">
+                                        <input
+                                            type="text"
+                                            className="w-full p-4 bg-transparent placeholder-gray-400 focus:outline-none text-lg"
+                                            placeholder="Search language..."
+                                            value={searchTerm}
+                                            onChange={(e) => {
+                                                setSearchTerm(e.target.value);
+                                                setIsDropdownOpen(true);
+                                            }}
+                                            onFocus={() => setIsDropdownOpen(true)}
+                                            onBlur={() => setTimeout(() => setIsDropdownOpen(false), 100)}
                                         />
                                     </div>
-                                </article>
-                            )}
-                        </div>
-                    )}
+                                    {isDropdownOpen && filteredLanguages.length > 0 && (
+                                        <ul className="absolute z-10 mt-1 w-full bg-white border border-emerald-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                            {filteredLanguages.map((lang) => (
+                                                <li
+                                                    key={lang.code}
+                                                    className="px-4 py-2 hover:bg-emerald-100 cursor-pointer"
+                                                    onClick={() => handleLanguageSelect(lang.code, lang.name)}
+                                                >
+                                                    {lang.name}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
 
-                    {error && <p className="text-red-500">{error}</p>}
-                    {!summaryContent && !error && !isLoading && (
-                        <p className="text-gray-400 italic text-center">
-                            Summary will appear here after processing...
-                        </p>
-                    )}
-                    {isLoading && !error && (
-                        <div className="text-center">
-                            <svg className="animate-spin h-5 w-5 text-gray-600 inline-block mr-2" viewBox="0 0 24 24">
-                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                            </svg>
-                            <p className="text-gray-600 inline">Processing...</p>
-                        </div>
-                    )}
-                </section>
+                                <button
+                                    onClick={translateSummary}
+                                    className="w-full bg-gradient-to-br from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg"
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? "Translating..." : "Translate Now"}
+                                </button>
+
+                                {translatedContent && (
+                                    <article className="bg-white rounded-xl border-2 border-gray-200 p-5 shadow-sm">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                                                <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                Translation ({availableLanguages.find((l) => l.code === targetLang)?.name || "English"})
+                                            </h3>
+                                            <span className="text-sm text-gray-500 font-medium">{translatedContent.length} chars</span>
+                                        </div>
+                                        <div className="bg-gray-50 rounded-lg p-4">
+                                            <textarea
+                                                className="w-full min-h-[180px] bg-transparent focus:outline-none resize-none text-gray-700 text-md"
+                                                value={translatedContent}
+                                                placeholder="✨ Your translation will appear here..."
+                                                readOnly
+                                            />
+                                        </div>
+                                    </article>
+                                )}
+                            </div>
+                        )}
+
+                        {error && <p className="text-red-500">{error}</p>}
+                        {!summaryContent && !error && !isLoading && (
+                            <p className="text-gray-400 italic text-center">
+                                Summary will appear here after processing...
+                            </p>
+                        )}
+                        {isLoading && !error && (
+                            <div className="text-center">
+                                <svg className="animate-spin h-5 w-5 text-gray-600 inline-block mr-2" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                </svg>
+                                <p className="text-gray-600 inline">Processing...</p>
+                            </div>
+                        )}
+                    </section>
+                </div>
             </div>
+
+            {/* Add the ChatBox component */}
+            <ChatBox />
         </div>
     );
 }
