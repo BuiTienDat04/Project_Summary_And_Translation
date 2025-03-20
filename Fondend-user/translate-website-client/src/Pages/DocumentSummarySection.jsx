@@ -16,6 +16,7 @@ export default function DocumentSummarySection() {
     const [error, setError] = useState(null);
 
     const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // Giới hạn 10MB (đồng bộ với backend)
 
     const availableLanguages = [
         { code: "en", name: "English" },
@@ -54,11 +55,15 @@ export default function DocumentSummarySection() {
 
     const handleFileChange = (event) => {
         const selectedFile = event.target.files[0];
-        if (selectedFile && selectedFile.type !== "application/pdf") {
-            setError("Chỉ hỗ trợ file PDF!");
-            return;
-        }
         if (selectedFile) {
+            if (selectedFile.size > MAX_FILE_SIZE) {
+                setError(`File quá lớn! Kích thước tối đa là ${MAX_FILE_SIZE / (1024 * 1024)}MB.`);
+                return;
+            }
+            if (selectedFile.type !== "application/pdf") {
+                setError("Chỉ hỗ trợ file PDF!");
+                return;
+            }
             setFile(selectedFile);
             setOriginalContent("");
             setSummaryContent("");
@@ -82,11 +87,15 @@ export default function DocumentSummarySection() {
         event.preventDefault();
         setDragActive(false);
         const droppedFile = event.dataTransfer.files[0];
-        if (droppedFile && droppedFile.type !== "application/pdf") {
-            setError("Chỉ hỗ trợ file PDF!");
-            return;
-        }
         if (droppedFile) {
+            if (droppedFile.size > MAX_FILE_SIZE) {
+                setError(`File quá lớn! Kích thước tối đa là ${MAX_FILE_SIZE / (1024 * 1024)}MB.`);
+                return;
+            }
+            if (droppedFile.type !== "application/pdf") {
+                setError("Chỉ hỗ trợ file PDF!");
+                return;
+            }
             setFile(droppedFile);
             setOriginalContent("");
             setSummaryContent("");
@@ -130,7 +139,10 @@ export default function DocumentSummarySection() {
     };
 
     const generateSummary = async () => {
-        if (!file) return;
+        if (!file) {
+            setError("Vui lòng chọn file trước khi tạo tóm tắt.");
+            return;
+        }
 
         setIsLoading(true);
         setError(null);
@@ -214,7 +226,9 @@ export default function DocumentSummarySection() {
     };
 
     // Nội dung gửi đến ChatBox
-    const documentSummaryContent = `File Name: ${file?.name || "Unknown"}\nOriginal Content: ${originalContent}\nSummary: ${summaryContent}\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}): ${translatedContent}`;
+    const documentSummaryContent = summaryContent
+        ? `File Name: ${file?.name || "Unknown"}\nOriginal Content: ${originalContent}\nSummary: ${summaryContent}\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}): ${translatedContent}`
+        : "";
 
     return (
         <div className="relative">
