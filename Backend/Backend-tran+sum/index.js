@@ -56,6 +56,7 @@ app.use(
   );
 app.use(helmet());
 app.use(morgan("combined"));
+app.use("/api/users", userRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use(cookieParser());  // Thêm middleware này
 
