@@ -1,5 +1,9 @@
 import { useState } from "react";
+
 import { FaSignInAlt, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaTwitter, FaGithub, FaApple, FaInstagram, FaLinkedin, FaYoutube, FaDiscord, FaSlack } from "react-icons/fa";
+
+import { FaSignInAlt, FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+
 import axios from "axios";
 
 const LoginPage = ({ onClose, onLoginSuccess }) => {
@@ -7,7 +11,11 @@ const LoginPage = ({ onClose, onLoginSuccess }) => {
   const [loginPassword, setLoginPassword] = useState("");
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
   const [loginSuccess, setLoginSuccess] = useState(false);
+
   const [showPassword, setShowPassword] = useState(false);
+
+  const [showPassword, setShowPassword] = useState(false); // Toggle password visibility
+
 
   const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {

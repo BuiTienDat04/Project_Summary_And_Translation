@@ -9,7 +9,7 @@ import Footer from "./Pages/Footer";
 import ServicesSection from "./Pages/ServicesSection";
 import Homepage from "./Pages/HomePage";
 import NaAboutus from "./components/ui/naAboutus";
-
+import LinkPage from "./Pages/LinkPage";
 
 
 export default function App() {
@@ -29,6 +29,7 @@ export default function App() {
         <Route path="/" element={<Homepage/>}/>
         <Route path="/naf" element={<navFeatures />} />
         <Route path="aboutus" element={<NaAboutus />}/>
+        <Route path="/link" element={<LinkPage />}/>
 
       </Routes>
     </BrowserRouter>
