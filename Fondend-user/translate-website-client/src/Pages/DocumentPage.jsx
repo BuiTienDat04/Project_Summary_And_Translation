@@ -87,26 +87,36 @@ const DocumentPage = () => {
 
             {/* Main Content */}
             <div className="container mx-auto px-6 pt-16 min-h-screen">
-                <header className="container mx-auto mt-20 px-6 text-center">
-
+                <motion.header
+                    initial={{ y: -50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.8 }}
+                    className="container mx-auto mt-20 px-6 text-center"
+                >
                     <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6 flex items-center justify-center">
                         {/* Gradient Text with LED Effect */}
                         <span className="bg-gradient-to-r from-blue-600 to-green-500 text-transparent bg-clip-text bg-[length:200%_auto] animate-gradient">
                             Smart Document Summarization
                         </span>
 
-                        {/* Simple Icon (No Animation) */}
+                        {/* Simple Icon */}
                         <FaFilePdf className="ml-4 text-blue-500" />
                     </h1>
                     <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
                         Transform complex documents into concise summaries with advanced AI technology. Supports various formats: PDF.
                     </p>
-                </header>
+                </motion.header>
 
                 {/* Feature Section */}
                 <div className="max-w-7xl mx-auto p-8"> {/* Thêm div max-w-7xl ở đây */}
                     <section className="mt-10 flex flex-col items-center gap-8">
-                        <div className="flex space-x-6">
+                        {/* Buttons */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 50 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8, delay: 0.2 }}
+                            className="flex flex-wrap justify-center gap-4"
+                        >
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
@@ -127,7 +137,7 @@ const DocumentPage = () => {
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 className="relative bg-gradient-to-r from-green-500 to-green-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 overflow-hidden group"
-                                onClick={() => navigate("/document")}
+                                
                             >
                                 {/* Gradient Animation */}
                                 <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -144,7 +154,6 @@ const DocumentPage = () => {
                                 whileTap={{ scale: 0.95 }}
                                 className="relative bg-gradient-to-r from-purple-500 to-purple-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 overflow-hidden group"
                                 onClick={() => navigate("/link")}>
-
                                 {/* Gradient Animation */}
                                 <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
@@ -154,11 +163,10 @@ const DocumentPage = () => {
                                     <FaLink className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
                                 </div>
                             </motion.button>
-
-                        </div>
+                        </motion.div>
                     </section>
 
-                    
+
                     {/* Help Icon */}
                     <div className="relative flex items-center justify-center mt-4">
                         <button
