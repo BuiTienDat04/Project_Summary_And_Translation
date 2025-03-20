@@ -9,7 +9,7 @@ import Footer from "../Pages/Footer";
 import { motion } from "framer-motion";
 import { FaFilePdf, FaLink } from "react-icons/fa";
 import axios from "axios";
-import ChatBox from "../Pages/ChatBox"; // Import the ChatBox component
+import ChatBox from "../Pages/ChatBox";
 
 const LinkPage = () => {
     const navigate = useNavigate();
@@ -160,6 +160,9 @@ const LinkPage = () => {
         }
     };
 
+    // Nội dung gửi đến ChatBox
+    const linkPageContent = `URL: ${linkInput}\nSummary: ${summaryResult}\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}): ${translatedContent}`;
+
     return (
         <div className="relative min-h-screen bg-indigo-200 font-sans">
             <Navigation
@@ -285,7 +288,6 @@ const LinkPage = () => {
                         transition={{ duration: 0.8, delay: 0.6 }}
                         className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10"
                     >
-                        {/* Upload Link Section */}
                         <div className="bg-white p-6 rounded-xl shadow-lg">
                             <h3 className="text-xl font-semibold text-gray-800 mb-4">Upload Link</h3>
                             <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-6">
@@ -314,11 +316,9 @@ const LinkPage = () => {
                             </motion.button>
                         </div>
 
-                        {/* Summary Result Section */}
                         <div className="bg-white p-6 rounded-xl shadow-lg">
                             <h3 className="text-xl font-semibold text-gray-800 mb-4">Summary Result</h3>
                             <div className="space-y-6">
-                                {/* Summary Section */}
                                 {summaryResult && (
                                     <article className="bg-white rounded-xl border-2 border-gray-200 p-5 shadow-sm">
                                         <div className="flex items-center justify-between mb-4">
@@ -353,7 +353,6 @@ const LinkPage = () => {
                                     </article>
                                 )}
 
-                                {/* Translation Section */}
                                 {summaryResult && (
                                     <div className="space-y-6">
                                         <div className="relative">
@@ -589,8 +588,8 @@ const LinkPage = () => {
                 <Footer />
             </div>
 
-            {/* Add the ChatBox component */}
-            <ChatBox />
+            {/* Truyền dữ liệu vào ChatBox */}
+            <ChatBox linkPageContent={linkPageContent} />
         </div>
     );
 };

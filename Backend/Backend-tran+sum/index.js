@@ -90,7 +90,6 @@ app.use((err, req, res, next) => {
 
 // =================== 🔹 UTILITY FUNCTIONS 🔹 ===================
 const cleanText = (text) => {
-    // Preserve more punctuation and special characters
     return text
         .replace(/[^\w\s.,!?;:'"()-]/g, " ")
         .replace(/\s+/g, " ")
@@ -113,9 +112,9 @@ const callGeminiAPI = async (prompt) => {
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: {
-                    temperature: 0.9, // Increased for more detailed responses
-                    topP: 0.95, // Adjusted for more diverse output
-                    maxOutputTokens: 2000, // Increased to allow longer summaries
+                    temperature: 0.9,
+                    topP: 0.95,
+                    maxOutputTokens: 2000,
                 },
             }),
         });
@@ -191,6 +190,7 @@ app.post("/translate", async (req, res) => {
 });
 
 // ✅ API to summarize a URL
+let lastContent = ""; // Lưu nội dung từ /summarize-link để sử dụng trong /chat nếu cần
 app.post("/summarize-link", async (req, res) => {
     const { url, language } = req.body;
 
@@ -213,7 +213,7 @@ app.post("/summarize-link", async (req, res) => {
         console.log(`Generated summary (first 200 chars): ${summary.slice(0, 200)}...`);
         console.log(`Summary length: ${summary.length} characters`);
 
-        lastContent = content;
+        lastContent = content; // Lưu nội dung để sử dụng trong /chat
 
         await Visit.findOneAndUpdate(
             {},
@@ -236,6 +236,7 @@ app.post("/summarize-link", async (req, res) => {
     }
 });
 
+// ✅ API to upload and summarize PDF
 app.post("/upload", upload.single("file"), async (req, res) => {
     let filePath;
     try {
@@ -245,33 +246,99 @@ app.post("/upload", upload.single("file"), async (req, res) => {
         const pdfResult = await pdfParse(dataBuffer);
         const filteredText = filterIrrelevantContent(pdfResult.text);
         if (!filteredText) return res.status(400).json({ error: "Không thể trích xuất nội dung." });
-        const summary = await summarizeText(filteredText, "tiếng Việt");
+        const summary = await summarizeText(filteredText, "English"); // Ngôn ngữ mặc định là English
         res.json({ originalText: filteredText, summary });
+    } catch (error) {
+        console.error("❌ Error processing PDF:", error.message);
+        res.status(500).json({ error: `Error processing PDF: ${error.message}` });
     } finally {
-        if (filePath) await fs.unlink(filePath);
+        if (filePath) await fs.unlink(filePath).catch((err) => console.error("❌ Error deleting file:", err));
+    }
+});
+
+// ✅ API Chat với AI
+app.post("/chat", async (req, res) => {
+    try {
+        const { question, context } = req.body;
+        if (!question) {
+            return res.status(400).json({
+                error: "Thiếu câu hỏi trong yêu cầu",
+                timestamp: new Date().toISOString(),
+            });
+        }
+
+        let answer;
+        const lowerQuestion = question.toLowerCase();
+
+        // Xử lý câu hỏi liên quan đến TextSummarizerAndTranslator
+        if (lowerQuestion.includes("textsummarizer") || lowerQuestion.includes("translator")) {
+            console.log(`💬 Xử lý câu hỏi về TextSummarizerAndTranslator: ${question}`);
+            if (context?.textSummarizerContent) {
+                const prompt = `Dựa vào nội dung sau từ TextSummarizerAndTranslator để trả lời chính xác và ngắn gọn:\n\n${context.textSummarizerContent}\n\nCâu hỏi: ${question}`;
+                answer = await callGeminiAPI(prompt);
+            } else {
+                answer = "Vui lòng cung cấp nội dung từ TextSummarizerAndTranslator trước.";
+            }
+        }
+        // Xử lý câu hỏi liên quan đến LinkPage
+        else if (lowerQuestion.includes("linkpage") || lowerQuestion.includes("url") || lowerQuestion.includes("web")) {
+            console.log(`💬 Xử lý câu hỏi về LinkPage: ${question}`);
+            if (context?.linkPageContent) {
+                const prompt = `Dựa vào nội dung sau từ LinkPage để trả lời chính xác và ngắn gọn:\n\n${context.linkPageContent}\n\nCâu hỏi: ${question}`;
+                answer = await callGeminiAPI(prompt);
+            } else if (lastContent) {
+                const prompt = `Dựa vào nội dung sau từ trang web gần đây nhất để trả lời chính xác và ngắn gọn:\n\n${lastContent}\n\nCâu hỏi: ${question}`;
+                answer = await callGeminiAPI(prompt);
+            } else {
+                answer = "Vui lòng cung cấp URL và tóm tắt trước để tôi có thể trả lời.";
+            }
+        }
+        // Xử lý câu hỏi liên quan đến DocumentSummarySection
+        else if (lowerQuestion.includes("documentsummary") || lowerQuestion.includes("section") || lowerQuestion.includes("pdf")) {
+            console.log(`💬 Xử lý câu hỏi về DocumentSummarySection: ${question}`);
+            if (context?.documentSummaryContent) {
+                const prompt = `Dựa vào nội dung sau từ DocumentSummarySection để trả lời chính xác và ngắn gọn:\n\n${context.documentSummaryContent}\n\nCâu hỏi: ${question}`;
+                answer = await callGeminiAPI(prompt);
+            } else {
+                answer = "Vui lòng tải lên tài liệu và tóm tắt trước để tôi có thể trả lời.";
+            }
+        }
+        // Xử lý câu hỏi chung
+        else {
+            console.log(`💬 Xử lý câu hỏi chung: ${question}`);
+            const prompt = `Trả lời câu hỏi sau một cách ngắn gọn và chính xác: ${question}`;
+            answer = await callGeminiAPI(prompt);
+        }
+
+        res.json({
+            question,
+            answer,
+            timestamp: new Date().toISOString(),
+            status: "success",
+        });
+    } catch (error) {
+        console.error("❌ Lỗi khi xử lý câu hỏi:", error.message);
+        res.status(500).json({
+            error: error.message || "Lỗi trong quá trình chat",
+            question: req.body.question,
+            timestamp: new Date().toISOString(),
+        });
     }
 });
 
 // ✅ Health Check
 app.get("/", (req, res) => res.status(200).json({ message: "🚀 API is running!" }));
 
-// ✅ Kết nối MongoDB
-const connectDB = async () => {
-    try {
-        await mongoose.connect(MONGODB_URI);
-        console.log("✅ Connected to MongoDB");
-    } catch (error) {
-        console.error("❌ MongoDB Connection Error:", error);
-        process.exit(1);
-    }
-};
-
-// ✅ Start server
-connectDB().then(() => {
-    const server = app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+// ✅ API lấy nội dung cuối cùng (dùng để debug nếu cần)
+app.get("/last-content", (req, res) => {
+    res.json({
+        lastContent: lastContent,
+        timestamp: new Date().toISOString(),
+        status: "success",
+    });
 });
 
-let lastContent = "";
+// ✅ Hàm lấy nội dung từ URL
 async function fetchContent(url) {
     try {
         if (!url || !url.match(/^https?:\/\//)) {
@@ -325,82 +392,50 @@ async function fetchContent(url) {
     }
 }
 
-app.post("/chat", async (req, res) => {
+// ✅ Kết nối MongoDB
+const connectDB = async () => {
     try {
-        const { question } = req.body;
-        if (!question) {
-            return res.status(400).json({
-                error: "Thiếu câu hỏi trong yêu cầu",
-                timestamp: new Date().toISOString(),
-            });
-        }
-
-        let answer;
-        const isContentRelated =
-            question.toLowerCase().includes("nội dung") || question.toLowerCase().includes("web");
-
-        if (isContentRelated && lastContent) {
-            console.log(`💬 Xử lý câu hỏi liên quan đến nội dung: ${question}`);
-            const context = `Dựa vào nội dung sau để trả lời chính xác và ngắn gọn: ${lastContent}`;
-            answer = await callGeminiAPI(context + "\n\n" + question);
-        } else if (!lastContent) {
-            console.log(`💬 Chưa có nội dung để trả lời: ${question}`);
-            answer = "Vui lòng nhập URL và tóm tắt trước để tôi có thể trả lời dựa trên nội dung.";
-        } else {
-            console.log(`💬 Xử lý câu hỏi chung: ${question}`);
-            const prompt = `Trả lời câu hỏi sau một cách ngắn gọn và chính xác: ${question}`;
-            answer = await callGeminiAPI(prompt);
-        }
-
-        res.json({
-            question,
-            answer,
-            timestamp: new Date().toISOString(),
-            status: "success",
-        });
+        await mongoose.connect(MONGODB_URI);
+        console.log("✅ Connected to MongoDB");
     } catch (error) {
-        console.error("❌ Lỗi khi xử lý câu hỏi:", error.message);
-        res.status(500).json({
-            error: error.message || "Lỗi trong quá trình chat",
-            question: req.body.question,
-            timestamp: new Date().toISOString(),
-        });
+        console.error("❌ MongoDB Connection Error:", error);
+        process.exit(1);
     }
-});
+};
 
-app.get("/last-content", (req, res) => {
-    res.json({
-        lastContent: lastContent,
-        timestamp: new Date().toISOString(),
-        status: "success",
+// ✅ Start server
+connectDB().then(() => {
+    const server = app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+
+    // Xử lý khi server tắt
+    process.on("SIGTERM", () => {
+        console.log("👋 Đang tắt server...");
+        server.close(() => {
+            console.log("✅ Server đã tắt");
+            process.exit(0);
+        });
+    });
+
+    process.on("SIGINT", () => {
+        console.log("👋 Nhận tín hiệu ngắt (Ctrl+C), đang tắt server...");
+        server.close(() => {
+            console.log("✅ Server đã tắt");
+            process.exit(0);
+        });
     });
 });
 
+// Xử lý lỗi 404
 app.use((req, res) => {
     res.status(404).json({ error: "Không tìm thấy endpoint", timestamp: new Date().toISOString() });
 });
 
+// Xử lý lỗi server
 app.use((err, req, res, next) => {
     console.error("❌ Lỗi server:", err.stack);
     res.status(500).json({
         error: "Có lỗi xảy ra trên server",
         timestamp: new Date().toISOString(),
         details: err.message,
-    });
-});
-
-process.on("SIGTERM", () => {
-    console.log("👋 Đang tắt server...");
-    server.close(() => {
-        console.log("✅ Server đã tắt");
-        process.exit(0);
-    });
-});
-
-process.on("SIGINT", () => {
-    console.log("👋 Nhận tín hiệu ngắt (Ctrl+C), đang tắt server...");
-    server.close(() => {
-        console.log("✅ Server đã tắt");
-        process.exit(0);
     });
 });

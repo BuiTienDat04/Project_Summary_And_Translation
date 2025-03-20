@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Upload, Download, Trash2 } from "lucide-react";
-import ChatBox from "./ChatBox"; // Import the ChatBox component
+import ChatBox from "../Pages/ChatBox";
 
 export default function DocumentSummarySection() {
     const [file, setFile] = useState(null);
@@ -102,7 +102,7 @@ export default function DocumentSummarySection() {
         setOriginalContent("");
         setSummaryContent("");
         setTranslatedContent("");
-        if (summaryFile) URL.revokeObjectURL(summaryFile); // Dọn URL cũ
+        if (summaryFile) URL.revokeObjectURL(summaryFile);
         setSummaryFile(null);
         setError(null);
         setSearchTerm("");
@@ -123,7 +123,7 @@ export default function DocumentSummarySection() {
     };
 
     const updateSummaryFile = (content) => {
-        if (summaryFile) URL.revokeObjectURL(summaryFile); // Dọn URL cũ
+        if (summaryFile) URL.revokeObjectURL(summaryFile);
         const blob = new Blob([content], { type: "text/plain" });
         const url = URL.createObjectURL(blob);
         setSummaryFile(url);
@@ -131,36 +131,34 @@ export default function DocumentSummarySection() {
 
     const generateSummary = async () => {
         if (!file) return;
-    
+
         setIsLoading(true);
         setError(null);
-    
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
-    
+
         const formData = new FormData();
         formData.append("file", file);
-    
+
         try {
             const response = await fetch(`${API_BASE_URL}/upload`, {
                 method: "POST",
                 body: formData,
                 signal: controller.signal,
             });
-    
+
             clearTimeout(timeoutId);
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || "Lỗi khi xử lý file.");
             }
-    
+
             const data = await response.json();
-            console.log("📥 Full Response từ /upload:", JSON.stringify(data, null, 2));
-            console.log("📜 Original content from PDF:", data.originalText.slice(0, 200)); // Log nội dung gốc
             setOriginalContent(data.originalText || "Không thể trích xuất nội dung.");
             setSummaryContent(data.summary || "Không thể tóm tắt nội dung.");
             setTranslatedContent("");
-    
+
             const content = `File Name: ${file.name}\n\nOriginal Text:\n${data.originalText || "Không có nội dung"}\n\nSummary:\n${data.summary || "Không có tóm tắt"}`;
             updateSummaryFile(content);
         } catch (err) {
@@ -181,10 +179,9 @@ export default function DocumentSummarySection() {
         setError(null);
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
 
         const cleanedSummary = cleanText(summaryContent);
-        console.log("📤 Dữ liệu gửi đi /translate:", { text: cleanedSummary, targetLang });
 
         try {
             const response = await fetch(`${API_BASE_URL}/translate`, {
@@ -204,7 +201,6 @@ export default function DocumentSummarySection() {
             }
 
             const data = await response.json();
-            console.log("📥 Response từ /translate:", data);
             setTranslatedContent(data.translation || "Không thể dịch nội dung.");
 
             const content = `File Name: ${file?.name || "document"}\n\nOriginal Text:\n${originalContent}\n\nSummary:\n${summaryContent}\n\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}):\n${data.translation || "Không có bản dịch"}`;
@@ -217,11 +213,13 @@ export default function DocumentSummarySection() {
         }
     };
 
+    // Nội dung gửi đến ChatBox
+    const documentSummaryContent = `File Name: ${file?.name || "Unknown"}\nOriginal Content: ${originalContent}\nSummary: ${summaryContent}\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}): ${translatedContent}`;
+
     return (
         <div className="relative">
             <div className="max-w-7xl mx-auto p-8">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Input Column */}
                     <section className="space-y-6 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-2xl font-semibold text-gray-800 flex-grow">Upload Document</h2>
@@ -291,7 +289,6 @@ export default function DocumentSummarySection() {
                         {error && <p className="text-red-500">{error}</p>}
                     </section>
 
-                    {/* Output Column */}
                     <section className="space-y-6 p-6 bg-gray-50 rounded-2xl border-2 border-gray-100 shadow-inner">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-2xl font-bold text-gray-800">Summary Result</h2>
@@ -307,7 +304,6 @@ export default function DocumentSummarySection() {
                             )}
                         </div>
 
-                        {/* Summary Section */}
                         {summaryContent && (
                             <article className="bg-white rounded-xl border-2 border-gray-200 p-5 shadow-sm">
                                 <div className="flex items-center justify-between mb-4">
@@ -330,7 +326,6 @@ export default function DocumentSummarySection() {
                             </article>
                         )}
 
-                        {/* Translation Section */}
                         {summaryContent && (
                             <div className="space-y-6">
                                 <div className="relative">
@@ -413,8 +408,8 @@ export default function DocumentSummarySection() {
                 </div>
             </div>
 
-            {/* Add the ChatBox component */}
-            <ChatBox />
+            {/* Truyền dữ liệu vào ChatBox */}
+            <ChatBox documentSummaryContent={documentSummaryContent} />
         </div>
     );
 }

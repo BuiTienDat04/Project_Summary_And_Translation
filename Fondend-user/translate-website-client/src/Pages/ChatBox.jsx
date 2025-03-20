@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Send, X } from "lucide-react";
 
-const ChatBox = () => {
+const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryContent, loggedInUser }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([]);
     const [userInput, setUserInput] = useState("");
@@ -12,7 +12,6 @@ const ChatBox = () => {
 
     const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
-    // Scroll to the bottom of the chat when new messages are added
     useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
@@ -22,7 +21,6 @@ const ChatBox = () => {
     const handleSendMessage = async () => {
         if (!userInput.trim()) return;
 
-        // Add user's message to the chat
         const newMessage = { role: "user", content: userInput };
         setMessages((prev) => [...prev, newMessage]);
         setUserInput("");
@@ -32,6 +30,11 @@ const ChatBox = () => {
         try {
             const response = await axios.post(`${API_BASE_URL}/chat`, {
                 question: userInput,
+                context: {
+                    textSummarizerContent,
+                    linkPageContent,
+                    documentSummaryContent,
+                },
             });
 
             const { answer } = response.data;
@@ -79,7 +82,6 @@ const ChatBox = () => {
             {/* Chat Window */}
             {isOpen && (
                 <div className="bg-white rounded-lg shadow-xl w-80 sm:w-96 h-[500px] flex flex-col">
-                    {/* Chat Header */}
                     <div className="bg-blue-600 text-white p-4 rounded-t-lg flex justify-between items-center">
                         <h3 className="text-lg font-semibold">Chat with AI</h3>
                         <button onClick={() => setIsOpen(false)} className="text-white hover:text-gray-200">
@@ -87,14 +89,10 @@ const ChatBox = () => {
                         </button>
                     </div>
 
-                    {/* Chat Messages */}
-                    <div
-                        ref={chatContainerRef}
-                        className="flex-1 p-4 overflow-y-auto bg-gray-50"
-                    >
+                    <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto bg-gray-50">
                         {messages.length === 0 && !isLoading && !error && (
                             <p className="text-gray-500 text-center">
-                                Ask a question about the summarized content!
+                                Ask a question about the summarized content or components!
                             </p>
                         )}
                         {messages.map((message, index) => (
@@ -135,12 +133,9 @@ const ChatBox = () => {
                                 </div>
                             </div>
                         )}
-                        {error && (
-                            <div className="text-red-500 text-center mb-3">{error}</div>
-                        )}
+                        {error && <div className="text-red-500 text-center mb-3">{error}</div>}
                     </div>
 
-                    {/* Chat Input */}
                     <div className="p-4 border-t border-gray-200">
                         <div className="flex items-center gap-2">
                             <textarea
