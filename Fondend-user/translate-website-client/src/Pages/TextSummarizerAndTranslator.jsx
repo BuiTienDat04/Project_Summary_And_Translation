@@ -13,7 +13,10 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
     const [error, setError] = useState("");
     const [charCount, setCharCount] = useState(0);
     const [loginPromptVisible, setLoginPromptVisible] = useState(false);
+    const [isLoading, setIsLoading] = useState(false); // Thêm trạng thái loading
     const maxCharLimit = 1000;
+
+    const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
     const languages = [
         { code: "en", name: "English" },
@@ -54,49 +57,93 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
         setCharCount(text.length);
     }, [text]);
 
+    const cleanText = (text) => {
+        return text
+            .replace(/[^\w\s.,!?]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    };
+
     const handleSummarize = async () => {
         if (!loggedInUser) {
             setLoginPromptVisible(true);
             return;
         }
         if (!text) {
-            setError("Please enter text to summarize.");
+            setError("Vui lòng nhập văn bản trước khi tạo tóm tắt.");
             return;
         }
 
+        setIsLoading(true);
+        setError(null);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
         try {
-            const response = await fetch("http://localhost:5001/summarize", {
+            const response = await fetch(`${API_BASE_URL}/summarize`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ text }),
+                signal: controller.signal,
             });
+
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Lỗi khi tóm tắt văn bản.");
+            }
+
             const data = await response.json();
-            setSummary(data.summary);
-            setError("");
-        } catch (error) {
-            console.error("Error summarizing text:", error);
-            setError("Error summarizing text. Please try again.");
+            setSummary(data.summary || "Không thể tóm tắt nội dung.");
+            setError(null);
+        } catch (err) {
+            setError(err.name === "AbortError" ? "Yêu cầu quá thời gian." : err.message);
+            console.error("Lỗi handleSummarize:", err);
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const handleTranslate = async () => {
         if (!summary || !targetLang) {
-            setError("Please summarize the text first and select a target language.");
+            setError("Vui lòng tóm tắt văn bản trước và chọn ngôn ngữ mục tiêu.");
             return;
         }
 
+        setIsLoading(true);
+        setError(null);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        const cleanedSummary = cleanText(summary);
+
         try {
-            const response = await fetch("http://localhost:5001/translate", {
+            const response = await fetch(`${API_BASE_URL}/translate`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: summary, targetLang }),
+                body: JSON.stringify({
+                    text: cleanedSummary,
+                    targetLang,
+                }),
+                signal: controller.signal,
             });
+
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Lỗi khi dịch văn bản.");
+            }
+
             const data = await response.json();
-            setTranslation(data.translation);
-            setError("");
-        } catch (error) {
-            console.error("Error translating text:", error);
-            setError("Error translating text. Please try again.");
+            setTranslation(data.translation || "Không thể dịch nội dung.");
+            setError(null);
+        } catch (err) {
+            setError(err.name === "AbortError" ? "Yêu cầu quá thời gian." : err.message);
+            console.error("Lỗi handleTranslate:", err);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -136,13 +183,15 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
                         placeholder="Enter text to summarize and translate..."
                         value={text}
                         onChange={(e) => setText(e.target.value)}
+                        maxLength={maxCharLimit}
                     />
 
                     <button
-                        className="w-full bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg"
+                        className={`w-full bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                         onClick={handleSummarize}
+                        disabled={isLoading}
                     >
-                        Generate Summary
+                        {isLoading ? "Processing..." : "Generate Summary"}
                     </button>
                     {error && <p className="text-red-500">{error}</p>}
                 </section>
@@ -191,7 +240,7 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
                                         {filteredLanguages.map((lang) => (
                                             <li
                                                 key={lang.code}
-                                                className="px-4 py-2 hover:bg-emerald-100 Wcursor-pointer"
+                                                className="px-4 py-2 hover:bg-emerald-100 cursor-pointer"
                                                 onClick={() => handleLanguageSelect(lang.code, lang.name)}
                                             >
                                                 {lang.name}
@@ -202,10 +251,11 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
                             </div>
 
                             <button
-                                className="w-full bg-gradient-to-br from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg"
+                                className={`w-full bg-gradient-to-br from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                                 onClick={handleTranslate}
+                                disabled={isLoading}
                             >
-                                Translate Now
+                                {isLoading ? "Translating..." : "Translate Now"}
                             </button>
 
                             {translation && (
@@ -257,6 +307,15 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    )}
+
+                    {isLoading && !error && (
+                        <div className="text-center">
+                            <svg className="animate-spin h-5 w-5 text-gray-600 inline-block mr-2" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            </svg>
+                            <p className="text-gray-600 inline">Processing...</p>
                         </div>
                     )}
                 </section>
