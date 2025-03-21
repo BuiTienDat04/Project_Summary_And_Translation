@@ -46,6 +46,13 @@ if (!MONGODB_URI) {
 // ✅ Initialize cache (10 minutes)
 const cache = new NodeCache({ stdTTL: 600 });
 
+// ✅ Biến theo dõi nội dung mới nhất
+let latestContent = {
+    type: null, // "text", "pdf", hoặc "link"
+    content: null,
+    timestamp: null
+};
+
 // =================== 🔹 MIDDLEWARE 🔹 ===================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -176,7 +183,12 @@ app.post("/summarize", async (req, res) => {
 
     try {
         const summary = await summarizeText(text, language || "English");
-        cache.set("lastTextSummarizerContent", summary, 600); // Lưu vào cache
+        cache.set("lastTextSummarizerContent", summary, 600);
+        latestContent = {
+            type: "text",
+            content: text, // Lưu nội dung gốc
+            timestamp: Date.now()
+        };
         await Visit.findOneAndUpdate(
             {},
             { $inc: { translatedPosts: 1 } },
@@ -241,6 +253,11 @@ app.post("/summarize-link", async (req, res) => {
 
         lastContent = content;
         cache.set("lastLinkPageContent", summary, 600);
+        latestContent = {
+            type: "link",
+            content: content, // Lưu nội dung gốc
+            timestamp: Date.now()
+        };
 
         await Visit.findOneAndUpdate(
             {},
@@ -278,7 +295,12 @@ app.post("/upload", upload.single("file"), async (req, res) => {
         if (!filteredText) return res.status(400).json({ error: "Không thể trích xuất nội dung." });
 
         const summary = await summarizeText(filteredText, "tiếng Việt");
-        cache.set("lastDocumentContent", filteredText, 600); // Lưu vào cache
+        cache.set("lastDocumentContent", filteredText, 600);
+        latestContent = {
+            type: "pdf",
+            content: filteredText, // Lưu nội dung gốc
+            timestamp: Date.now()
+        };
 
         res.json({ originalText: filteredText, summary });
     } catch (error) {
@@ -295,8 +317,8 @@ app.get("/", (req, res) => res.status(200).json({ message: "🚀 API is running!
 // ✅ API to handle chat
 app.post("/chat", async (req, res) => {
     try {
-        const { question, context } = req.body;
-        console.log("Dữ liệu nhận được từ frontend:", { question, context });
+        const { question } = req.body;
+        console.log("Câu hỏi nhận được:", question);
 
         if (!question || question.trim().length < 3) {
             return res.status(400).json({
@@ -305,105 +327,38 @@ app.post("/chat", async (req, res) => {
             });
         }
 
-        let answer;
         const lowerQuestion = question.toLowerCase();
 
+        // Kiểm tra xem có nội dung mới nhất không
+        if (!latestContent.content || !latestContent.timestamp) {
+            return res.status(400).json({
+                error: "Vui lòng tải lên nội dung (text, PDF, hoặc link) trước khi đặt câu hỏi.",
+                timestamp: new Date().toISOString(),
+            });
+        }
+
+        // Hàm tạo prompt
         const createPrompt = (content, question) => {
+            if (lowerQuestion.includes("tóm tắt") || lowerQuestion.includes("summary")) {
+                return `Tóm tắt nội dung sau một cách ngắn gọn và chính xác:\n\n${content}`;
+            } else if (lowerQuestion.includes("dịch") || lowerQuestion.includes("translate")) {
+                const targetLang = lowerQuestion.match(/dịch sang (.+)$/i)?.[1] || "English";
+                return `Dịch nội dung sau sang ${targetLang}:\n\n${content}`;
+            }
             return `Dựa vào nội dung sau để trả lời câu hỏi một cách ngắn gọn và chính xác:\n\n${content}\n\nCâu hỏi: ${question}`;
         };
 
-        if (
-            lowerQuestion.includes("textsummarizer") ||
-            lowerQuestion.includes("translator") ||
-            lowerQuestion.includes("tóm tắt văn bản") ||
-            lowerQuestion.includes("dịch văn bản") ||
-            lowerQuestion.includes("dịch thuật") ||
-            lowerQuestion.includes("summary")
-        ) {
-            console.log(`💬 Xử lý câu hỏi về TextSummarizerAndTranslator: ${question}`);
-            if (context?.textSummarizerContent) {
-                answer = await callGeminiAPI(createPrompt(context.textSummarizerContent, question));
-            } else {
-                const cachedContent = cache.get("lastTextSummarizerContent");
-                if (cachedContent) {
-                    answer = await callGeminiAPI(createPrompt(cachedContent, question));
-                } else {
-                    answer = "Vui lòng cung cấp nội dung từ TextSummarizerAndTranslator trước.";
-                }
-            }
-        } else if (
-            lowerQuestion.includes("linkpage") ||
-            lowerQuestion.includes("url") ||
-            lowerQuestion.includes("web") ||
-            lowerQuestion.includes("tóm tắt liên kết") ||
-            lowerQuestion.includes("nội dung web") ||
-            lowerQuestion.includes("trang web")
-        ) {
-            console.log(`💬 Xử lý câu hỏi về LinkPage: ${question}`);
-            if (context?.linkPageContent) {
-                answer = await callGeminiAPI(createPrompt(context.linkPageContent, question));
-            } else if (lastContent) {
-                answer = await callGeminiAPI(createPrompt(lastContent, question));
-            } else {
-                const cachedContent = cache.get("lastLinkPageContent");
-                if (cachedContent) {
-                    answer = await callGeminiAPI(createPrompt(cachedContent, question));
-                } else {
-                    answer = "Vui lòng cung cấp URL và tóm tắt trước để tôi có thể trả lời.";
-                }
-            }
-        } else if (
-            lowerQuestion.includes("documentsummary") ||
-            lowerQuestion.includes("section") ||
-            lowerQuestion.includes("pdf") ||
-            lowerQuestion.includes("tóm tắt") ||
-            lowerQuestion.includes("nội dung pdf") ||
-            lowerQuestion.includes("tài liệu")
-        ) {
-            console.log(`💬 Xử lý câu hỏi về DocumentSummarySection: ${question}`);
-            if (context?.documentSummaryContent) {
-                answer = await callGeminiAPI(createPrompt(context.documentSummaryContent, question));
-            } else {
-                const cachedContent = cache.get("lastDocumentContent");
-                if (cachedContent) {
-                    answer = await callGeminiAPI(createPrompt(cachedContent, question));
-                } else {
-                    answer = "Vui lòng tải lên tài liệu và tóm tắt trước để tôi có thể trả lời.";
-                }
-            }
-        } else {
-            console.log(`💬 Xử lý câu hỏi chung: ${question}`);
-            if (context?.textSummarizerContent || context?.linkPageContent || context?.documentSummaryContent) {
-                const combinedContent = [
-                    context.textSummarizerContent || "",
-                    context.linkPageContent || "",
-                    context.documentSummaryContent || "",
-                ].join("\n\n");
-                answer = await callGeminiAPI(createPrompt(combinedContent, question));
-            } else if (lastContent || cache.get("lastTextSummarizerContent") || cache.get("lastDocumentContent")) {
-                const combinedContent = [
-                    cache.get("lastTextSummarizerContent") || "",
-                    lastContent || "",
-                    cache.get("lastDocumentContent") || "",
-                ].join("\n\n");
-                answer = await callGeminiAPI(createPrompt(combinedContent, question));
-            } else {
-                answer = await callGeminiAPI(`Trả lời câu hỏi sau một cách ngắn gọn và chính xác: ${question}`);
-            }
-        }
+        // Trả lời dựa trên nội dung mới nhất
+        const answer = await callGeminiAPI(createPrompt(latestContent.content, question));
+        const source = `${latestContent.type} vừa tải lên lúc ${new Date(latestContent.timestamp).toLocaleString()}`;
 
-        cache.set(`chat:${Date.now()}`, { question, answer }, 3600); // Lưu 1 giờ
+        // Lưu vào cache
+        cache.set(`chat:${Date.now()}`, { question, answer }, 3600);
 
         res.json({
             question,
             answer,
-            source: context?.textSummarizerContent
-                ? "TextSummarizerAndTranslator"
-                : context?.linkPageContent
-                ? "LinkPage"
-                : context?.documentSummaryContent
-                ? "DocumentSummarySection"
-                : "General Knowledge",
+            source,
             timestamp: new Date().toISOString(),
             status: "success",
         });
@@ -419,8 +374,9 @@ app.post("/chat", async (req, res) => {
 
 app.get("/last-content", (req, res) => {
     res.json({
-        lastContent: lastContent,
-        timestamp: new Date().toISOString(),
+        lastContent: latestContent.content,
+        type: latestContent.type,
+        timestamp: latestContent.timestamp ? new Date(latestContent.timestamp).toISOString() : null,
         status: "success",
     });
 });
@@ -437,8 +393,9 @@ const connectDB = async () => {
 };
 
 // ✅ Start server
+let server;
 connectDB().then(() => {
-    const server = app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+    server = app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
 });
 
 let lastContent = "";
@@ -484,13 +441,11 @@ async function fetchContent(url) {
             }
         });
 
-        // Nếu không tìm thấy nội dung từ các thẻ cụ thể, lấy toàn bộ text từ body
         if (!text.trim()) {
             console.warn(`Không tìm thấy nội dung cụ thể trên ${url}, lấy toàn bộ text từ body.`);
             text = $("body").text().trim();
         }
 
-        // Nếu vẫn không có nội dung, trả về thông báo mặc định
         if (!text.trim()) {
             console.warn(`Không có nội dung text nào trên ${url}.`);
             text = "Trang web này không chứa nội dung text có thể tóm tắt (có thể chủ yếu là hình ảnh hoặc video).";
