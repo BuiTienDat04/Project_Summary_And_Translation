@@ -13,6 +13,23 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
     const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
     useEffect(() => {
+        if (
+            !textSummarizerContent &&
+            !linkPageContent &&
+            !documentSummaryContent &&
+            messages.length === 0
+        ) {
+            setMessages([
+                {
+                    role: "bot",
+                    content:
+                        "Chào bạn! Hãy tóm tắt văn bản, URL hoặc tải lên PDF trước để tôi có thể trả lời câu hỏi của bạn.",
+                },
+            ]);
+        }
+    }, [textSummarizerContent, linkPageContent, documentSummaryContent]);
+
+    useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
@@ -20,21 +37,16 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
 
     const handleSendMessage = async () => {
         if (!userInput.trim()) return;
+        if (userInput.length > 500) {
+            setError("Câu hỏi quá dài, vui lòng giữ dưới 500 ký tự.");
+            return;
+        }
 
         const newMessage = { role: "user", content: userInput };
         setMessages((prev) => [...prev, newMessage]);
         setUserInput("");
         setError("");
         setIsLoading(true);
-
-        console.log("Dữ liệu gửi đến backend:", {
-            question: userInput,
-            context: {
-                textSummarizerContent,
-                linkPageContent,
-                documentSummaryContent,
-            },
-        });
 
         try {
             const response = await axios.post(`${API_BASE_URL}/chat`, {
@@ -46,11 +58,9 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
                 },
             });
 
-            const { answer } = response.data;
-            console.log("Phản hồi từ backend:", answer);
-            setMessages((prev) => [...prev, { role: "bot", content: answer }]);
+            const { answer, source } = response.data;
+            setMessages((prev) => [...prev, { role: "bot", content: answer, source }]);
         } catch (error) {
-            console.error("Error sending message:", error);
             setError(error.response?.data?.error || "Error sending message. Please try again.");
         } finally {
             setIsLoading(false);
@@ -64,20 +74,23 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
         }
     };
 
+    const clearMessages = () => {
+        setMessages([]);
+        setError("");
+    };
+
     return (
         <div className="fixed bottom-4 right-4 z-50">
-            {/* Chat Toggle Button */}
             {!isOpen && (
                 <button
                     onClick={() => setIsOpen(true)}
-                    className="bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-300 flex items-center justify-center"
+                    className="bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-300"
                 >
                     <svg
                         className="w-6 h-6"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
                     >
                         <path
                             strokeLinecap="round"
@@ -89,22 +102,24 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
                 </button>
             )}
 
-            {/* Chat Window */}
             {isOpen && (
                 <div className="bg-white rounded-lg shadow-xl w-80 sm:w-96 h-[500px] flex flex-col">
                     <div className="bg-blue-600 text-white p-4 rounded-t-lg flex justify-between items-center">
                         <h3 className="text-lg font-semibold">Chat with AI</h3>
-                        <button onClick={() => setIsOpen(false)} className="text-white hover:text-gray-200">
-                            <X className="w-6 h-6" />
-                        </button>
+                        <div>
+                            <button
+                                onClick={clearMessages}
+                                className="text-white hover:text-gray-200 mr-2"
+                            >
+                                Clear
+                            </button>
+                            <button onClick={() => setIsOpen(false)} className="text-white hover:text-gray-200">
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
                     </div>
 
                     <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto bg-gray-50">
-                        {messages.length === 0 && !isLoading && !error && (
-                            <p className="text-gray-500 text-center">
-                                Ask a question about the summarized content or components!
-                            </p>
-                        )}
                         {messages.map((message, index) => (
                             <div
                                 key={index}
@@ -120,6 +135,11 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
                                     }`}
                                 >
                                     {message.content}
+                                    {message.source && (
+                                        <span className="text-xs text-gray-500 block mt-1">
+                                            (Nguồn: {message.source})
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         ))}

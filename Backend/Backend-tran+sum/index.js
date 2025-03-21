@@ -176,6 +176,7 @@ app.post("/summarize", async (req, res) => {
 
     try {
         const summary = await summarizeText(text, language || "English");
+        cache.set("lastTextSummarizerContent", summary, 600); // Lưu vào cache
         await Visit.findOneAndUpdate(
             {},
             { $inc: { translatedPosts: 1 } },
@@ -183,6 +184,7 @@ app.post("/summarize", async (req, res) => {
         );
         res.json({ summary });
     } catch (error) {
+        console.error("❌ Error summarizing text:", error.message);
         res.status(500).json({ error: `Error summarizing: ${error.message}` });
     }
 });
@@ -217,7 +219,6 @@ app.post("/summarize-link", async (req, res) => {
         });
     }
 
-    // Kiểm tra cache trước khi gọi API
     const cacheKey = `summarize-link:${url}:${language || "English"}`;
     const cachedResult = cache.get(cacheKey);
     if (cachedResult) {
@@ -228,17 +229,18 @@ app.post("/summarize-link", async (req, res) => {
     try {
         const content = await fetchContent(url);
         console.log(`Extracted content (first 200 chars): ${content.slice(0, 200)}...`);
-        if (!content || content.trim().length < 50) {
-            return res.status(400).json({
-                error: "The webpage content is too short or not suitable for summarization. Please try a different URL with more textual content.",
-            });
+
+        let summary;
+        if (content.trim().length < 50) {
+            summary = "Không đủ nội dung để tóm tắt từ trang web này.";
+        } else {
+            summary = await summarizeText(content, language || "English");
+            console.log(`Generated summary (first 200 chars): ${summary.slice(0, 200)}...`);
+            console.log(`Summary length: ${summary.length} characters`);
         }
 
-        const summary = await summarizeText(content, language || "English");
-        console.log(`Generated summary (first 200 chars): ${summary.slice(0, 200)}...`);
-        console.log(`Summary length: ${summary.length} characters`);
-
         lastContent = content;
+        cache.set("lastLinkPageContent", summary, 600);
 
         await Visit.findOneAndUpdate(
             {},
@@ -253,9 +255,7 @@ app.post("/summarize-link", async (req, res) => {
             status: "success",
         };
 
-        // Lưu vào cache với thời gian sống 10 phút
         cache.set(cacheKey, result, 600);
-
         res.json(result);
     } catch (error) {
         console.error("❌ Error summarizing URL:", error.message);
@@ -266,6 +266,7 @@ app.post("/summarize-link", async (req, res) => {
     }
 });
 
+// ✅ API to upload and summarize PDF
 app.post("/upload", upload.single("file"), async (req, res) => {
     let filePath;
     try {
@@ -275,10 +276,16 @@ app.post("/upload", upload.single("file"), async (req, res) => {
         const pdfResult = await pdfParse(dataBuffer);
         const filteredText = filterIrrelevantContent(pdfResult.text);
         if (!filteredText) return res.status(400).json({ error: "Không thể trích xuất nội dung." });
+
         const summary = await summarizeText(filteredText, "tiếng Việt");
+        cache.set("lastDocumentContent", filteredText, 600); // Lưu vào cache
+
         res.json({ originalText: filteredText, summary });
+    } catch (error) {
+        console.error("❌ Error uploading PDF:", error.message);
+        res.status(500).json({ error: `Error processing PDF: ${error.message}` });
     } finally {
-        if (filePath) await fs.unlink(filePath);
+        if (filePath) await fs.unlink(filePath).catch((err) => console.error("Error deleting file:", err));
     }
 });
 
@@ -291,9 +298,9 @@ app.post("/chat", async (req, res) => {
         const { question, context } = req.body;
         console.log("Dữ liệu nhận được từ frontend:", { question, context });
 
-        if (!question) {
+        if (!question || question.trim().length < 3) {
             return res.status(400).json({
-                error: "Thiếu câu hỏi trong yêu cầu",
+                error: "Câu hỏi quá ngắn hoặc không hợp lệ",
                 timestamp: new Date().toISOString(),
             });
         }
@@ -301,66 +308,102 @@ app.post("/chat", async (req, res) => {
         let answer;
         const lowerQuestion = question.toLowerCase();
 
-        // Xử lý câu hỏi liên quan đến TextSummarizerAndTranslator
+        const createPrompt = (content, question) => {
+            return `Dựa vào nội dung sau để trả lời câu hỏi một cách ngắn gọn và chính xác:\n\n${content}\n\nCâu hỏi: ${question}`;
+        };
+
         if (
             lowerQuestion.includes("textsummarizer") ||
             lowerQuestion.includes("translator") ||
             lowerQuestion.includes("tóm tắt văn bản") ||
-            lowerQuestion.includes("dịch văn bản")
+            lowerQuestion.includes("dịch văn bản") ||
+            lowerQuestion.includes("dịch thuật") ||
+            lowerQuestion.includes("summary")
         ) {
             console.log(`💬 Xử lý câu hỏi về TextSummarizerAndTranslator: ${question}`);
             if (context?.textSummarizerContent) {
-                const prompt = `Dựa vào nội dung sau từ TextSummarizerAndTranslator để trả lời chính xác và ngắn gọn:\n\n${context.textSummarizerContent}\n\nCâu hỏi: ${question}`;
-                answer = await callGeminiAPI(prompt);
+                answer = await callGeminiAPI(createPrompt(context.textSummarizerContent, question));
             } else {
-                answer = "Vui lòng cung cấp nội dung từ TextSummarizerAndTranslator trước.";
+                const cachedContent = cache.get("lastTextSummarizerContent");
+                if (cachedContent) {
+                    answer = await callGeminiAPI(createPrompt(cachedContent, question));
+                } else {
+                    answer = "Vui lòng cung cấp nội dung từ TextSummarizerAndTranslator trước.";
+                }
             }
-        }
-        // Xử lý câu hỏi liên quan đến LinkPage
-        else if (
+        } else if (
             lowerQuestion.includes("linkpage") ||
             lowerQuestion.includes("url") ||
             lowerQuestion.includes("web") ||
             lowerQuestion.includes("tóm tắt liên kết") ||
-            lowerQuestion.includes("nội dung web")
+            lowerQuestion.includes("nội dung web") ||
+            lowerQuestion.includes("trang web")
         ) {
             console.log(`💬 Xử lý câu hỏi về LinkPage: ${question}`);
             if (context?.linkPageContent) {
-                const prompt = `Dựa vào nội dung sau từ LinkPage để trả lời chính xác và ngắn gọn:\n\n${context.linkPageContent}\n\nCâu hỏi: ${question}`;
-                answer = await callGeminiAPI(prompt);
+                answer = await callGeminiAPI(createPrompt(context.linkPageContent, question));
             } else if (lastContent) {
-                const prompt = `Dựa vào nội dung sau từ trang web gần đây nhất để trả lời chính xác và ngắn gọn:\n\n${lastContent}\n\nCâu hỏi: ${question}`;
-                answer = await callGeminiAPI(prompt);
+                answer = await callGeminiAPI(createPrompt(lastContent, question));
             } else {
-                answer = "Vui lòng cung cấp URL và tóm tắt trước để tôi có thể trả lời.";
+                const cachedContent = cache.get("lastLinkPageContent");
+                if (cachedContent) {
+                    answer = await callGeminiAPI(createPrompt(cachedContent, question));
+                } else {
+                    answer = "Vui lòng cung cấp URL và tóm tắt trước để tôi có thể trả lời.";
+                }
             }
-        }
-        // Xử lý câu hỏi liên quan đến DocumentSummarySection
-        else if (
+        } else if (
             lowerQuestion.includes("documentsummary") ||
             lowerQuestion.includes("section") ||
             lowerQuestion.includes("pdf") ||
             lowerQuestion.includes("tóm tắt") ||
-            lowerQuestion.includes("nội dung pdf")
+            lowerQuestion.includes("nội dung pdf") ||
+            lowerQuestion.includes("tài liệu")
         ) {
             console.log(`💬 Xử lý câu hỏi về DocumentSummarySection: ${question}`);
             if (context?.documentSummaryContent) {
-                const prompt = `Dựa vào nội dung sau từ DocumentSummarySection để trả lời chính xác và ngắn gọn:\n\n${context.documentSummaryContent}\n\nCâu hỏi: ${question}`;
-                answer = await callGeminiAPI(prompt);
+                answer = await callGeminiAPI(createPrompt(context.documentSummaryContent, question));
             } else {
-                answer = "Vui lòng tải lên tài liệu và tóm tắt trước để tôi có thể trả lời.";
+                const cachedContent = cache.get("lastDocumentContent");
+                if (cachedContent) {
+                    answer = await callGeminiAPI(createPrompt(cachedContent, question));
+                } else {
+                    answer = "Vui lòng tải lên tài liệu và tóm tắt trước để tôi có thể trả lời.";
+                }
+            }
+        } else {
+            console.log(`💬 Xử lý câu hỏi chung: ${question}`);
+            if (context?.textSummarizerContent || context?.linkPageContent || context?.documentSummaryContent) {
+                const combinedContent = [
+                    context.textSummarizerContent || "",
+                    context.linkPageContent || "",
+                    context.documentSummaryContent || "",
+                ].join("\n\n");
+                answer = await callGeminiAPI(createPrompt(combinedContent, question));
+            } else if (lastContent || cache.get("lastTextSummarizerContent") || cache.get("lastDocumentContent")) {
+                const combinedContent = [
+                    cache.get("lastTextSummarizerContent") || "",
+                    lastContent || "",
+                    cache.get("lastDocumentContent") || "",
+                ].join("\n\n");
+                answer = await callGeminiAPI(createPrompt(combinedContent, question));
+            } else {
+                answer = await callGeminiAPI(`Trả lời câu hỏi sau một cách ngắn gọn và chính xác: ${question}`);
             }
         }
-        // Xử lý câu hỏi chung
-        else {
-            console.log(`💬 Xử lý câu hỏi chung: ${question}`);
-            const prompt = `Trả lời câu hỏi sau một cách ngắn gọn và chính xác: ${question}`;
-            answer = await callGeminiAPI(prompt);
-        }
+
+        cache.set(`chat:${Date.now()}`, { question, answer }, 3600); // Lưu 1 giờ
 
         res.json({
             question,
             answer,
+            source: context?.textSummarizerContent
+                ? "TextSummarizerAndTranslator"
+                : context?.linkPageContent
+                ? "LinkPage"
+                : context?.documentSummaryContent
+                ? "DocumentSummarySection"
+                : "General Knowledge",
             timestamp: new Date().toISOString(),
             status: "success",
         });
@@ -441,12 +484,21 @@ async function fetchContent(url) {
             }
         });
 
-        if (!text) throw new Error("Không tìm thấy nội dung để tóm tắt trên trang web.");
+        // Nếu không tìm thấy nội dung từ các thẻ cụ thể, lấy toàn bộ text từ body
+        if (!text.trim()) {
+            console.warn(`Không tìm thấy nội dung cụ thể trên ${url}, lấy toàn bộ text từ body.`);
+            text = $("body").text().trim();
+        }
+
+        // Nếu vẫn không có nội dung, trả về thông báo mặc định
+        if (!text.trim()) {
+            console.warn(`Không có nội dung text nào trên ${url}.`);
+            text = "Trang web này không chứa nội dung text có thể tóm tắt (có thể chủ yếu là hình ảnh hoặc video).";
+        }
 
         text = text.replace(/\n+/g, "\n").trim();
         console.log(`Extracted content length: ${text.length} characters`);
 
-        // Giới hạn độ dài nội dung gửi đến Gemini API (50,000 ký tự)
         const MAX_CONTENT_LENGTH = 50000;
         if (text.length > MAX_CONTENT_LENGTH) {
             text = text.substring(0, MAX_CONTENT_LENGTH);
