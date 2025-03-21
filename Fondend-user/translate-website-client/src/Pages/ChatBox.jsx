@@ -27,6 +27,15 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
         setError("");
         setIsLoading(true);
 
+        console.log("Dữ liệu gửi đến backend:", {
+            question: userInput,
+            context: {
+                textSummarizerContent,
+                linkPageContent,
+                documentSummaryContent,
+            },
+        });
+
         try {
             const response = await axios.post(`${API_BASE_URL}/chat`, {
                 question: userInput,
@@ -38,6 +47,7 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
             });
 
             const { answer } = response.data;
+            console.log("Phản hồi từ backend:", answer);
             setMessages((prev) => [...prev, { role: "bot", content: answer }]);
         } catch (error) {
             console.error("Error sending message:", error);

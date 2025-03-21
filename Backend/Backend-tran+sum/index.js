@@ -81,7 +81,10 @@ const upload = multer({
 // ✅ Middleware để xử lý lỗi của Multer
 app.use((err, req, res, next) => {
     if (err instanceof multer.MulterError) {
-        return res.status(400).json({ error: "File is too large or upload error." });
+        if (err.code === "LIMIT_FILE_SIZE") {
+            return res.status(400).json({ error: "File quá lớn! Kích thước tối đa là 10MB." });
+        }
+        return res.status(400).json({ error: "Lỗi khi tải file lên: " + err.message });
     } else if (err) {
         return res.status(400).json({ error: err.message });
     }
@@ -90,7 +93,6 @@ app.use((err, req, res, next) => {
 
 // =================== 🔹 UTILITY FUNCTIONS 🔹 ===================
 const cleanText = (text) => {
-    // Preserve more punctuation and special characters
     return text
         .replace(/[^\w\s.,!?;:'"()-]/g, " ")
         .replace(/\s+/g, " ")
@@ -105,32 +107,47 @@ const filterIrrelevantContent = (text) => {
         .trim();
 };
 
-const callGeminiAPI = async (prompt) => {
-    try {
-        const response = await fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: 0.9, // Increased for more detailed responses
-                    topP: 0.95, // Adjusted for more diverse output
-                    maxOutputTokens: 2000, // Increased to allow longer summaries
-                },
-            }),
-        });
+const callGeminiAPI = async (prompt, retries = 3, delay = 2000) => {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        temperature: 0.9,
+                        topP: 0.95,
+                        maxOutputTokens: 2000,
+                    },
+                }),
+            });
 
-        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+            if (!response.ok) {
+                if (response.status === 503 && attempt < retries) {
+                    console.log(`Attempt ${attempt} failed with 503, retrying after ${delay}ms...`);
+                    await new Promise((resolve) => setTimeout(resolve, delay));
+                    continue;
+                }
+                throw new Error(`HTTP Error: ${response.status}`);
+            }
 
-        const data = await response.json();
-        const result = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!result) throw new Error("No valid response from Gemini API");
+            const data = await response.json();
+            const result = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!result) throw new Error("No valid response from Gemini API");
 
-        return result;
-    } catch (error) {
-        console.error("❌ Gemini API Error:", error.message);
-        throw new Error(`Gemini API Error: ${error.message}`);
+            return result;
+        } catch (error) {
+            if (error.message.includes("ECONNRESET") && attempt < retries) {
+                console.log(`Attempt ${attempt} failed with ECONNRESET, retrying after ${delay}ms...`);
+                await new Promise((resolve) => setTimeout(resolve, delay));
+                continue;
+            }
+            console.error("❌ Gemini API Error:", error.message);
+            throw new Error(`Gemini API Error: ${error.message}`);
+        }
     }
+    throw new Error(`Failed to call Gemini API after ${retries} attempts.`);
 };
 
 const summarizeText = async (text, lang = "English") => {
@@ -200,6 +217,14 @@ app.post("/summarize-link", async (req, res) => {
         });
     }
 
+    // Kiểm tra cache trước khi gọi API
+    const cacheKey = `summarize-link:${url}:${language || "English"}`;
+    const cachedResult = cache.get(cacheKey);
+    if (cachedResult) {
+        console.log(`Returning cached result for ${url}`);
+        return res.json(cachedResult);
+    }
+
     try {
         const content = await fetchContent(url);
         console.log(`Extracted content (first 200 chars): ${content.slice(0, 200)}...`);
@@ -221,12 +246,17 @@ app.post("/summarize-link", async (req, res) => {
             { upsert: true, new: true }
         );
 
-        res.json({
+        const result = {
             originalText: content,
             summary,
             timestamp: new Date().toISOString(),
             status: "success",
-        });
+        };
+
+        // Lưu vào cache với thời gian sống 10 phút
+        cache.set(cacheKey, result, 600);
+
+        res.json(result);
     } catch (error) {
         console.error("❌ Error summarizing URL:", error.message);
         res.status(500).json({
@@ -254,6 +284,103 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
 // ✅ Health Check
 app.get("/", (req, res) => res.status(200).json({ message: "🚀 API is running!" }));
+
+// ✅ API to handle chat
+app.post("/chat", async (req, res) => {
+    try {
+        const { question, context } = req.body;
+        console.log("Dữ liệu nhận được từ frontend:", { question, context });
+
+        if (!question) {
+            return res.status(400).json({
+                error: "Thiếu câu hỏi trong yêu cầu",
+                timestamp: new Date().toISOString(),
+            });
+        }
+
+        let answer;
+        const lowerQuestion = question.toLowerCase();
+
+        // Xử lý câu hỏi liên quan đến TextSummarizerAndTranslator
+        if (
+            lowerQuestion.includes("textsummarizer") ||
+            lowerQuestion.includes("translator") ||
+            lowerQuestion.includes("tóm tắt văn bản") ||
+            lowerQuestion.includes("dịch văn bản")
+        ) {
+            console.log(`💬 Xử lý câu hỏi về TextSummarizerAndTranslator: ${question}`);
+            if (context?.textSummarizerContent) {
+                const prompt = `Dựa vào nội dung sau từ TextSummarizerAndTranslator để trả lời chính xác và ngắn gọn:\n\n${context.textSummarizerContent}\n\nCâu hỏi: ${question}`;
+                answer = await callGeminiAPI(prompt);
+            } else {
+                answer = "Vui lòng cung cấp nội dung từ TextSummarizerAndTranslator trước.";
+            }
+        }
+        // Xử lý câu hỏi liên quan đến LinkPage
+        else if (
+            lowerQuestion.includes("linkpage") ||
+            lowerQuestion.includes("url") ||
+            lowerQuestion.includes("web") ||
+            lowerQuestion.includes("tóm tắt liên kết") ||
+            lowerQuestion.includes("nội dung web")
+        ) {
+            console.log(`💬 Xử lý câu hỏi về LinkPage: ${question}`);
+            if (context?.linkPageContent) {
+                const prompt = `Dựa vào nội dung sau từ LinkPage để trả lời chính xác và ngắn gọn:\n\n${context.linkPageContent}\n\nCâu hỏi: ${question}`;
+                answer = await callGeminiAPI(prompt);
+            } else if (lastContent) {
+                const prompt = `Dựa vào nội dung sau từ trang web gần đây nhất để trả lời chính xác và ngắn gọn:\n\n${lastContent}\n\nCâu hỏi: ${question}`;
+                answer = await callGeminiAPI(prompt);
+            } else {
+                answer = "Vui lòng cung cấp URL và tóm tắt trước để tôi có thể trả lời.";
+            }
+        }
+        // Xử lý câu hỏi liên quan đến DocumentSummarySection
+        else if (
+            lowerQuestion.includes("documentsummary") ||
+            lowerQuestion.includes("section") ||
+            lowerQuestion.includes("pdf") ||
+            lowerQuestion.includes("tóm tắt") ||
+            lowerQuestion.includes("nội dung pdf")
+        ) {
+            console.log(`💬 Xử lý câu hỏi về DocumentSummarySection: ${question}`);
+            if (context?.documentSummaryContent) {
+                const prompt = `Dựa vào nội dung sau từ DocumentSummarySection để trả lời chính xác và ngắn gọn:\n\n${context.documentSummaryContent}\n\nCâu hỏi: ${question}`;
+                answer = await callGeminiAPI(prompt);
+            } else {
+                answer = "Vui lòng tải lên tài liệu và tóm tắt trước để tôi có thể trả lời.";
+            }
+        }
+        // Xử lý câu hỏi chung
+        else {
+            console.log(`💬 Xử lý câu hỏi chung: ${question}`);
+            const prompt = `Trả lời câu hỏi sau một cách ngắn gọn và chính xác: ${question}`;
+            answer = await callGeminiAPI(prompt);
+        }
+
+        res.json({
+            question,
+            answer,
+            timestamp: new Date().toISOString(),
+            status: "success",
+        });
+    } catch (error) {
+        console.error("❌ Lỗi khi xử lý câu hỏi:", error.message);
+        res.status(500).json({
+            error: error.message || "Lỗi trong quá trình chat",
+            question: req.body.question,
+            timestamp: new Date().toISOString(),
+        });
+    }
+});
+
+app.get("/last-content", (req, res) => {
+    res.json({
+        lastContent: lastContent,
+        timestamp: new Date().toISOString(),
+        status: "success",
+    });
+});
 
 // ✅ Kết nối MongoDB
 const connectDB = async () => {
@@ -318,63 +445,20 @@ async function fetchContent(url) {
 
         text = text.replace(/\n+/g, "\n").trim();
         console.log(`Extracted content length: ${text.length} characters`);
+
+        // Giới hạn độ dài nội dung gửi đến Gemini API (50,000 ký tự)
+        const MAX_CONTENT_LENGTH = 50000;
+        if (text.length > MAX_CONTENT_LENGTH) {
+            text = text.substring(0, MAX_CONTENT_LENGTH);
+            console.log(`Content truncated to ${MAX_CONTENT_LENGTH} characters for Gemini API.`);
+        }
+
         return text;
     } catch (error) {
         console.error(`Lỗi khi tải nội dung từ ${url}:`, error.message);
         throw new Error(`Lỗi lấy nội dung: ${error.message}`);
     }
 }
-
-app.post("/chat", async (req, res) => {
-    try {
-        const { question } = req.body;
-        if (!question) {
-            return res.status(400).json({
-                error: "Thiếu câu hỏi trong yêu cầu",
-                timestamp: new Date().toISOString(),
-            });
-        }
-
-        let answer;
-        const isContentRelated =
-            question.toLowerCase().includes("nội dung") || question.toLowerCase().includes("web");
-
-        if (isContentRelated && lastContent) {
-            console.log(`💬 Xử lý câu hỏi liên quan đến nội dung: ${question}`);
-            const context = `Dựa vào nội dung sau để trả lời chính xác và ngắn gọn: ${lastContent}`;
-            answer = await callGeminiAPI(context + "\n\n" + question);
-        } else if (!lastContent) {
-            console.log(`💬 Chưa có nội dung để trả lời: ${question}`);
-            answer = "Vui lòng nhập URL và tóm tắt trước để tôi có thể trả lời dựa trên nội dung.";
-        } else {
-            console.log(`💬 Xử lý câu hỏi chung: ${question}`);
-            const prompt = `Trả lời câu hỏi sau một cách ngắn gọn và chính xác: ${question}`;
-            answer = await callGeminiAPI(prompt);
-        }
-
-        res.json({
-            question,
-            answer,
-            timestamp: new Date().toISOString(),
-            status: "success",
-        });
-    } catch (error) {
-        console.error("❌ Lỗi khi xử lý câu hỏi:", error.message);
-        res.status(500).json({
-            error: error.message || "Lỗi trong quá trình chat",
-            question: req.body.question,
-            timestamp: new Date().toISOString(),
-        });
-    }
-});
-
-app.get("/last-content", (req, res) => {
-    res.json({
-        lastContent: lastContent,
-        timestamp: new Date().toISOString(),
-        status: "success",
-    });
-});
 
 app.use((req, res) => {
     res.status(404).json({ error: "Không tìm thấy endpoint", timestamp: new Date().toISOString() });
