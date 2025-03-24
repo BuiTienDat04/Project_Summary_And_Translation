@@ -1,14 +1,24 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Send, X } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
 const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryContent, loggedInUser }) => {
+    const location = useLocation();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([]);
     const [userInput, setUserInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const chatContainerRef = useRef(null);
+
+    // Kiểm tra điều kiện ẩn chatbox
+    const shouldHideChatbox = 
+        location.pathname === "/login" || 
+        location.pathname === "/register" || 
+        location.pathname === "/aboutus" ||
+        (location.pathname === "/" && !loggedInUser);
+   
 
     const API_BASE_URL = process.env.REACT_APP_API_URL || "https://api.pdfsmart.online";
 
@@ -31,6 +41,11 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
     }, [messages]);
+
+    // Ẩn hoàn toàn component chatbox nếu không đáp ứng điều kiện
+    if (shouldHideChatbox) {
+        return null;
+    }
 
     // Gửi tin nhắn
     const handleSendMessage = async () => {
