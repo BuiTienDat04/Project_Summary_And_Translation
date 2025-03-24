@@ -58,7 +58,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
     cors({
-        origin: ["http://localhost:3000", "http://localhost:3001"],
+        origin: ["https://api.pdfsmart.online", "https://api.pdfsmart.online"],
         credentials: true,
     })
 );
@@ -287,18 +287,21 @@ app.post("/summarize-link", async (req, res) => {
 app.post("/upload", upload.single("file"), async (req, res) => {
     let filePath;
     try {
+        console.log("Received file:", req.file); // Kiểm tra file có được gửi không
         if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
         filePath = req.file.path;
         const dataBuffer = await fs.readFile(filePath);
         const pdfResult = await pdfParse(dataBuffer);
+        console.log("Extracted text length:", pdfResult.text.length); // Kiểm tra nội dung trích xuất
         const filteredText = filterIrrelevantContent(pdfResult.text);
         if (!filteredText) return res.status(400).json({ error: "Không thể trích xuất nội dung." });
 
         const summary = await summarizeText(filteredText, "tiếng Việt");
+        console.log("Summary length:", summary.length); // Kiểm tra tóm tắt
         cache.set("lastDocumentContent", filteredText, 600);
         latestContent = {
             type: "pdf",
-            content: filteredText, // Lưu nội dung gốc
+            content: filteredText,
             timestamp: Date.now()
         };
 

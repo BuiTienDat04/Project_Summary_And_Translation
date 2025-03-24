@@ -5,6 +5,7 @@ import {
 } from "react-icons/fa";
 import axios from "axios";
 import { motion } from "framer-motion";
+import { API_BASE_URL } from "../apis/api";
 function RegisterPage({ onClose, onRegistrationSuccess }) {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -21,6 +22,7 @@ function RegisterPage({ onClose, onRegistrationSuccess }) {
         setPassword("");
         setPhoneNumber("");
         setDateOfBirth("");
+
     };
 
     const handleRegister = async () => {
@@ -30,7 +32,7 @@ function RegisterPage({ onClose, onRegistrationSuccess }) {
         }
 
         try {
-            const response = await axios.post("https://api.pdfsmart.online/api/auth/register", {
+            const response = await axios.post(`${API_BASE_URL}/api/auth/register`, {
                 name,
                 email,
                 password,

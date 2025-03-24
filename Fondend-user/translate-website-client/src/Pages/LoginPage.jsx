@@ -3,6 +3,7 @@ import { FaSignInAlt, FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/
 import axios from "axios";
 import RegisterPage from "./RegisterPage";
 import { motion } from "framer-motion";
+import { API_BASE_URL } from "../apis/api";
 const PasswordInput = ({ value, onChange }) => {
   const [showPassword, setShowPassword] = useState(false);
   return (
@@ -42,7 +43,7 @@ const LoginPage = ({ onClose, onLoginSuccess, onOpenRegister }) => {
     }
 
     try {
-      const response = await axios.post("https://api.pdfsmart.online/api/auth/login", {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
         email: loginEmail,
         password: loginPassword,
       });
