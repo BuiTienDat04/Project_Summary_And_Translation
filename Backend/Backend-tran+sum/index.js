@@ -64,10 +64,7 @@ app.use(
 );
 app.use(helmet());
 app.use(morgan("combined"));
-
 app.use(cookieParser());
-
-app.use("/api/users", userRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
 // 🚀 Rate limiting to prevent DDoS

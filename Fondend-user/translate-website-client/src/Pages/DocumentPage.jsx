@@ -6,7 +6,7 @@ import LoginPage from "./LoginPage";
 import RegisterPage from "./RegisterPage"
 import Navigation from "./Navigation";
 import Footer from "./Footer";
-import DocumentSummarySection from "../Pages/DocumentSummarySection";
+import DocumentSummarySection from "./DocumentSummarySection";
 
 import axios from "axios";
 import { motion } from "framer-motion";
