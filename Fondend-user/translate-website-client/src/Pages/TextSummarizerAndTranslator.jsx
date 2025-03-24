@@ -14,7 +14,7 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
     const [charCount, setCharCount] = useState(0);
     const [loginPromptVisible, setLoginPromptVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false); // Thêm trạng thái loading
-    const maxCharLimit = 10000;
+    const maxCharLimit = 3000;
 
     const API_BASE_URL = process.env.REACT_APP_API_URL || "https://api.pdfsmart.online";
 

@@ -182,7 +182,6 @@ const DocumentPage = () => {
                                 strokeWidth={1.5}
                             />
                         </button>
-
                         {showHelp && (
                             <motion.div
                                 initial={{ opacity: 0, y: -10, scale: 0.97 }}
@@ -202,7 +201,7 @@ const DocumentPage = () => {
                                 <div className="flex justify-between items-start mb-5">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg shadow-lg">
-                                            <BookOpen className="w-6 h-6 text-white" />
+                                            <FaFilePdf className="w-6 h-6 text-white" />
                                         </div>
                                         <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent">
                                             Quick Start Guide
@@ -470,27 +469,6 @@ const DocumentPage = () => {
                 </section>
             </div>
 
-
-            <div className="mt-40">
-                <Footer />
-            </div>
-
-
-            {/* Success Popup */}
-            {isPopupVisible && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-                    <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md text-center">
-                        <FaCheckCircle className="text-green-500 w-16 h-16 mx-auto mb-6" />
-                        <h3 className="text-2xl font-bold text-gray-800 mb-4">You have successfully registered!</h3>
-                        <button
-                            onClick={() => setIsPopupVisible(false)}
-                            className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-xl font-medium w-full"
-                        >
-                            Close
-                        </button>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

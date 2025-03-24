@@ -5,6 +5,16 @@ const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout,
     const navigate = useNavigate();
     const location = useLocation();
 
+    // Ẩn navigation nếu đang ở trang login
+    if (location.pathname === "/login") {
+        return null;
+    }
+
+    // Ẩn navigation nếu đang ở trang regsiter
+    if (location.pathname === "/register") {
+        return null;
+    }
+
     const handleLogout = async () => {
         try {
             const response = await fetch("http://localhost:5001/api/auth/logout", {
@@ -29,7 +39,6 @@ const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout,
         }
     };
 
-
     return (
         <nav className="fixed top-0 left-0 w-full bg-white shadow-md py-3 z-50 min-h-[64px]">
             <div className="container mx-auto flex justify-between items-center px-6">
@@ -42,7 +51,7 @@ const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout,
                 </div>
 
                 {/* Menu */}
-                <div className="flex gap-6 sm:gap-3"> {/* Giảm khoảng cách trên màn hình nhỏ */}
+                <div className="flex gap-6 sm:gap-3">
                     {!loggedInUsername && (
                         <>
                             <a href="/" className="text-blue-600 hover:bg-blue-100 py-2 px-4 rounded-lg text-base min-w-[100px] text-center">
@@ -73,7 +82,7 @@ const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout,
                 </div>
 
                 {/* Nút điều hướng */}
-                <div className="flex items-center space-x-3 sm:space-x-1"> {/* Giảm khoảng cách trên màn hình nhỏ */}
+                <div className="flex items-center space-x-3 sm:space-x-1">
                     {loggedInUsername ? (
                         <div className="flex items-center space-x-3">
                             <span className="text-indigo-700 font-medium text-lg">Hello, {loggedInUsername}</span>
@@ -85,15 +94,15 @@ const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout,
                             </button>
                         </div>
                     ) : (
-                        <div className="flex space-x-3 sm:space-x-1"> {/* Giảm khoảng cách trên màn hình nhỏ */}
+                        <div className="flex space-x-3 sm:space-x-1">
                             <button
-                                onClick={onLoginClick}
-                                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg min-w-[100px] sm:px-3 sm:py-2 sm:text-base"> {/* Giảm padding và font size trên màn hình nhỏ */}
+                                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg min-w-[100px] sm:px-3 sm:py-2 sm:text-base"
+                                onClick={() => navigate("/login")}>
                                 Login
                             </button>
                             <button
-                                onClick={onRegisterClick}
-                                className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg min-w-[100px] sm:px-3 sm:py-2 sm:text-base"> {/* Giảm padding và font size trên màn hình nhỏ */}
+                                className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg min-w-[100px] sm:px-3 sm:py-2 sm:text-base"
+                                onClick={() => navigate("/register")}>
                                 Register
                             </button>
                         </div>

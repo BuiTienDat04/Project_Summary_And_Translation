@@ -22,8 +22,6 @@ import {
 
 
 
-
-
 const Homepage = () => {
     const [showLogin, setShowLogin] = useState(false);
     const [showRegister, setShowRegister] = useState(false);
@@ -91,8 +89,6 @@ const Homepage = () => {
     };
 
 
-
-
     return (
         <div className="min-h-screen bg-indigo-200 font-sans">
             {/* Navigation */}
@@ -105,29 +101,9 @@ const Homepage = () => {
                         {/* Navigation Bar */}
                         <div className="bg-indigo-100 py-2" >
                             <Navigation
-                                onLoginClick={handleLoginClick}
-                                onRegisterClick={handleRegisterClick}
                                 onContactClick={handleContactClick}
                                 onFeaturesClick={handleFeaturesClick} />
                         </div>
-
-                        {/* Popups for Login and Register */}
-                        {showLogin && (
-                            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[1000]">
-                                <LoginPage onClose={handleCloseLogin}
-                                    onLoginSuccess={handleLoginSuccess}
-                                    onOpenRegister={handleOpenRegister} />
-                            </div>
-                        )}
-
-                        {showRegister && (
-                            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[1000]">
-                                <RegisterPage
-                                    onClose={handleCloseRegister}
-                                    onRegistrationSuccess={handleRegistrationSuccess}
-                                />
-                            </div>
-                        )}
                     </div>
                 </div>
             </nav>
@@ -399,9 +375,6 @@ const Homepage = () => {
                 </div>
             </section>
 
-
-            {/* Footer */}
-            <Footer />
         </div>
     );
 };

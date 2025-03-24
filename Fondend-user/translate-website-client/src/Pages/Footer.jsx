@@ -3,7 +3,7 @@ import { FaMapMarkerAlt, FaPhoneAlt, FaEnvelope, FaFacebook, FaTwitter, FaLinked
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-white py-8 px-6 mt-20">
+    <footer className="bg-gray-900 text-white py-8 px-6">
       <div className="container mx-auto flex flex-col md:flex-row justify-between items-start md:items-center">
         {/* Cột 1: Thông tin liên hệ */}
         <div className="space-y-4">

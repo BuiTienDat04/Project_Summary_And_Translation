@@ -587,10 +587,6 @@ const NaAboutus = () => {  // ✅ Renamed to start with an uppercase letter
                 </section>
 
             </div >
-            <div className="w-full">
-                <Footer />
-            </div>
-
         </div >
     );
 };
