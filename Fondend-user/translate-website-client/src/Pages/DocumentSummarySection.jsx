@@ -15,7 +15,7 @@ export default function DocumentSummarySection() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
+    const API_BASE_URL = process.env.REACT_APP_API_URL || "https://api.pdfsmart.online";
     const MAX_FILE_SIZE = 10 * 1024 * 1024; // Giới hạn 10MB (đồng bộ với backend)
 
     const availableLanguages = [

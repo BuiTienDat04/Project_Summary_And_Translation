@@ -10,7 +10,7 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
     const [error, setError] = useState("");
     const chatContainerRef = useRef(null);
 
-    const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
+    const API_BASE_URL = process.env.REACT_APP_API_URL || "https://api.pdfsmart.online";
 
     // Khởi tạo tin nhắn mặc định
     useEffect(() => {
