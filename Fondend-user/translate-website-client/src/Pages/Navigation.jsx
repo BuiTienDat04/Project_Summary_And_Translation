@@ -1,5 +1,7 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { API_BASE_URL } from "../api/api";
+
 
 const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout, onContactClick, onFeaturesClick }) => {
     const navigate = useNavigate();
@@ -17,7 +19,7 @@ const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout,
 
     const handleLogout = async () => {
         try {
-            const response = await fetch("http://localhost:5001/api/auth/logout", {
+            const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
                 method: "POST",
                 credentials: "include", // Cần thiết để gửi cookie
             });

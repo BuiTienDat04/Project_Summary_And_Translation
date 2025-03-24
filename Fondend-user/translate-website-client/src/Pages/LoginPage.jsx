@@ -15,6 +15,8 @@ import {
 // Or similar names based on what you find in the react-icons documentation
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE_URL } from "../api/api";
+
 import { motion, AnimatePresence } from "framer-motion";
 
 const PasswordInput = ({ value, onChange }) => {
@@ -87,7 +89,7 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
     }
 
     try {
-      const response = await axios.post("http://localhost:5001/api/auth/login", {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
         email: loginEmail,
         password: loginPassword,
       });
