@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"; // Import useEffect
-import { HelpCircle, Upload, Download } from "lucide-react";
+import { HelpCircle, Upload, Download, BookOpen, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { FaFileAlt, FaCheckCircle } from "react-icons/fa";
 import LoginPage from "./LoginPage";
@@ -21,6 +21,7 @@ const DocumentPage = () => {
     const [loggedInUser, setLoggedInUser] = useState(null);
     const handleCloseLogin = () => setShowLogin(false);
     const handleCloseRegister = () => setShowRegister(false);
+    const [showHelp, setShowHelp] = useState(false);
 
     // Xử lý đăng nhập/đăng ký
     const handleRegistrationSuccess = () => {
@@ -86,26 +87,36 @@ const DocumentPage = () => {
 
             {/* Main Content */}
             <div className="container mx-auto px-6 pt-16 min-h-screen">
-                <header className="container mx-auto mt-20 px-6 text-center">
-
+                <motion.header
+                    initial={{ y: -50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.8 }}
+                    className="container mx-auto mt-20 px-6 text-center"
+                >
                     <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6 flex items-center justify-center">
                         {/* Gradient Text with LED Effect */}
                         <span className="bg-gradient-to-r from-blue-600 to-green-500 text-transparent bg-clip-text bg-[length:200%_auto] animate-gradient">
                             Smart Document Summarization
                         </span>
 
-                        {/* Simple Icon (No Animation) */}
+                        {/* Simple Icon */}
                         <FaFilePdf className="ml-4 text-blue-500" />
                     </h1>
                     <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
                         Transform complex documents into concise summaries with advanced AI technology. Supports various formats: PDF.
                     </p>
-                </header>
+                </motion.header>
 
                 {/* Feature Section */}
                 <div className="max-w-7xl mx-auto p-8"> {/* Thêm div max-w-7xl ở đây */}
                     <section className="mt-10 flex flex-col items-center gap-8">
-                        <div className="flex space-x-6">
+                        {/* Buttons */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 50 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8, delay: 0.2 }}
+                            className="flex flex-wrap justify-center gap-4"
+                        >
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
@@ -126,7 +137,7 @@ const DocumentPage = () => {
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 className="relative bg-gradient-to-r from-green-500 to-green-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 overflow-hidden group"
-                                onClick={() => navigate("/document")}
+                                
                             >
                                 {/* Gradient Animation */}
                                 <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -143,7 +154,6 @@ const DocumentPage = () => {
                                 whileTap={{ scale: 0.95 }}
                                 className="relative bg-gradient-to-r from-purple-500 to-purple-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 overflow-hidden group"
                                 onClick={() => navigate("/link")}>
-
                                 {/* Gradient Animation */}
                                 <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
@@ -153,27 +163,102 @@ const DocumentPage = () => {
                                     <FaLink className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
                                 </div>
                             </motion.button>
-
-                        </div>
-
-                        {/* Help Section */}
-                        <div className="relative group">
-                            <HelpCircle className="w-8 h-8 text-gray-500 hover:text-blue-600 cursor-pointer transition-colors" />
-                            <div className="absolute left-full top-1/2 ml-4 -translate-y-1/2 w-80 bg-white p-6 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
-                                <h3 className="text-lg font-bold text-gray-800 mb-3">Quick Guide</h3>
-                                <ul className="space-y-3 text-gray-600">
-                                    <li className="flex items-start">
-                                        <span className="text-blue-500 font-bold mr-2">1.</span>
-                                        Upload a document (PDF)
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="text-blue-500 font-bold mr-2">2.</span>
-                                        Click "Generate Summary"
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
+                        </motion.div>
                     </section>
+
+
+                    {/* Help Icon */}
+                    <div className="relative flex items-center justify-center mt-4">
+                        <button
+                            onClick={() => setShowHelp(!showHelp)}
+                            className="group relative rounded-full p-2 transition-all duration-500 hover:rotate-[360deg] focus:outline-none"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+                            <HelpCircle
+                                className={`w-9 h-9 transition-all duration-500 ${showHelp
+                                    ? 'text-purple-600 drop-shadow-[0_4px_8px_rgba(99,102,241,0.3)]'
+                                    : 'text-gray-400 hover:text-blue-500 group-hover:scale-110 group-hover:drop-shadow-[0_4px_12px_rgba(59,130,246,0.25)]'
+                                    }`}
+                                strokeWidth={1.5}
+                            />
+                        </button>
+
+                        {showHelp && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10, scale: 0.97 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: -10, scale: 0.97 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                className="absolute top-full left-1/2 mt-2 w-80 transform -translate-x-1/2 bg-white/95 backdrop-blur-sm shadow-2xl p-6 rounded-2xl border border-white/20 z-50"
+                                style={{
+                                    background: 'radial-gradient(at top right, #f8fafc 0%, #f1f5f9 100%)',
+                                    boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)',
+                                    border: '1px solid rgba(255,255,255,0.3)'
+                                }}
+                            >
+                                {/* Arrow indicator */}
+                                <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-t border-l border-white/20" />
+
+                                <div className="flex justify-between items-start mb-5">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg shadow-lg">
+                                            <BookOpen className="w-6 h-6 text-white" />
+                                        </div>
+                                        <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent">
+                                            Quick Start Guide
+                                        </h3>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowHelp(false)}
+                                        className="p-1 hover:bg-gray-100/50 rounded-full transition-all duration-200 hover:rotate-90"
+                                    >
+                                        <X className="w-5 h-5 text-gray-400 hover:text-gray-600" />
+                                    </button>
+                                </div>
+
+                                <ul className="space-y-4">
+                                    <motion.li
+                                        className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors"
+                                        whileHover={{ x: 5 }}
+                                    >
+                                        <div className="flex-shrink-0 w-7 h-7 bg-blue-500/10 text-blue-600 rounded-full flex items-center justify-center font-semibold">
+                                            1
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-gray-700">Upload PDF Document</p>
+                                            <p className="text-sm text-gray-500 mt-1">Drag & drop or click to upload your PDF file</p>
+                                        </div>
+                                    </motion.li>
+
+                                    <motion.li
+                                        className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors"
+                                        whileHover={{ x: 5 }}
+                                    >
+                                        <div className="flex-shrink-0 w-7 h-7 bg-purple-500/10 text-purple-600 rounded-full flex items-center justify-center font-semibold">
+                                            2
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-gray-700">Generate Summary</p>
+                                            <p className="text-sm text-gray-500 mt-1">Click the "Summarize" button for AI-powered summary</p>
+                                        </div>
+                                    </motion.li>
+
+                                    <motion.li
+                                        className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors"
+                                        whileHover={{ x: 5 }}
+                                    >
+                                        <div className="flex-shrink-0 w-7 h-7 bg-pink-500/10 text-pink-600 rounded-full flex items-center justify-center font-semibold">
+                                            3
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-gray-700">Translate Results</p>
+                                            <p className="text-sm text-gray-500 mt-1">Select language and click "Translate" for instant translation</p>
+                                        </div>
+                                    </motion.li>
+                                </ul>
+                            </motion.div>
+                        )}
+                    </div>
 
 
                     {/* Upload & Result Section */}
