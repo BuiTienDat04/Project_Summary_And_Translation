@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { FaFilePdf, FaLink } from "react-icons/fa";
 import axios from "axios";
 import ChatBox from "../Pages/ChatBox";
+import { API_BASE_URL } from "../api/api";
 import {
     SparklesIcon,
     CpuChipIcon,
@@ -44,7 +45,6 @@ const LinkPage = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
       const [showHelp, setShowHelp] = useState(false);
 
-    const API_BASE_URL = process.env.REACT_APP_API_URL || "https://api.pdfsmart.online";
 
     const availableLanguages = [
         { code: "en", name: "English" },

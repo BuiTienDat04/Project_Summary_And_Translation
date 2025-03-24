@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Upload, Download, Trash2 } from "lucide-react";
 import ChatBox from "../Pages/ChatBox";
+import { API_BASE_URL } from "../api/api";
 
 export default function DocumentSummarySection() {
     const [file, setFile] = useState(null);
@@ -15,8 +16,7 @@ export default function DocumentSummarySection() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const API_BASE_URL = process.env.REACT_APP_API_URL || "https://api.pdfsmart.online";
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // Giới hạn 10MB (đồng bộ với backend)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // Giới hạn 10MB
 
     const availableLanguages = [
         { code: "en", name: "English" },
@@ -154,19 +154,27 @@ export default function DocumentSummarySection() {
         formData.append("file", file);
 
         try {
+            const token = localStorage.getItem("token");
+
             const response = await fetch(`${API_BASE_URL}/upload`, {
                 method: "POST",
                 body: formData,
                 signal: controller.signal,
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
             });
 
             clearTimeout(timeoutId);
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || "Lỗi khi xử lý file.");
+                throw new Error(
+                    errorData.error || `Lỗi khi xử lý file (HTTP ${response.status})`
+                );
             }
 
             const data = await response.json();
+            if (!data.originalText || !data.summary) {
+                throw new Error("Backend không trả về nội dung hoặc tóm tắt hợp lệ.");
+            }
             setOriginalContent(data.originalText || "Không thể trích xuất nội dung.");
             setSummaryContent(data.summary || "Không thể tóm tắt nội dung.");
             setTranslatedContent("");
@@ -174,7 +182,13 @@ export default function DocumentSummarySection() {
             const content = `File Name: ${file.name}\n\nOriginal Text:\n${data.originalText || "Không có nội dung"}\n\nSummary:\n${data.summary || "Không có tóm tắt"}`;
             updateSummaryFile(content);
         } catch (err) {
-            setError(err.name === "AbortError" ? "Yêu cầu quá thời gian." : err.message);
+            if (err.name === "AbortError") {
+                setError("Yêu cầu quá thời gian. Vui lòng thử lại.");
+            } else if (err.message.includes("Failed to fetch")) {
+                setError("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng hoặc server.");
+            } else {
+                setError(err.message);
+            }
             console.error("Lỗi generateSummary:", err);
         } finally {
             setIsLoading(false);
@@ -196,9 +210,14 @@ export default function DocumentSummarySection() {
         const cleanedSummary = cleanText(summaryContent);
 
         try {
+            const token = localStorage.getItem("token");
+
             const response = await fetch(`${API_BASE_URL}/translate`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
                 body: JSON.stringify({
                     text: cleanedSummary,
                     targetLang,
@@ -209,7 +228,9 @@ export default function DocumentSummarySection() {
             clearTimeout(timeoutId);
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || "Lỗi khi dịch văn bản.");
+                throw new Error(
+                    errorData.error || `Lỗi khi dịch văn bản (HTTP ${response.status})`
+                );
             }
 
             const data = await response.json();
@@ -218,14 +239,19 @@ export default function DocumentSummarySection() {
             const content = `File Name: ${file?.name || "document"}\n\nOriginal Text:\n${originalContent}\n\nSummary:\n${summaryContent}\n\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}):\n${data.translation || "Không có bản dịch"}`;
             updateSummaryFile(content);
         } catch (err) {
-            setError(err.name === "AbortError" ? "Yêu cầu quá thời gian." : err.message);
+            if (err.name === "AbortError") {
+                setError("Yêu cầu quá thời gian. Vui lòng thử lại.");
+            } else if (err.message.includes("Failed to fetch")) {
+                setError("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng hoặc server.");
+            } else {
+                setError(err.message);
+            }
             console.error("Lỗi translateSummary:", err);
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Nội dung gửi đến ChatBox
     const documentSummaryContent = summaryContent
         ? `File Name: ${file?.name || "Unknown"}\nOriginal Content: ${originalContent}\nSummary: ${summaryContent}\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}): ${translatedContent}`
         : "";
@@ -323,7 +349,7 @@ export default function DocumentSummarySection() {
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
                                         <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M6 15h.01M6 11h.01M9 11h.01M9 15h.01" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 0 002-2M9 5a2 2 0 012-2h2a2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M6 15h.01M6 11h.01M9 11h.01M9 15h.01" />
                                         </svg>
                                         Summary
                                     </h3>
@@ -374,7 +400,9 @@ export default function DocumentSummarySection() {
 
                                 <button
                                     onClick={translateSummary}
-                                    className="w-full bg-gradient-to-br from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg"
+                                    className={`w-full bg-gradient-to-br from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg ${
+                                        isLoading ? "opacity-50 cursor-not-allowed" : ""
+                                    }`}
                                     disabled={isLoading}
                                 >
                                     {isLoading ? "Translating..." : "Translate Now"}
@@ -422,7 +450,6 @@ export default function DocumentSummarySection() {
                 </div>
             </div>
 
-            {/* Truyền dữ liệu vào ChatBox */}
             <ChatBox documentSummaryContent={documentSummaryContent} />
         </div>
     );

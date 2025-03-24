@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Send, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
-
+import { API_BASE_URL } from "../api/api";
 const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryContent, loggedInUser }) => {
     const location = useLocation();
     const [isOpen, setIsOpen] = useState(false);
@@ -20,7 +20,6 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
         (location.pathname === "/" && !loggedInUser);
    
 
-    const API_BASE_URL = process.env.REACT_APP_API_URL || "https://api.pdfsmart.online";
 
     // Khởi tạo tin nhắn mặc định
     useEffect(() => {
