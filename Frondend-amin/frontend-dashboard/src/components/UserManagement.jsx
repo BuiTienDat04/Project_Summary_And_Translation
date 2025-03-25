@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import { API_BASE_URL } from "../api/api";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -22,7 +23,7 @@ const UserManagement = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:5001/api/users", {
+      const response = await fetch(`${API_BASE_URL}/api/users`, {
         method: "GET",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
@@ -43,7 +44,7 @@ const UserManagement = () => {
       setError("");
       const token = localStorage.getItem("token");
 
-      const response = await fetch("http://localhost:5001/api/users/create", {
+      const response = await fetch(`${API_BASE_URL}/api/users/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(newUser),
@@ -74,7 +75,7 @@ const UserManagement = () => {
       const updatedData = { ...editingUser };
       if (!updatedData.password) delete updatedData.password;
 
-      const response = await fetch(`http://localhost:5001/api/users/${editingUser._id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${editingUser._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(updatedData),
@@ -101,7 +102,7 @@ const UserManagement = () => {
       setError("");
       const token = localStorage.getItem("token");
 
-      const response = await fetch(`http://localhost:5001/api/users/${user._id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${user._id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });

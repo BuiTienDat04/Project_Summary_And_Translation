@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import StatisticsChart from "../components/StatisticsChart";
+import { API_BASE_URL } from "../api/api";
+
 
 const Dashboard = () => {
   const [data, setData] = useState({ totalUsers: 0, translatedPosts: 0, totalVisits: 0 });
@@ -10,7 +12,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("http://localhost:5001/api/dashboard");
+        const response = await fetch(`${API_BASE_URL}/api/dashboard`);
         if (!response.ok) throw new Error("Failed to fetch data");
 
         const result = await response.json();

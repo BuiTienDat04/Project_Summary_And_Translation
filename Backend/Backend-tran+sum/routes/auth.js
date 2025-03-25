@@ -137,7 +137,12 @@ router.post("/login", async (req, res) => {
         console.log("🔹 User logged out. Total visits updated.");
   
         // Xóa cookie token
-        res.clearCookie("token", { path: "/", httpOnly: true, sameSite: "Strict" });
+        res.clearCookie("token", {
+          path: "/",
+          httpOnly: true,
+          secure: true,  // 👈 Nếu backend chạy HTTPS, bắt buộc phải có!
+          sameSite: "None", // 👈 Bắt buộc nếu frontend và backend khác domain
+      });      
 
         res.status(200).json({ message: "Logout successful" });
 

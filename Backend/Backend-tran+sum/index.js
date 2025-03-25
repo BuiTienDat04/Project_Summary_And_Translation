@@ -1,7 +1,6 @@
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
-const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
@@ -56,12 +55,24 @@ let latestContent = {
 // =================== 🔹 MIDDLEWARE 🔹 ===================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+const cors = require("cors");
+
 app.use(
     cors({
-        origin: ["http://localhost:3000", "http://localhost:3001"],
-        credentials: true,
+        origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online"],
+        credentials: true,  // 👈 Bắt buộc! Cho phép cookie
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"], // 👈 Thêm "Set-Cookie"
     })
 );
+
+// Xử lý Preflight request (OPTIONS)
+app.options("*", cors());
+
+
+// Xử lý request OPTIONS (Preflight request)
+app.options("*", cors());
+
 app.use(helmet());
 app.use(morgan("combined"));
 app.use(cookieParser());
