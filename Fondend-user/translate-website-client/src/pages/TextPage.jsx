@@ -92,71 +92,86 @@ function TextPage() {
       </div>
 
       {/* Header Section */}
-      <header className="container mx-auto mt-24 px-6 text-center">
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6">
-          <span className="bg-gradient-to-r from-blue-600 to-green-500 text-transparent bg-clip-text">
+      <motion.header
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        className="container mx-auto mt-20 px-6 text-center"
+      >
+        <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6 flex items-center justify-center">
+          {/* Gradient Text with LED Effect */}
+          <span className="bg-gradient-to-r from-blue-600 to-green-500 text-transparent bg-clip-text bg-[length:200%_auto] animate-gradient">
             AI-Powered Text Summarization & Translation Tool
           </span>
-          <FaFileAlt className="inline-block ml-4 text-blue-500 animate-pulse" />
+          {/* Simple Icon */}
+          <FaFileAlt className="ml-4 text-blue-500" />
         </h1>
         <div className="container mx-auto px-6 text-center text-indigo-700 text-xl mt-10">
           Unlock the power of AI to summarize and translate text effortlessly.
         </div>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto text-center">
+        <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
           Quickly grasp the main points from any text and translate it into your desired language.
         </p>
-      </header>
+      </motion.header>
 
       {/* Features and Help Section */}
       <div className="flex items-center space-x-8 justify-center mt-12">
-        <div className="flex space-x-4">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="relative bg-gradient-to-r from-blue-500 to-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 overflow-hidden group"
-            onClick={() => navigate("/text")}
+        <section className="mt-10 flex flex-col items-center gap-8">
+          {/* Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="flex flex-wrap justify-center gap-4"
           >
-            {/* Gradient Animation */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative bg-gradient-to-r from-blue-500 to-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 overflow-hidden group"
+             
+            >
+              {/* Gradient Animation */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-            {/* Button Content */}
-            <div className="relative flex items-center justify-center gap-2">
-              <span className="group-hover:scale-110 transition-transform duration-300">Summarize Text</span>
-              <FaFileAlt className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
-            </div>
-          </motion.button>
+              {/* Button Content */}
+              <div className="relative flex items-center justify-center gap-2">
+                <span className="group-hover:scale-110 transition-transform duration-300">Summarize Text</span>
+                <FaFileAlt className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
+              </div>
+            </motion.button>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="relative bg-gradient-to-r from-green-500 to-green-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 overflow-hidden group"
-            onClick={() => navigate("/document")}
-          >
-            {/* Gradient Animation */}
-            <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative bg-gradient-to-r from-green-500 to-green-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 overflow-hidden group"
 
-            {/* Button Content */}
-            <div className="relative flex items-center justify-center gap-2">
-              <span className="group-hover:scale-110 transition-transform duration-300">Summarize Document</span>
-              <FaFilePdf className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
-            </div>
-          </motion.button>
+              onClick={() => navigate("/document")}>
+              {/* Gradient Animation */}
+              <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="relative bg-gradient-to-r from-purple-500 to-purple-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 overflow-hidden group"
-            onClick={() => navigate("/link")}>
-            {/* Gradient Animation */}
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              {/* Button Content */}
+              <div className="relative flex items-center justify-center gap-2">
+                <span className="group-hover:scale-110 transition-transform duration-300">Summarize Document</span>
+                <FaFilePdf className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
+              </div>
+            </motion.button>
 
-            {/* Button Content */}
-            <div className="relative flex items-center justify-center gap-2">
-              <span className="group-hover:scale-110 transition-transform duration-300">Summarize Link</span>
-              <FaLink className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
-            </div>
-          </motion.button>
-        </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative bg-gradient-to-r from-purple-500 to-purple-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 overflow-hidden group"
+              onClick={() => navigate("/link")}>
+              {/* Gradient Animation */}
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+              {/* Button Content */}
+              <div className="relative flex items-center justify-center gap-2">
+                <span className="group-hover:scale-110 transition-transform duration-300">Summarize Link</span>
+                <FaLink className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
+              </div>
+            </motion.button>
+          </motion.div>
+        </section>
 
         {/* Help Icon */}
         <div className="relative flex items-center justify-center mt-4">

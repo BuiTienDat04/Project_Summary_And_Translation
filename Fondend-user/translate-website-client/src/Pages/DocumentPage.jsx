@@ -216,6 +216,7 @@ const DocumentPage = () => {
                                 </div>
 
                                 <ul className="space-y-4">
+                                    
                                     <motion.li
                                         className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors"
                                         whileHover={{ x: 5 }}
