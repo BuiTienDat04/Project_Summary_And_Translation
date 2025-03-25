@@ -65,6 +65,21 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
       </div> 
   );
 
+  const handleLogout = async () => {
+    try {
+        await axios.post(`${API_BASE_URL}/api/auth/logout`, {}, { withCredentials: true });
+        console.log("🔹 Người dùng truy cập trang login → Tự động logout");
+
+        // Xóa token khỏi localStorage hoặc sessionStorage
+        localStorage.removeItem("token"); 
+        sessionStorage.removeItem("token");
+
+    } catch (error) {
+        console.error("❌ Lỗi khi logout:", error);
+    }
+};
+
+
   useEffect(() => {
     // Ẩn footer và chatbot khi mở form login
     const footer = document.querySelector("footer");
