@@ -223,23 +223,25 @@ function RegisterPage({ onClose, onRegistrationSuccess }) {
                             </div>
                             <div className="relative">
                                 <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
-                                    <FaLock className="inline-block mr-2 text-gray-300" />Password
+                                    Password
                                 </label>
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    id="password"
-                                    className="w-full px-4 py-3 border rounded-md focus:ring-blue-400 focus:border-blue-400 text-gray-800 bg-white/90 backdrop-blur-sm shadow-sm"
-                                    placeholder="Create a strong password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                />
-                                <button
-                                    type="button"
-                                    className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-blue-400 focus:outline-none text-sm"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                >
-                                    {showPassword ? <FaEyeSlash /> : <FaEye />}
-                                </button>
+                                <div className="relative"> {/* Container for input and icon */}
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        id="password"
+                                        className="w-full px-4 py-3 border rounded-md focus:ring-blue-400 focus:border-blue-400 text-gray-800 bg-white/90 backdrop-blur-sm shadow-sm"
+                                        placeholder="Create a strong password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-blue-400 focus:outline-none text-sm"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                    >
+                                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                    </button>
+                                </div>
                             </div>
                             <div className="relative">
                                 <label htmlFor="phoneNumber" className="block text-sm font-medium text-white mb-2">

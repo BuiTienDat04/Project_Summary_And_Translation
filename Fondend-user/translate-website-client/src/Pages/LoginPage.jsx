@@ -49,21 +49,20 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
   const [loginSuccess, setLoginSuccess] = useState(false);
   const navigate = useNavigate();
   const [showChat, setShowChat] = useState(false);
-  const FeatureItem = ({ icon, title, description, delay }) => (
-    <motion.div
-      className="bg-white/5 backdrop-blur-md rounded-lg p-5 shadow-md border border-white/10 flex items-center space-x-4"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay }}
-    >
-      <div className="p-2 rounded-md bg-gradient-to-br from-gray-200/10 to-gray-700/10">
-        {icon}
-      </div>
-      <div>
-        <h4 className="text-lg font-semibold text-white">{title}</h4>
-        <p className="text-white/70 text-sm">{description}</p>
-      </div>
-    </motion.div>
+
+    const FeatureItem = ({ icon, title, description, delay }) => (
+      <div // Changed motion.div to a regular div
+        className="bg-white/5 backdrop-blur-md rounded-lg p-5 shadow-md border border-white/10 flex items-center space-x-4"
+        // Removed initial, animate, and transition props
+      >
+        <div className="p-2 rounded-md bg-gradient-to-br from-gray-200/10 to-gray-700/10">
+          {icon}
+        </div>
+        <div>
+          <h4 className="text-lg font-semibold text-white">{title}</h4>
+          <p className="text-white/70 text-sm">{description}</p>
+        </div>
+      </div> 
   );
 
   useEffect(() => {
@@ -161,11 +160,11 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
           className="relative z-10 text-center space-y-12"
           initial={{ opacity: 0, y: 60 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.8, delayChildren: 0.2 }} // Added delayChildren
         >
           {/* Striking Title with Subtle Animation */}
           <motion.h1
-            className="text-5xl md:text-6xl font-extrabold text-white drop-shadow-lg animate-pulse"
+            className="text-5xl md:text-6xl font-extrabold text-white drop-shadow-lg"
             style={{ textShadow: '0 4px 6px rgba(0, 0, 0, 0.3)' }}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -179,7 +178,7 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
             className="text-xl md:text-2xl font-semibold text-white/90 drop-shadow-sm"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
           >
             Intelligent Document Solutions, Simplified.
           </motion.h2>
@@ -190,25 +189,25 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
               icon={<FaMagic className="w-7 h-7 text-yellow-300" />}
               title="Summarize Smartly"
               description="Get key insights quickly. AI-powered summaries for rapid understanding."
-              delay={0.3}
+              delay={0} // Removed individual delays, using delayChildren on parent
             />
             <FeatureItem
               icon={<FaLanguage className="w-7 h-7 text-green-300" />}
               title="Translate Instantly"
               description="Break language barriers. Accurate translations at your fingertips."
-              delay={0.4}
+              delay={0}
             />
             <FeatureItem
               icon={<FaBookOpen className="w-7 h-7 text-purple-300" />}
               title="Manage Effortlessly"
               description="Organize, merge, split, and more. Streamline your PDF workflow."
-              delay={0.5}
+              delay={0}
             />
             <FeatureItem
               icon={<FaCheckCircle className="w-7 h-7 text-cyan-300" />}
               title="Secure & Reliable"
               description="Your documents are safe. Fast processing you can trust."
-              delay={0.6}
+              delay={0}
             />
           </div>
         </motion.div>
