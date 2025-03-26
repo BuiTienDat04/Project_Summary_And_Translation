@@ -13,7 +13,6 @@ const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$
 
 const DEFAULT_COUNTRY_CODE = "VN"; // Default country (Vietnam)
 
-// 🟢 Lấy biến visitCount từ index.js (truyền vào từ ngoài)
 module.exports = (visitCountObj) => {
   const { visitCount } = visitCountObj;
 
@@ -67,20 +66,20 @@ module.exports = (visitCountObj) => {
   });
 
   // ================== 🟢 LOGIN API ==================
-router.post("/login", async (req, res) => {
-  try {
+  router.post("/login", async (req, res) => {
+    try {
       console.log("🔹 Request Body:", req.body);
 
       const { email, password } = req.body;
       if (!email || !password) {
-          return res.status(400).json({ message: "Missing email or password" });
+        return res.status(400).json({ message: "Missing email or password" });
       }
 
       // 🔍 Kiểm tra user có tồn tại không
       const user = await User.findOne({ email });
       if (!user) {
-          console.error("❌ User not found:", email);
-          return res.status(400).json({ message: "Invalid email or password" });
+        console.error("❌ User not found:", email);
+        return res.status(400).json({ message: "Invalid email or password" });
       }
 
       console.log("✅ Found user:", user);
@@ -88,16 +87,16 @@ router.post("/login", async (req, res) => {
       // 🔍 Kiểm tra mật khẩu
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
-          console.error("❌ Password mismatch for user:", email);
-          return res.status(400).json({ message: "Invalid email or password" });
+        console.error("❌ Password mismatch for user:", email);
+        return res.status(400).json({ message: "Invalid email or password" });
       }
 
       console.log("✅ Password matched!");
 
       // 🔍 Kiểm tra JWT_SECRET có tồn tại không
       if (!process.env.JWT_SECRET) {
-          console.error("❌ JWT_SECRET is missing!");
-          return res.status(500).json({ message: "Server configuration error" });
+        console.error("❌ JWT_SECRET is missing!");
+        return res.status(500).json({ message: "Server configuration error" });
       }
 
       const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
@@ -108,49 +107,49 @@ router.post("/login", async (req, res) => {
       await Visit.findOneAndUpdate({}, { $inc: { totalVisits: 1 } }, { upsert: true, new: true });
 
       res.status(200).json({
-          message: "Login successful",
-          token,
-          user: { id: user._id, name: user.name, email: user.email, role: user.role }
+        message: "Login successful",
+        token,
+        user: { id: user._id, name: user.name, email: user.email, role: user.role }
       });
 
-  } catch (error) {
+    } catch (error) {
       console.error("❌ ERROR in /login:", error);
       res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
-  
+    }
+  });
 
   // ================== 🟢 LOGOUT API ==================
   router.post("/logout", async (req, res) => {
     try {
-        console.log("🔹 Cookies received:", req.cookies); // In ra cookies trong request
-
-        let visitData = await Visit.findOne();
-        if (!visitData) {
-            visitData = await Visit.create({ totalVisits: 0 });
-        }
+      console.log("🔹 /logout API called at:", new Date().toISOString());
+      console.log("🔹 Cookies received:", req.cookies);
   
-        if (visitData.totalVisits > 0) {
-            await Visit.findOneAndUpdate({}, { $inc: { totalVisits: -1 } });
-        }
+      let visitData = await Visit.findOne();
+      if (!visitData) {
+        visitData = await Visit.create({ totalVisits: 0 });
+      }
   
-        console.log("🔹 User logged out. Total visits updated.");
+      const updatedVisit = await Visit.findOneAndUpdate(
+        {},
+        { $inc: { totalVisits: -1 }, $max: { totalVisits: 0 } },
+        { new: true }
+      );
   
-        // Xóa cookie token
-        res.clearCookie("token", {
-          path: "/",
-          httpOnly: true,
-          secure: true,  // 👈 Nếu backend chạy HTTPS, bắt buộc phải có!
-          sameSite: "None", // 👈 Bắt buộc nếu frontend và backend khác domain
-      });      
-
-        res.status(200).json({ message: "Logout successful" });
-
+      console.log("🔹 Total visits after update:", updatedVisit.totalVisits);
+  
+      res.clearCookie("token", {
+        path: "/",
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "Strict",
+      });
+  
+      res.status(200).json({ message: "Logout successful" });
     } catch (error) {
-        console.error("❌ Error in /logout:", error);
-        res.status(500).json({ message: "Server error", error: error.message });
+      console.error("❌ Error in /logout:", error);
+      res.status(500).json({ message: "Server error", error: error.message });
     }
-});
+  });
 
-  return router;
+  return router; // 🟢 Trả về router
 };
