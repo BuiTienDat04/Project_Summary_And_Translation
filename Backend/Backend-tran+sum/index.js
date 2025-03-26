@@ -62,7 +62,7 @@ app.use(
         origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online"],
         credentials: true,  // 👈 Bắt buộc! Cho phép cookie
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"], // 👈 Thêm "Set-Cookie"
+        allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"],
     })
 );
 

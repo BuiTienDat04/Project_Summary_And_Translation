@@ -27,7 +27,7 @@ const Dashboard = () => {
     fetchData(); // Gọi API ngay khi component load
 
     // 🔄 Cập nhật dữ liệu mỗi 5 giây
-    const interval = setInterval(fetchData, 5000);
+    const interval = setInterval(fetchData, 3000);
 
     return () => clearInterval(interval); // Clear interval khi rời khỏi trang
   }, []);

@@ -1,11 +1,14 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { API_BASE_URL } from "../api/api";
+import axios from "axios";
 
 
 const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout, onContactClick, onFeaturesClick }) => {
     const navigate = useNavigate();
     const location = useLocation();
+
+    
 
     // Ẩn navigation nếu đang ở trang login
     if (location.pathname === "/login") {
@@ -17,28 +20,13 @@ const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout,
         return null;
     }
 
-    const handleLogout = async () => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
-                method: "POST",
-                credentials: "include", // Cần thiết để gửi cookie
-            });
-
-            if (!response.ok) {
-                throw new Error("Logout failed");
-            }
-
-            const data = await response.json();
-            console.log("✅ Logout successful:", data);
-
-            // Xóa token trên frontend (nếu có dùng localStorage)
-            localStorage.removeItem("token");
-
-            // Chuyển hướng về trang login
-            window.location.href = "/";
-        } catch (error) {
-            console.error("❌ Logout error:", error);
-        }
+    const handleLogout = () => {
+        axios.post(`${API_BASE_URL}/api/auth/logout`, {}, { withCredentials: true })
+            .then(() => {
+                localStorage.removeItem("token"); // Xóa token trên frontend
+                navigate("/login"); // Chuyển hướng về trang đăng nhập
+            })
+            .catch(err => console.error("❌ Logout error:", err));
     };
 
     return (
