@@ -1,62 +1,52 @@
 import { useState } from "react";
 import { FaSignInAlt, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaTwitter, FaGithub, FaApple, FaInstagram, FaLinkedin, FaYoutube, FaDiscord, FaSlack } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_BASE_URL } from "../api/api";
 
-
-const LoginPage = ({ onClose, onLoginSuccess }) => {
+const LoginPage = () => {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
   const [loginSuccess, setLoginSuccess] = useState(false);
-
   const [showPassword, setShowPassword] = useState(false);
-
+  const navigate = useNavigate();
 
   const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {
       setLoginErrorMessage("Email and password are required!");
       return;
     }
-
+  
     try {
       const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
         email: loginEmail,
         password: loginPassword,
-      });
-
+      }, { withCredentials: true });
+  
       console.log("Login response:", response.data);
-
+  
       const { token, user } = response.data;
-
+  
       if (!token || !user) {
         setLoginErrorMessage("Invalid response from server!");
         return;
       }
-
+  
       localStorage.setItem("token", token);
-
-      if (onLoginSuccess && typeof onLoginSuccess === "function") {
-        onLoginSuccess(user);
-      }
-
-      setLoginSuccess(true);
-
-      if (user.role === "admin") {
-        window.location.href = "/dashboard";
-      } else {
-        setTimeout(() => {
-          setLoginSuccess(false);
-          onClose();
-        }, 2000);
-      }
+      localStorage.setItem("loggedInUser", JSON.stringify(user));
+  
+      setLoginSuccess(true); 
+      setLoginErrorMessage("");
+      setTimeout(() => {
+        navigate("/dashboard", { replace: true }); 
+      }, 2000); 
     } catch (error) {
       console.error("Login error:", error.response?.data || error.message);
       setLoginErrorMessage(error.response?.data?.message || "Login failed!");
       setLoginSuccess(false);
     }
-};
-
+  };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 overflow-hidden">
