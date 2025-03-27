@@ -230,7 +230,7 @@ const LinkPage = () => {
                 </motion.header>
 
                 <div className="max-w-7xl mx-auto p-8">
-                    <section className="mt-10 flex flex-col items-center gap-8">
+                    <section className="flex flex-col items-center gap-8">
                         <motion.div
                             initial={{ opacity: 0, y: 50 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -367,8 +367,6 @@ const LinkPage = () => {
                                 </motion.div>
                             )}
                         </div>
-
-
                     </section>
 
                     <motion.div

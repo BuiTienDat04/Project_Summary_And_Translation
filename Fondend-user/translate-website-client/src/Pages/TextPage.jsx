@@ -115,9 +115,8 @@ function TextPage() {
       </motion.header>
 
       {/* Features and Help Section */}
-      <div className="flex items-center space-x-8 justify-center mt-12">
-        <section className="mt-10 flex flex-col items-center gap-8">
-          {/* Buttons */}
+      <div className="max-w-7xl mx-auto p-8">
+        <section className="flex flex-col items-center gap-8">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -128,12 +127,8 @@ function TextPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="relative bg-gradient-to-r from-blue-500 to-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 overflow-hidden group"
-             
             >
-              {/* Gradient Animation */}
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-              {/* Button Content */}
               <div className="relative flex items-center justify-center gap-2">
                 <span className="group-hover:scale-110 transition-transform duration-300">Summarize Text</span>
                 <FaFileAlt className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
@@ -144,12 +139,9 @@ function TextPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="relative bg-gradient-to-r from-green-500 to-green-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 overflow-hidden group"
-
-              onClick={() => navigate("/document")}>
-              {/* Gradient Animation */}
+              onClick={() => navigate("/document")}
+            >
               <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-              {/* Button Content */}
               <div className="relative flex items-center justify-center gap-2">
                 <span className="group-hover:scale-110 transition-transform duration-300">Summarize Document</span>
                 <FaFilePdf className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
@@ -160,111 +152,110 @@ function TextPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="relative bg-gradient-to-r from-purple-500 to-purple-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 overflow-hidden group"
-              onClick={() => navigate("/link")}>
-              {/* Gradient Animation */}
+              onClick={() => navigate("/link")}
+            >
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-              {/* Button Content */}
               <div className="relative flex items-center justify-center gap-2">
                 <span className="group-hover:scale-110 transition-transform duration-300">Summarize Link</span>
                 <FaLink className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
               </div>
             </motion.button>
           </motion.div>
-        </section>
 
-        {/* Help Icon */}
-        <div className="relative flex items-center justify-center mt-4">
-          <button
-            onClick={() => setShowHelp(!showHelp)}
-            className="group relative rounded-full p-2 transition-all duration-500 hover:rotate-[360deg] focus:outline-none"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
-            <HelpCircle
-              className={`w-9 h-9 transition-all duration-500 ${showHelp
-                ? 'text-purple-600 drop-shadow-[0_4px_8px_rgba(99,102,241,0.3)]'
-                : 'text-gray-400 hover:text-blue-500 group-hover:scale-110 group-hover:drop-shadow-[0_4px_12px_rgba(59,130,246,0.25)]'
-                }`}
-              strokeWidth={1.5}
-            />
-          </button>
-
-          {showHelp && (
-            <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.97 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              className="absolute top-full left-1/2 mt-2 w-80 transform -translate-x-1/2 bg-white/95 backdrop-blur-sm shadow-2xl p-6 rounded-2xl border border-white/20 z-50"
-              style={{
-                background: 'radial-gradient(at top right, #f8fafc 0%, #f1f5f9 100%)',
-                boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)',
-                border: '1px solid rgba(255,255,255,0.3)',
-              }}
+          <div className="relative flex items-center justify-center mt-4 px-4 w-full max-w-4xl mx-auto">
+            <button
+              onClick={() => setShowHelp(!showHelp)}
+              className="group relative rounded-full p-2 transition-all duration-500 hover:rotate-[360deg] focus:outline-none z-50"
             >
-              {/* Arrow indicator */}
-              <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-t border-l border-white/20" />
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+              <HelpCircle
+                className={`w-8 h-8 md:w-9 md:h-9 transition-all duration-500 ${showHelp
+                    ? 'text-purple-600 drop-shadow-[0_4px_8px_rgba(99,102,241,0.3)]'
+                    : 'text-gray-400 hover:text-blue-500 group-hover:scale-110 group-hover:drop-shadow-[0_4px_12px_rgba(59,130,246,0.25)]'
+                  }`}
+                strokeWidth={1.5}
+              />
+            </button>
 
-              <div className="flex justify-between items-start mb-5">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg shadow-lg">
-                    <FaFileAlt className="w-6 h-6 text-white" />
+            {showHelp && (
+              <motion.div
+                initial={{ opacity: 0, y: -10, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.97 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="absolute top-full mt-2 w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-[20rem] 
+            transform left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0
+            bg-white/95 backdrop-blur-sm shadow-2xl p-4 sm:p-6 rounded-2xl border border-white/20 z-50"
+                style={{
+                  background: 'radial-gradient(at top right, #f8fafc 0%, #f1f5f9 100%)',
+                  boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                }}
+              >
+                {/* Arrow indicator - hidden on mobile */}
+                <div className="hidden sm:block absolute -top-2 left-1/2 sm:left-auto sm:right-8 -translate-x-1/2 sm:translate-x-0 w-4 h-4 bg-white rotate-45 border-t border-l border-white/20" />
+
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-1.5 sm:p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg shadow-lg">
+                      <FaFileAlt className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent">
+                      Quick Start Guide
+                    </h3>
                   </div>
-                  <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent">
-                    Quick Start Guide
-                  </h3>
+                  <button
+                    onClick={() => setShowHelp(false)}
+                    className="p-1 hover:bg-gray-100/50 rounded-full transition-all duration-200 hover:rotate-90"
+                  >
+                    <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 hover:text-gray-600" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setShowHelp(false)}
-                  className="p-1 hover:bg-gray-100/50 rounded-full transition-all duration-200 hover:rotate-90"
-                >
-                  <X className="w-5 h-5 text-gray-400 hover:text-gray-600" />
-                </button>
-              </div>
 
-              <ul className="space-y-4">
-                <motion.li
-                  className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors"
-                  whileHover={{ x: 5 }}
-                >
-                  <div className="flex-shrink-0 w-7 h-7 bg-blue-500/10 text-blue-600 rounded-full flex items-center justify-center font-semibold">
-                    1
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-700">Enter Document URL</p>
-                    <p className="text-sm text-gray-500 mt-1">Paste your document URL link to analyze</p>
-                  </div>
-                </motion.li>
+                <ul className="space-y-3 sm:space-y-4">
+                  <motion.li
+                    className="flex items-start gap-3 sm:gap-4 p-2 sm:p-3 rounded-xl hover:bg-white/50 transition-colors"
+                    whileHover={{ x: 5 }}
+                  >
+                    <div className="flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 bg-blue-500/10 text-blue-600 rounded-full flex items-center justify-center font-semibold text-sm sm:text-base">
+                      1
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-700 text-sm sm:text-base">Enter Text</p>
+                      <p className="text-xs sm:text-sm text-gray-500 mt-1">Paste or enter the text you want to summarize</p>
+                    </div>
+                  </motion.li>
 
-                <motion.li
-                  className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors"
-                  whileHover={{ x: 5 }}
-                >
-                  <div className="flex-shrink-0 w-7 h-7 bg-purple-500/10 text-purple-600 rounded-full flex items-center justify-center font-semibold">
-                    2
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-700">Generate Summary</p>
-                    <p className="text-sm text-gray-500 mt-1">Click the "Summarize" button for AI-powered analysis</p>
-                  </div>
-                </motion.li>
+                  <motion.li
+                    className="flex items-start gap-3 sm:gap-4 p-2 sm:p-3 rounded-xl hover:bg-white/50 transition-colors"
+                    whileHover={{ x: 5 }}
+                  >
+                    <div className="flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 bg-purple-500/10 text-purple-600 rounded-full flex items-center justify-center font-semibold text-sm sm:text-base">
+                      2
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-700 text-sm sm:text-base">Generate Summary</p>
+                      <p className="text-xs sm:text-sm text-gray-500 mt-1">Click the "Summarize" button for AI-powered analysis</p>
+                    </div>
+                  </motion.li>
 
-                <motion.li
-                  className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors"
-                  whileHover={{ x: 5 }}
-                >
-                  <div className="flex-shrink-0 w-7 h-7 bg-pink-500/10 text-pink-600 rounded-full flex items-center justify-center font-semibold">
-                    3
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-700">Translate Results</p>
-                    <p className="text-sm text-gray-500 mt-1">Select language and click "Translate" for instant conversion</p>
-                  </div>
-                </motion.li>
-              </ul>
-            </motion.div>
-          )}
-        </div>
+                  <motion.li
+                    className="flex items-start gap-3 sm:gap-4 p-2 sm:p-3 rounded-xl hover:bg-white/50 transition-colors"
+                    whileHover={{ x: 5 }}
+                  >
+                    <div className="flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 bg-pink-500/10 text-pink-600 rounded-full flex items-center justify-center font-semibold text-sm sm:text-base">
+                      3
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-700 text-sm sm:text-base">Translate Results</p>
+                      <p className="text-xs sm:text-sm text-gray-500 mt-1">Select language and click "Translate" for instant conversion</p>
+                    </div>
+                  </motion.li>
+                </ul>
+              </motion.div>
+            )}
+          </div>
+        </section>
       </div>
 
       {/* Main Content: Text Summarizer and Translator */}
