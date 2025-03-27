@@ -56,7 +56,7 @@ export default function App() {
       <LogoutOnTabClose />
       <AuthHandler />
       <div className="App">
-        <Navigation onLogout={handleLogout} /> {/* Truyền hàm logout xuống Navigation */}
+        <Navigation onLogout={handleLogout} />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -90,8 +90,8 @@ function AuthHandler() {
       if (!allowedPaths.includes(location.pathname)) {
         console.log("🔹 Trang không hợp lệ! Xóa token và logout...");
         localStorage.removeItem("token");
-        localStorage.removeItem("adminToken"); // Thêm
-        localStorage.removeItem("loggedInUser"); // Thêm
+        localStorage.removeItem("adminToken");
+        localStorage.removeItem("loggedInUser");
         navigate("/login");
       }
     }
@@ -101,30 +101,35 @@ function AuthHandler() {
 }
 
 function LogoutOnTabClose() {
-    useEffect(() => {
-      const handleLogout = (event) => {
+  const location = useLocation(); // Thêm useLocation
+
+  useEffect(() => {
+    const handleLogout = (event) => {
+      // Chỉ hiển thị thông báo xác nhận nếu không phải trang /login
+      if (location.pathname !== "/login") {
         event.preventDefault();
         event.returnValue = "Are you sure you want to leave? You will be logged out.";
-  
-        // Sử dụng navigator.sendBeacon để gửi yêu cầu logout
-        const url = `${API_BASE_URL}/api/auth/logout`;
-        const data = new Blob([JSON.stringify({})], { type: "application/json" });
-        navigator.sendBeacon(url, data);
-  
-        // Xóa Local Storage ngay lập tức
-        localStorage.removeItem("token");
-        localStorage.removeItem("adminToken");
-        localStorage.removeItem("loggedInUser");
-  
-        console.log("🔹 Logout request sent via sendBeacon at:", new Date().toISOString());
-      };
-  
-      window.addEventListener("beforeunload", handleLogout);
-  
-      return () => {
-        window.removeEventListener("beforeunload", handleLogout);
-      };
-    }, []);
-  
-    return null;
-  }
+      }
+
+      // Sử dụng navigator.sendBeacon để gửi yêu cầu logout
+      const url = `${API_BASE_URL}/api/auth/logout`;
+      const data = new Blob([JSON.stringify({})], { type: "application/json" });
+      navigator.sendBeacon(url, data);
+
+      // Xóa Local Storage ngay lập tức
+      localStorage.removeItem("token");
+      localStorage.removeItem("adminToken");
+      localStorage.removeItem("loggedInUser");
+
+      console.log("🔹 Logout request sent via sendBeacon at:", new Date().toISOString());
+    };
+
+    window.addEventListener("beforeunload", handleLogout);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleLogout);
+    };
+  }, [location.pathname]); // Thêm dependency
+
+  return null;
+}
