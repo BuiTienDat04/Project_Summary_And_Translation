@@ -3,6 +3,7 @@ import axios from "axios";
 import { Send, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { API_BASE_URL } from "../api/api";
+
 const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryContent, loggedInUser }) => {
     const location = useLocation();
     const [isOpen, setIsOpen] = useState(false);
@@ -12,45 +13,42 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
     const [error, setError] = useState("");
     const chatContainerRef = useRef(null);
 
-    // Kiểm tra điều kiện ẩn chatbox
-    const shouldHideChatbox = 
-        location.pathname === "/login" || 
-        location.pathname === "/register" || 
+    // Check conditions to hide chatbox
+    const shouldHideChatbox =
+        location.pathname === "/login" ||
+        location.pathname === "/register" ||
         location.pathname === "/aboutus" ||
         (location.pathname === "/" && !loggedInUser);
-   
 
-
-    // Khởi tạo tin nhắn mặc định
+    // Initialize default message
     useEffect(() => {
         if (messages.length === 0) {
             setMessages([
                 {
                     role: "bot",
-                    content:
-                        "Chào bạn! Hãy tóm tắt văn bản, URL hoặc tải lên PDF để tôi có thể trả lời câu hỏi của bạn.",
+                    content: "Hello! Summarize text, provide a URL, or upload a PDF so I can answer your question.",
                 },
             ]);
         }
     }, []);
 
-    // Cuộn xuống cuối khi có tin nhắn mới
+    // Scroll to the bottom when a new message is added
     useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
     }, [messages]);
 
-    // Ẩn hoàn toàn component chatbox nếu không đáp ứng điều kiện
+    // Completely hide the chatbox component if the condition is met
     if (shouldHideChatbox) {
         return null;
     }
 
-    // Gửi tin nhắn
+    // Send a message
     const handleSendMessage = async () => {
         if (!userInput.trim()) return;
         if (userInput.length > 500) {
-            setError("Câu hỏi quá dài, vui lòng giữ dưới 500 ký tự.");
+            setError("The question is too long, please keep it under 500 characters.");
             return;
         }
 
@@ -63,13 +61,12 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
         try {
             const response = await axios.post(`${API_BASE_URL}/chat`, {
                 question: userInput,
-                // Không cần gửi context nữa vì backend dùng latestContent
             });
 
             const { answer, source } = response.data;
             setMessages((prev) => [...prev, { role: "bot", content: answer, source }]);
         } catch (error) {
-            setError(error.response?.data?.error || "Lỗi khi gửi tin nhắn. Vui lòng thử lại.");
+            setError(error.response?.data?.error || "Error sending message. Please try again.");
         } finally {
             setIsLoading(false);
         }
@@ -86,8 +83,7 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
         setMessages([
             {
                 role: "bot",
-                content:
-                    "Chào bạn! Hãy tóm tắt văn bản, URL hoặc tải lên PDF để tôi có thể trả lời câu hỏi của bạn.",
+                content: "Hello! Summarize text, provide a URL, or upload a PDF so I can answer your question.",
             },
         ]);
         setError("");
@@ -95,7 +91,7 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
 
     return (
         <div className="fixed bottom-4 right-4 z-50 font-sans">
-            {/* Nút mở chat */}
+            {/* Open Chat Button */}
             {!isOpen && (
                 <button
                     onClick={() => setIsOpen(true)}
@@ -117,7 +113,7 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
                 </button>
             )}
 
-            {/* Chat box */}
+            {/* Chat Box */}
             {isOpen && (
                 <div className="bg-white rounded-xl shadow-2xl w-80 sm:w-96 h-[500px] flex flex-col overflow-hidden border border-gray-200">
                     {/* Header */}
@@ -128,7 +124,7 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
                                 onClick={clearMessages}
                                 className="text-sm text-white hover:text-gray-200 transition-colors"
                             >
-                                Xóa
+                                Clear
                             </button>
                             <button
                                 onClick={() => setIsOpen(false)}
@@ -139,17 +135,12 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
                         </div>
                     </div>
 
-                    {/* Nội dung chat */}
-                    <div
-                        ref={chatContainerRef}
-                        className="flex-1 p-4 overflow-y-auto bg-gray-100 space-y-3"
-                    >
+                    {/* Chat Content */}
+                    <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto bg-gray-100 space-y-3">
                         {messages.map((message, index) => (
                             <div
                                 key={index}
-                                className={`flex ${
-                                    message.role === "user" ? "justify-end" : "justify-start"
-                                }`}
+                                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                             >
                                 <div
                                     className={`max-w-[75%] p-3 rounded-lg shadow-sm transition-all duration-200 ${
@@ -161,7 +152,7 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
                                     {message.content}
                                     {message.source && (
                                         <span className="text-xs block mt-1 opacity-75">
-                                            (Nguồn: {message.source})
+                                            (Source: {message.source})
                                         </span>
                                     )}
                                 </div>
@@ -170,10 +161,7 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
                         {isLoading && (
                             <div className="flex justify-start">
                                 <div className="bg-white text-gray-600 p-3 rounded-lg shadow-sm flex items-center">
-                                    <svg
-                                        className="animate-spin h-5 w-5 text-blue-500 mr-2"
-                                        viewBox="0 0 24 24"
-                                    >
+                                    <svg className="animate-spin h-5 w-5 text-blue-500 mr-2" viewBox="0 0 24 24">
                                         <circle
                                             cx="12"
                                             cy="12"
@@ -189,7 +177,7 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
                                             className="opacity-75"
                                         />
                                     </svg>
-                                    Đang xử lý...
+                                    Processing...
                                 </div>
                             </div>
                         )}
@@ -207,7 +195,7 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
                                 value={userInput}
                                 onChange={(e) => setUserInput(e.target.value)}
                                 onKeyPress={handleKeyPress}
-                                placeholder="Nhập câu hỏi của bạn..."
+                                placeholder="Enter your question..."
                                 className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
                                 rows="2"
                                 maxLength={500}
@@ -216,9 +204,7 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
                                 onClick={handleSendMessage}
                                 disabled={isLoading}
                                 className={`p-2 rounded-full shadow-md transition-all duration-200 ${
-                                    isLoading
-                                        ? "bg-gray-300 cursor-not-allowed"
-                                        : "bg-blue-600 hover:bg-blue-700 text-white"
+                                    isLoading ? "bg-gray-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"
                                 }`}
                             >
                                 <Send className="w-5 h-5" />

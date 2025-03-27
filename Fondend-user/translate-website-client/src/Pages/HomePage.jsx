@@ -157,13 +157,13 @@ const Homepage = () => {
                             {/* Login/Register Buttons */}
                             <div className="flex justify-center mt-6 space-x-6">
                                 <button
-                                    onClick={handleLoginClick}
+                                    onClick={() => navigate("/login")}
                                     className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white px-12 py-5 rounded-2xl font-bold text-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg hover:shadow-green-300/50 active:scale-95 uppercase tracking-wide"
                                 >
                                     Login
                                 </button>
                                 <button
-                                    onClick={handleRegisterClick}
+                                    onClick={() => navigate("/register")}
                                     className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-12 py-5 rounded-2xl font-bold text-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg hover:shadow-blue-300/50 active:scale-95 uppercase tracking-wide"
                                 >
                                     Register

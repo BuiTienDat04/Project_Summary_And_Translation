@@ -159,6 +159,5 @@ module.exports = (visitCountObj) => {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 });
-
   return router; // 🟢 Trả về router
 };
