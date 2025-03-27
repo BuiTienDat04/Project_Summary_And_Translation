@@ -20,10 +20,10 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     console.log("App useEffect - Token:", token, "Path:", location.pathname);
-    if (token && (location.pathname === "/login" || location.pathname === "/")) {
+    if (token && (location.pathname === "/loginad" || location.pathname === "/")) {
       navigate("/dashboard");
-    } else if (!token && location.pathname !== "/login") {
-      navigate("/login", { replace: true });
+    } else if (!token && location.pathname !== "/loginad") {
+      navigate("/loginad", { replace: true });
     }
   }, [location.pathname, navigate]);
 
@@ -58,7 +58,7 @@ function App() {
       console.error("Logout error:", error);
     } finally {
       localStorage.removeItem("token");
-      navigate("/login", { replace: true });
+      navigate("/loginad", { replace: true });
       setIsLogoutConfirmOpen(false);
     }
   }, [navigate]);
@@ -87,7 +87,7 @@ function App() {
 
         <Routes>
           <Route path="/" element={<LoginPage />} />
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/loginad" element={<LoginPage />} />
           <Route
             path="/dashboard"
             element={
@@ -118,7 +118,7 @@ function AuthHandler() {
     const allowedPaths = ["/dashboard", "/user-management"];
     const token = localStorage.getItem("token");
 
-    if (token && !allowedPaths.includes(location.pathname) && location.pathname !== "/login") {
+    if (token && !allowedPaths.includes(location.pathname) && location.pathname !== "/loginad") {
       console.log("AuthHandler - Forcing logout");
       handleForcedLogout(navigate);
     }
@@ -134,7 +134,7 @@ async function handleForcedLogout(navigate) {
     console.error("Forced logout error:", error);
   } finally {
     localStorage.removeItem("token");
-    navigate("/login", { replace: true });
+    navigate("/loginad", { replace: true });
   }
 }
 
