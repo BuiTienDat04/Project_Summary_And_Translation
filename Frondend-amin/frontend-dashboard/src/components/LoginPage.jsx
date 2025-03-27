@@ -3,7 +3,7 @@ import { useState } from "react";
 import { FaSignInAlt, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaTwitter, FaGithub, FaApple, FaInstagram, FaLinkedin, FaYoutube, FaDiscord, FaSlack } from "react-icons/fa";
 
 import axios from "axios";
-
+import { API_BASE_URL } from "../api/api";  
 const LoginPage = ({ onClose, onLoginSuccess }) => {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -20,7 +20,7 @@ const LoginPage = ({ onClose, onLoginSuccess }) => {
     }
 
     try {
-      const response = await axios.post("http://localhost:5001/api/auth/login", {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
         email: loginEmail,
         password: loginPassword,
       });

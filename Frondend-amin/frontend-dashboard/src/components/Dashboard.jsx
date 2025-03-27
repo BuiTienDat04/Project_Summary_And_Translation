@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios"; // ✅ Đảm bảo import axios
 import StatisticsChart from "../components/StatisticsChart";
-
+import { API_BASE_URL } from "../api/api";
 const Dashboard = () => {
   const [data, setData] = useState({ totalUsers: 0, translatedPosts: 0, totalVisits: 0 });
   const [loading, setLoading] = useState(true);
@@ -10,11 +11,8 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("http://localhost:5001/api/dashboard");
-        if (!response.ok) throw new Error("Failed to fetch data");
-
-        const result = await response.json();
-        setData(result);
+        const response = await axios.post(`${API_BASE_URL}/api/dashboard`);
+        setData(response.data); // ✅ Lấy dữ liệu từ response
       } catch (err) {
         setError(err.message);
       } finally {
@@ -82,7 +80,6 @@ const Dashboard = () => {
           ]}
         />
       </div>
-
     </div>
   );
 };
