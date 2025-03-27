@@ -121,35 +121,44 @@ module.exports = (visitCountObj) => {
   // ================== 🟢 LOGOUT API ==================
   router.post("/logout", async (req, res) => {
     try {
-      console.log("🔹 /logout API called at:", new Date().toISOString());
-      console.log("🔹 Cookies received:", req.cookies);
-  
-      let visitData = await Visit.findOne();
-      if (!visitData) {
-        visitData = await Visit.create({ totalVisits: 0 });
-      }
-  
-      const updatedVisit = await Visit.findOneAndUpdate(
-        {},
-        { $inc: { totalVisits: -1 }, $max: { totalVisits: 0 } },
-        { new: true }
-      );
-  
-      console.log("🔹 Total visits after update:", updatedVisit.totalVisits);
-  
-      res.clearCookie("token", {
-        path: "/",
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "Strict",
-      });
-  
-      res.status(200).json({ message: "Logout successful" });
+        console.log("🔹 /logout API called at:", new Date().toISOString());
+        console.log("🔹 Cookies received:", req.cookies);
+
+        // Kiểm tra kết nối DB
+        let visitData = await Visit.findOne();
+        console.log("🔹 Visit data found:", visitData);
+        if (!visitData) {
+            visitData = await Visit.create({ totalVisits: 0 });
+            console.log("🔹 Created new visit data:", visitData);
+        }
+
+        // Cập nhật totalVisits với logic an toàn
+        const updatedVisit = await Visit.findOneAndUpdate(
+            {},
+            { $inc: { totalVisits: -1 } },
+            { new: true }
+        );
+        if (updatedVisit.totalVisits < 0) {
+            updatedVisit.totalVisits = 0;
+            await updatedVisit.save();
+        }
+        console.log("🔹 Total visits after update:", updatedVisit.totalVisits);
+
+        // Xóa cookie
+        res.clearCookie("token", {
+            path: "/",
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Strict",
+        });
+        console.log("🔹 Cookie 'token' cleared");
+
+        res.status(200).json({ message: "Logout successful" });
     } catch (error) {
-      console.error("❌ Error in /logout:", error);
-      res.status(500).json({ message: "Server error", error: error.message });
+        console.error("❌ Error in /logout:", error.stack); // Log chi tiết lỗi
+        res.status(500).json({ message: "Server error", error: error.message });
     }
-  });
+});
 
   return router; // 🟢 Trả về router
 };

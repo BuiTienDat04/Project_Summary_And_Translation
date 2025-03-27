@@ -21,12 +21,19 @@ const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout,
     }
 
     const handleLogout = () => {
+        console.log("Logout button clicked"); // Kiểm tra sự kiện
+        console.log("Calling logout API at:", `${API_BASE_URL}/api/auth/logout`); // Kiểm tra URL
+    
         axios.post(`${API_BASE_URL}/api/auth/logout`, {}, { withCredentials: true })
-            .then(() => {
-                localStorage.removeItem("token"); // Xóa token trên frontend
-                navigate("/login"); // Chuyển hướng về trang đăng nhập
+            .then((response) => {
+                console.log("Logout successful:", response.data); // Kiểm tra phản hồi
+                localStorage.removeItem("token");
+                console.log("Token removed, navigating to login");
+                navigate("/login");
             })
-            .catch(err => console.error("❌ Logout error:", err));
+            .catch(err => {
+                console.error("❌ Logout error:", err.response ? err.response.data : err.message); // Log lỗi chi tiết
+            });
     };
 
     return (
