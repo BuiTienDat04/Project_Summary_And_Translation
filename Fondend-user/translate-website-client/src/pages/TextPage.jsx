@@ -115,9 +115,9 @@ function TextPage() {
       </motion.header>
 
       {/* Features and Help Section */}
-      <div className="flex items-center space-x-8 justify-center mt-12">
-        <section className="mt-10 flex flex-col items-center gap-8">
-          {/* Buttons */}
+      <div className="flex flex-col items-center mt-12">
+        {/* Buttons Section */}
+        <section className="flex flex-col items-center gap-8 w-full">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -128,12 +128,8 @@ function TextPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="relative bg-gradient-to-r from-blue-500 to-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 overflow-hidden group"
-             
             >
-              {/* Gradient Animation */}
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-              {/* Button Content */}
               <div className="relative flex items-center justify-center gap-2">
                 <span className="group-hover:scale-110 transition-transform duration-300">Summarize Text</span>
                 <FaFileAlt className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
@@ -144,12 +140,9 @@ function TextPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="relative bg-gradient-to-r from-green-500 to-green-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 overflow-hidden group"
-
-              onClick={() => navigate("/document")}>
-              {/* Gradient Animation */}
+              onClick={() => navigate("/document")}
+            >
               <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-              {/* Button Content */}
               <div className="relative flex items-center justify-center gap-2">
                 <span className="group-hover:scale-110 transition-transform duration-300">Summarize Document</span>
                 <FaFilePdf className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
@@ -160,11 +153,9 @@ function TextPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="relative bg-gradient-to-r from-purple-500 to-purple-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 overflow-hidden group"
-              onClick={() => navigate("/link")}>
-              {/* Gradient Animation */}
+              onClick={() => navigate("/link")}
+            >
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-              {/* Button Content */}
               <div className="relative flex items-center justify-center gap-2">
                 <span className="group-hover:scale-110 transition-transform duration-300">Summarize Link</span>
                 <FaLink className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
@@ -173,8 +164,13 @@ function TextPage() {
           </motion.div>
         </section>
 
-        {/* Help Icon */}
-        <div className="relative flex items-center justify-center mt-4">
+        {/* Help Section - Now below buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="relative flex items-center justify-center mt-8"
+        >
           <button
             onClick={() => setShowHelp(!showHelp)}
             className="group relative rounded-full p-2 transition-all duration-500 hover:rotate-[360deg] focus:outline-none"
@@ -182,8 +178,8 @@ function TextPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
             <HelpCircle
               className={`w-9 h-9 transition-all duration-500 ${showHelp
-                ? 'text-purple-600 drop-shadow-[0_4px_8px_rgba(99,102,241,0.3)]'
-                : 'text-gray-400 hover:text-blue-500 group-hover:scale-110 group-hover:drop-shadow-[0_4px_12px_rgba(59,130,246,0.25)]'
+                  ? 'text-purple-600 drop-shadow-[0_4px_8px_rgba(99,102,241,0.3)]'
+                  : 'text-gray-400 hover:text-blue-500 group-hover:scale-110 group-hover:drop-shadow-[0_4px_12px_rgba(59,130,246,0.25)]'
                 }`}
               strokeWidth={1.5}
             />
@@ -202,9 +198,7 @@ function TextPage() {
                 border: '1px solid rgba(255,255,255,0.3)',
               }}
             >
-              {/* Arrow indicator */}
               <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-t border-l border-white/20" />
-
               <div className="flex justify-between items-start mb-5">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg shadow-lg">
@@ -264,7 +258,7 @@ function TextPage() {
               </ul>
             </motion.div>
           )}
-        </div>
+        </motion.div>
       </div>
 
       {/* Main Content: Text Summarizer and Translator */}
