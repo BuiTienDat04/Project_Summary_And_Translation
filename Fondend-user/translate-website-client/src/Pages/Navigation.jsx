@@ -16,15 +16,13 @@ const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout,
     const handleLogout = () => {
         console.log("Logout button clicked"); // Kiểm tra sự kiện
         console.log("Calling logout API at:", `${API_BASE_URL}/api/auth/logout`); // Kiểm tra URL
-    
+
         axios.post(`${API_BASE_URL}/api/auth/logout`, {}, { withCredentials: true })
             .then((response) => {
                 console.log("Logout successful:", response.data); // Kiểm tra phản hồi
                 localStorage.removeItem("token");
                 console.log("Token removed, navigating to login");
-            .then(() => {
-                localStorage.removeItem("token");
-                navigate("/login");
+                navigate("/login"); // Chuyển hướng ngay trong khối này
             })
             .catch(err => {
                 console.error("❌ Logout error:", err.response ? err.response.data : err.message); // Log lỗi chi tiết
@@ -53,8 +51,8 @@ const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout,
                         aria-label="Toggle menu"
                     >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
-                                d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} 
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
                             />
                         </svg>
                     </button>
