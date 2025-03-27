@@ -25,7 +25,7 @@ export default function App() {
     try {
       // Gọi API logout
       await axios.post(
-        `${API_BASE_URL}/logout`,
+        `${API_BASE_URL}/api/auth/logout`,
         {},
         { withCredentials: true }
       );
@@ -46,8 +46,8 @@ export default function App() {
       localStorage.removeItem("adminToken");
       localStorage.removeItem("loggedInUser");
 
-      // Chuyển hướng về trang đăng nhập
-      window.location.href = "/login";
+      // Chuyển hướng về
+      window.location.href = "/";
     }
   };
 
@@ -92,7 +92,7 @@ function AuthHandler() {
         localStorage.removeItem("token");
         localStorage.removeItem("adminToken");
         localStorage.removeItem("loggedInUser");
-        navigate("/login");
+        navigate("/");
       }
     }
   }, [location, navigate]);

@@ -23,14 +23,20 @@ const UserManagement = () => {
         setError("You are not logged in!");
         return;
       }
-
+  
       const response = await fetch(`${API_BASE_URL}/api/users`, {
         method: "GET",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
-
+  
+      console.log("Response status:", response.status);
       if (!response.ok) {
         const errorData = await response.json();
+        console.log("Error response from server:", errorData);
+        if (response.status === 404) {
+          setUsers([]); // Đặt users thành mảng rỗng để hiển thị "No users found"
+          return;
+        }
         throw new Error(errorData.message || "Failed to fetch users");
       }
       const data = await response.json();
@@ -123,7 +129,15 @@ const UserManagement = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">User Management</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">User Management</h1>
+        <button
+          onClick={fetchUsers}
+          className="p-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Refresh
+        </button>
+      </div>
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       {/* Form thêm tài khoản */}
