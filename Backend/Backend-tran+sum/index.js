@@ -77,7 +77,7 @@ app.use(helmet());
 app.use(morgan("combined"));
 app.use(cookieParser());
 app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/users", require("./routes/userRouters"));
+app.use("/api/users", userRoutes);
 
 // 🚀 Rate limiting to prevent DDoS
 const limiter = rateLimit({
