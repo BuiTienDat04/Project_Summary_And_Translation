@@ -6,9 +6,9 @@ const { verifyToken, verifyAdmin } = require("../middleware/authMiddleware");
 const router = express.Router();
 
 /** 
- * ✅ API: Lấy danh sách user (tạm bỏ `verifyToken` để test)
+ * ✅ API: Lấy danh sách user
  */
-router.get("/", async (req, res) => { 
+router.get("/", verifyToken, verifyAdmin, async (req, res) => { 
   try {
     const users = await User.find().select("-password").lean(); // Ẩn password + tối ưu
     if (!users || users.length === 0) {
