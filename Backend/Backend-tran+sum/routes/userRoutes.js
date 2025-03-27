@@ -1,5 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
+const mongoose = require("mongoose");
 const User = require("../models/User");
 const { verifyToken, verifyAdmin } = require("../middleware/authMiddleware");
 
@@ -10,7 +11,9 @@ const router = express.Router();
  */
 router.get("/", verifyToken, verifyAdmin, async (req, res) => { 
   try {
-    const users = await User.find().select("-password").lean(); // Ẩn password + tối ưu
+    console.log("MongoDB connection state:", mongoose.connection.readyState);
+    const users = await User.find().select("-password").lean();
+    console.log("Users found:", users);
     if (!users || users.length === 0) {
       return res.status(404).json({ message: "No users found" });
     }

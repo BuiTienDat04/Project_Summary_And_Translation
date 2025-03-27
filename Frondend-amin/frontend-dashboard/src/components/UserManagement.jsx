@@ -23,18 +23,24 @@ const UserManagement = () => {
         setError("You are not logged in!");
         return;
       }
-  
+
       const response = await fetch(`${API_BASE_URL}/api/users`, {
         method: "GET",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
-  
+
       console.log("Response status:", response.status);
       if (!response.ok) {
         const errorData = await response.json();
         console.log("Error response from server:", errorData);
         if (response.status === 404) {
-          setUsers([]); // Đặt users thành mảng rỗng để hiển thị "No users found"
+          setUsers([]);
+          return;
+        }
+        if (response.status === 401 || response.status === 403) {
+          setError(response.status === 401 ? "Unauthorized: Please log in again." : "Permission denied: Admin access required.");
+          localStorage.removeItem("token");
+          window.location.href = "/login";
           return;
         }
         throw new Error(errorData.message || "Failed to fetch users");

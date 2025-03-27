@@ -77,6 +77,7 @@ app.use(helmet());
 app.use(morgan("combined"));
 app.use(cookieParser());
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/users", require("./routes/userRouters"));
 
 // 🚀 Rate limiting to prevent DDoS
 const limiter = rateLimit({
@@ -395,13 +396,16 @@ app.get("/last-content", (req, res) => {
 // ✅ Kết nối MongoDB
 const connectDB = async () => {
     try {
-        await mongoose.connect(MONGODB_URI);
-        console.log("✅ Connected to MongoDB");
+      await mongoose.connect(MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+      console.log("✅ Connected to MongoDB");
     } catch (error) {
-        console.error("❌ MongoDB Connection Error:", error);
-        process.exit(1);
+      console.error("❌ MongoDB Connection Error:", error);
+      process.exit(1);
     }
-};
+  };
 
 // ✅ Start server
 let server;
