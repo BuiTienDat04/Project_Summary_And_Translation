@@ -18,6 +18,7 @@ const UserManagement = () => {
       setLoading(true);
       setError("");
       const token = localStorage.getItem("token");
+      console.log("Token in fetchUsers:", token);
       if (!token) {
         setError("You are not logged in!");
         return;
@@ -28,11 +29,16 @@ const UserManagement = () => {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) throw new Error("Failed to fetch users");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to fetch users");
+      }
       const data = await response.json();
+      console.log("Fetched users:", data);
       setUsers(data);
     } catch (error) {
       setError(error.message);
+      console.error("Error fetching users:", error);
     } finally {
       setLoading(false);
     }
@@ -53,8 +59,7 @@ const UserManagement = () => {
       if (!response.ok) throw new Error("Failed to add user");
       const addedUser = await response.json();
 
-      // Update UI only on success
-      setUsers((prevUsers) => [...prevUsers, addedUser.user]); 
+      setUsers((prevUsers) => [...prevUsers, addedUser.user]);
       setNewUser({ name: "", email: "", phoneNumber: "", dateOfBirth: "", password: "", role: "user" });
     } catch (error) {
       setError(error.message);
@@ -71,7 +76,6 @@ const UserManagement = () => {
       setError("");
       const token = localStorage.getItem("token");
 
-      // Remove password if empty (to avoid unnecessary updates)
       const updatedData = { ...editingUser };
       if (!updatedData.password) delete updatedData.password;
 
@@ -105,6 +109,7 @@ const UserManagement = () => {
       const response = await fetch(`${API_BASE_URL}/api/users/${user._id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({}),
       });
 
       if (!response.ok) throw new Error("Failed to delete user");
@@ -119,9 +124,9 @@ const UserManagement = () => {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-8">User Management</h1>
-      {error && <p className="text-red-500">{error}</p>}
+      {error && <p className="text-red-500 mb-4">{error}</p>}
 
-      {/* ✅ Form thêm tài khoản */}
+      {/* Form thêm tài khoản */}
       <div className="mb-6 p-4 bg-white rounded-lg shadow-md">
         <h2 className="text-xl font-semibold mb-3">Add New Account</h2>
         <div className="grid grid-cols-2 gap-4">
@@ -208,8 +213,6 @@ const UserManagement = () => {
         </div>
       </div>
 
-
-
       {editingUser && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
@@ -290,39 +293,50 @@ const UserManagement = () => {
         </div>
       )}
 
-
-
-
       {/* Danh sách người dùng */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <table className="min-w-full">
-          <thead className="bg-gray-800 text-white">
-            <tr>
-              <th className="p-3 text-left">User Name</th>
-              <th className="p-3 text-left">Email</th>
-              <th className="p-3 text-left">Phone Number</th>
-              <th className="p-3 text-left">Date of Birth</th>
-              <th className="p-3 text-left">Role</th>
-              <th className="p-3 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user._id} className="border-t hover:bg-gray-50 transition">
-                <td className="p-3">{user.name}</td>
-                <td className="p-3">{user.email}</td>
-                <td className="p-3">{user.phoneNumber}</td>
-                <td className="p-3">{user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString("vi-VN") : "N/A"}</td>
-                <td className="p-3">{user.role}</td>
-                <td className="p-3 flex space-x-2">
-                  <button onClick={() => setEditingUser(user)} className="text-blue-600"><FaEdit /></button>
-                  <button onClick={() => handleDeleteUser(user)} className="text-red-600"><FaTrash /></button>
-                </td>
+      {loading ? (
+        <div className="text-center p-4">
+          <p className="text-gray-500">Loading users...</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <table className="min-w-full">
+            <thead className="bg-gray-800 text-white">
+              <tr>
+                <th className="p-3 text-left">User Name</th>
+                <th className="p-3 text-left">Email</th>
+                <th className="p-3 text-left">Phone Number</th>
+                <th className="p-3 text-left">Date of Birth</th>
+                <th className="p-3 text-left">Role</th>
+                <th className="p-3 text-left">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {Array.isArray(users) && users.length > 0 ? (
+                users.map((user) => (
+                  <tr key={user._id} className="border-t hover:bg-gray-50 transition">
+                    <td className="p-3">{user.name}</td>
+                    <td className="p-3">{user.email}</td>
+                    <td className="p-3">{user.phoneNumber}</td>
+                    <td className="p-3">{user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString("vi-VN") : "N/A"}</td>
+                    <td className="p-3">{user.role}</td>
+                    <td className="p-3 flex space-x-2">
+                      <button onClick={() => setEditingUser(user)} className="text-blue-600"><FaEdit /></button>
+                      <button onClick={() => handleDeleteUser(user)} className="text-red-600"><FaTrash /></button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="p-3 text-center text-gray-500">
+                    No users found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
