@@ -170,91 +170,81 @@ function TextPage() {
               <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
               <HelpCircle
                 className={`w-8 h-8 md:w-9 md:h-9 transition-all duration-500 ${showHelp
-                    ? 'text-purple-600 drop-shadow-[0_4px_8px_rgba(99,102,241,0.3)]'
-                    : 'text-gray-400 hover:text-blue-500 group-hover:scale-110 group-hover:drop-shadow-[0_4px_12px_rgba(59,130,246,0.25)]'
+                  ? 'text-purple-600 drop-shadow-[0_4px_8px_rgba(99,102,241,0.3)]'
+                  : 'text-gray-400 hover:text-blue-500 group-hover:scale-110 group-hover:drop-shadow-[0_4px_12px_rgba(59,130,246,0.25)]'
                   }`}
                 strokeWidth={1.5}
               />
             </button>
 
             {showHelp && (
-              <motion.div
-                initial={{ opacity: 0, y: -10, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.97 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="absolute top-full mt-2 w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-[20rem] 
-            transform left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0
-            bg-white/95 backdrop-blur-sm shadow-2xl p-4 sm:p-6 rounded-2xl border border-white/20 z-50"
-                style={{
-                  background: 'radial-gradient(at top right, #f8fafc 0%, #f1f5f9 100%)',
-                  boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                }}
-              >
-                {/* Arrow indicator - hidden on mobile */}
-                <div className="hidden sm:block absolute -top-2 left-1/2 sm:left-auto sm:right-8 -translate-x-1/2 sm:translate-x-0 w-4 h-4 bg-white rotate-45 border-t border-l border-white/20" />
-
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="p-1.5 sm:p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg shadow-lg">
-                      <FaFileAlt className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                    </div>
-                    <h3 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent">
-                      Quick Start Guide
-                    </h3>
-                  </div>
+              <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-50">
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.97 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  className="w-full max-w-md sm:max-w-lg bg-white/95 backdrop-blur-sm shadow-2xl p-6 rounded-2xl border border-white/20 relative"
+                  style={{
+                    background: 'radial-gradient(at top right, #f8fafc 0%, #f1f5f9 100%)',
+                    boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                  }}
+                >
                   <button
                     onClick={() => setShowHelp(false)}
-                    className="p-1 hover:bg-gray-100/50 rounded-full transition-all duration-200 hover:rotate-90"
+                    className="absolute top-4 right-4 p-1 hover:bg-gray-100/50 rounded-full transition-all duration-200 hover:rotate-90"
                   >
-                    <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 hover:text-gray-600" />
+                    <X className="w-5 h-5 text-gray-400 hover:text-gray-600" />
                   </button>
-                </div>
 
-                <ul className="space-y-3 sm:space-y-4">
-                  <motion.li
-                    className="flex items-start gap-3 sm:gap-4 p-2 sm:p-3 rounded-xl hover:bg-white/50 transition-colors"
-                    whileHover={{ x: 5 }}
-                  >
-                    <div className="flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 bg-blue-500/10 text-blue-600 rounded-full flex items-center justify-center font-semibold text-sm sm:text-base">
-                      1
+                  <div className="flex justify-between items-start mb-5">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg shadow-lg">
+                        <FaFileAlt className="w-6 h-6 text-white" />
+                      </div>
+                      <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent">
+                        Quick Start Guide
+                      </h3>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-700 text-sm sm:text-base">Enter Text</p>
-                      <p className="text-xs sm:text-sm text-gray-500 mt-1">Paste or enter the text you want to summarize</p>
-                    </div>
-                  </motion.li>
+                  </div>
 
-                  <motion.li
-                    className="flex items-start gap-3 sm:gap-4 p-2 sm:p-3 rounded-xl hover:bg-white/50 transition-colors"
-                    whileHover={{ x: 5 }}
-                  >
-                    <div className="flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 bg-purple-500/10 text-purple-600 rounded-full flex items-center justify-center font-semibold text-sm sm:text-base">
-                      2
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-700 text-sm sm:text-base">Generate Summary</p>
-                      <p className="text-xs sm:text-sm text-gray-500 mt-1">Click the "Summarize" button for AI-powered analysis</p>
-                    </div>
-                  </motion.li>
+                  <ul className="space-y-4">
+                    <motion.li className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors" whileHover={{ x: 5 }}>
+                      <div className="flex-shrink-0 w-7 h-7 bg-blue-500/10 text-blue-600 rounded-full flex items-center justify-center font-semibold">
+                        1
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-700">Enter Text</p>
+                        <p className="text-sm text-gray-500 mt-1">Paste or enter the text you want to summarize</p>
+                      </div>
+                    </motion.li>
 
-                  <motion.li
-                    className="flex items-start gap-3 sm:gap-4 p-2 sm:p-3 rounded-xl hover:bg-white/50 transition-colors"
-                    whileHover={{ x: 5 }}
-                  >
-                    <div className="flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 bg-pink-500/10 text-pink-600 rounded-full flex items-center justify-center font-semibold text-sm sm:text-base">
-                      3
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-700 text-sm sm:text-base">Translate Results</p>
-                      <p className="text-xs sm:text-sm text-gray-500 mt-1">Select language and click "Translate" for instant conversion</p>
-                    </div>
-                  </motion.li>
-                </ul>
-              </motion.div>
+                    <motion.li className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors" whileHover={{ x: 5 }}>
+                      <div className="flex-shrink-0 w-7 h-7 bg-purple-500/10 text-purple-600 rounded-full flex items-center justify-center font-semibold">
+                        2
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-700">Generate Summary</p>
+                        <p className="text-sm text-gray-500 mt-1">Click the "Summarize" button for AI-powered analysis</p>
+                      </div>
+                    </motion.li>
+
+                    <motion.li className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors" whileHover={{ x: 5 }}>
+                      <div className="flex-shrink-0 w-7 h-7 bg-pink-500/10 text-pink-600 rounded-full flex items-center justify-center font-semibold">
+                        3
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-700">Translate Results</p>
+                        <p className="text-sm text-gray-500 mt-1">Select language and click "Translate" for instant conversion</p>
+                      </div>
+                    </motion.li>
+                  </ul>
+                </motion.div>
+              </div>
             )}
           </div>
+
         </section>
       </div>
 
