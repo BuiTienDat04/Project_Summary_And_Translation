@@ -43,7 +43,7 @@ const LinkPage = () => {
     const [targetLang, setTargetLang] = useState("en");
     const [searchTerm, setSearchTerm] = useState("");
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-      const [showHelp, setShowHelp] = useState(false);
+    const [showHelp, setShowHelp] = useState(false);
 
 
     const availableLanguages = [
@@ -292,79 +292,57 @@ const LinkPage = () => {
                             </button>
 
                             {showHelp && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -10, scale: 0.97 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: -10, scale: 0.97 }}
-                                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                                    className="absolute top-full left-1/2 mt-2 w-80 transform -translate-x-1/2 bg-white/95 backdrop-blur-sm shadow-2xl p-6 rounded-2xl border border-white/20 z-50"
-                                    style={{
-                                        background: 'radial-gradient(at top right, #f8fafc 0%, #f1f5f9 100%)',
-                                        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)',
-                                        border: '1px solid rgba(255,255,255,0.3)',
-                                    }}
-                                >
-                                    {/* Arrow indicator */}
-                                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-t border-l border-white/20" />
-
-                                    <div className="flex justify-between items-start mb-5">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg shadow-lg">
-                                                <FaLink className="w-6 h-6 text-white" />
+                                <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30 backdrop-blur-sm">
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10, scale: 0.97 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: -10, scale: 0.97 }}
+                                        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                                        className="w-full max-w-md mx-4 bg-white/95 backdrop-blur-lg shadow-2xl p-6 rounded-2xl border border-white/20 relative"
+                                        style={{
+                                            background: 'radial-gradient(at top right, #f8fafc 0%, #f1f5f9 100%)',
+                                            boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)',
+                                            border: '1px solid rgba(255,255,255,0.3)',
+                                        }}
+                                    >
+                                        <div className="flex justify-between items-start mb-5">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg shadow-lg">
+                                                    <FaLink className="w-6 h-6 text-white" />
+                                                </div>
+                                                <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent">
+                                                    Quick Start Guide
+                                                </h3>
                                             </div>
-                                            <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent">
-                                                Quick Start Guide
-                                            </h3>
+                                            <button
+                                                onClick={() => setShowHelp(false)}
+                                                className="p-1 hover:bg-gray-100/50 rounded-full transition-all duration-200 hover:rotate-90"
+                                            >
+                                                <X className="w-5 h-5 text-gray-400 hover:text-gray-600" />
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => setShowHelp(false)}
-                                            className="p-1 hover:bg-gray-100/50 rounded-full transition-all duration-200 hover:rotate-90"
-                                        >
-                                            <X className="w-5 h-5 text-gray-400 hover:text-gray-600" />
-                                        </button>
-                                    </div>
 
-                                    <ul className="space-y-4">
-                                        <motion.li
-                                            className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors"
-                                            whileHover={{ x: 5 }}
-                                        >
-                                            <div className="flex-shrink-0 w-7 h-7 bg-blue-500/10 text-blue-600 rounded-full flex items-center justify-center font-semibold">
-                                                1
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-gray-700">Enter Document URL</p>
-                                                <p className="text-sm text-gray-500 mt-1">Paste your document URL link to analyze</p>
-                                            </div>
-                                        </motion.li>
-
-                                        <motion.li
-                                            className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors"
-                                            whileHover={{ x: 5 }}
-                                        >
-                                            <div className="flex-shrink-0 w-7 h-7 bg-purple-500/10 text-purple-600 rounded-full flex items-center justify-center font-semibold">
-                                                2
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-gray-700">Generate Summary</p>
-                                                <p className="text-sm text-gray-500 mt-1">Click the "Summarize" button for AI-powered analysis</p>
-                                            </div>
-                                        </motion.li>
-
-                                        <motion.li
-                                            className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors"
-                                            whileHover={{ x: 5 }}
-                                        >
-                                            <div className="flex-shrink-0 w-7 h-7 bg-pink-500/10 text-pink-600 rounded-full flex items-center justify-center font-semibold">
-                                                3
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-gray-700">Translate Results</p>
-                                                <p className="text-sm text-gray-500 mt-1">Select language and click "Translate" for instant conversion</p>
-                                            </div>
-                                        </motion.li>
-                                    </ul>
-                                </motion.div>
+                                        <ul className="space-y-4">
+                                            {["Enter Document URL", "Generate Summary", "Translate Results"].map((title, index) => (
+                                                <motion.li
+                                                    key={index}
+                                                    className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors"
+                                                    whileHover={{ x: 5 }}
+                                                >
+                                                    <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center font-semibold ${index === 0 ? 'bg-blue-500/10 text-blue-600' : index === 1 ? 'bg-purple-500/10 text-purple-600' : 'bg-pink-500/10 text-pink-600'}`}>
+                                                        {index + 1}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-medium text-gray-700">{title}</p>
+                                                        <p className="text-sm text-gray-500 mt-1">
+                                                            {index === 0 ? "Paste your document URL link to analyze" : index === 1 ? "Click the 'Summarize' button for AI-powered analysis" : "Select language and click 'Translate' for instant conversion"}
+                                                        </p>
+                                                    </div>
+                                                </motion.li>
+                                            ))}
+                                        </ul>
+                                    </motion.div>
+                                </div>
                             )}
                         </div>
                     </section>
@@ -545,7 +523,7 @@ const LinkPage = () => {
                         </div>
                     </motion.div>
                 </div>
-                
+
             </div>
 
             <motion.section
@@ -559,23 +537,21 @@ const LinkPage = () => {
                     initial={{ opacity: 0, scale: 0.9 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.6, ease: "easeOut" }}
-                    className="mb-16 text-left"
+                    className="mb-12 px-4 sm:px-6 lg:px-8 text-center"
                 >
                     {/* Highlighted Title */}
-                    <h2 className="flex items-center justify-center text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent mb-8">
-                        Advanced Summarization & Translation
-                        <span className="block mt-2 text-3xl md:text-4xl">with WebSummarizer</span>
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent mb-6">
+                        Advanced Summarization & Translation with WebSummarizer
                     </h2>
 
                     {/* Service Introduction */}
-                    <p className="text-lg text-gray-700 max-w-3xl leading-relaxed">
+                    <p className="text-base sm:text-lg md:text-xl text-gray-700 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
                         WebSummarizer empowers you to <strong>quickly summarize web content</strong> and <strong>translate with precision</strong>.
-                        Harnessing the power of <strong className="text-indigo-600">artificial intelligence</strong>, it effortlessly condenses lengthy articles into concise summaries
+                        Harnessing the power of <strong className="text-indigo-600 dark:text-indigo-400">artificial intelligence</strong>, it effortlessly condenses lengthy articles into concise summaries
                         while delivering highly accurate translations across multiple languages.
                         Save time, stay informed, and experience seamless content transformation with WebSummarizer today!
                     </p>
                 </motion.div>
-
 
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-14">
