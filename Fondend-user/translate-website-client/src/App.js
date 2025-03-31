@@ -60,7 +60,6 @@ export default function App() {
       console.log("Socket.IO disconnected due to logout");
     }
 
-    // Cleanup khi component unmount (đóng trình duyệt)
     return () => {
       if (socket) {
         socket.disconnect();
