@@ -101,11 +101,11 @@ const ContactSection = () => (
               content={
                 <div className="space-y-1.5">
                   <a href="https://goo.gl/maps/..." target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-purple-600 transition-colors text-lg font-medium">
-                    12th Floor, Sunrise Building, Hanoi
+                   Duong Noi, Ha Dong, Hanoi
                   </a>
                   <div className="flex gap-2 text-sm text-gray-500">
                     <span className="bg-green-100 text-green-700 px-2 py-1 rounded-md">Main HQ</span>
-                    <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-md">5 Branches</span>
+                    <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-md">1 Branches</span>
                   </div>
                 </div>
               }
