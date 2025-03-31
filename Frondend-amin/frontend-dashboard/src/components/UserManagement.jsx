@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { API_BASE_URL } from "../api/api";
+import io from "socket.io-client";
 
 const UserManagement = () => {
   const [userStatuses, setUserStatuses] = useState({});
@@ -10,8 +11,38 @@ const UserManagement = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Thêm Socket.IO
   useEffect(() => {
+    // Kết nối Socket.IO với server
+    const token = localStorage.getItem("token");
+    const socket = io(API_BASE_URL, {
+      query: { userId: localStorage.getItem("userId") }, // Gửi userId từ localStorage hoặc context
+      auth: { token }, // Gửi token nếu server yêu cầu xác thực
+      withCredentials: true,
+    });
+
+    socket.on("connect", () => {
+      console.log("Connected to Socket.IO server");
+    });
+
+    // Lắng nghe sự kiện updateUsers từ server
+    socket.on("updateUsers", (users) => {
+      console.log("Received user statuses:", users);
+      setUserStatuses(users); // Cập nhật trạng thái
+    });
+
+    socket.on("updateTotalOnline", (total) => {
+      console.log("Total online users:", total);
+    });
+
+    // Lấy danh sách người dùng
     fetchUsers();
+
+    // Cleanup khi component unmount
+    return () => {
+      socket.disconnect();
+      console.log("Disconnected from Socket.IO server");
+    };
   }, []);
 
   const fetchUsers = async () => {
@@ -19,7 +50,6 @@ const UserManagement = () => {
       setLoading(true);
       setError("");
       const token = localStorage.getItem("token");
-      console.log("Token in fetchUsers:", token);
       if (!token) {
         setError("You are not logged in!");
         return;
@@ -30,10 +60,8 @@ const UserManagement = () => {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
 
-      console.log("Response status:", response.status);
       if (!response.ok) {
         const errorData = await response.json();
-        console.log("Error response from server:", errorData);
         if (response.status === 404) {
           setUsers([]);
           return;
@@ -41,17 +69,15 @@ const UserManagement = () => {
         if (response.status === 401 || response.status === 403) {
           setError(response.status === 401 ? "Unauthorized: Please log in again." : "Permission denied: Admin access required.");
           localStorage.removeItem("token");
-          window.location.href = "/login";
+          window.location.href = "/loginad";
           return;
         }
         throw new Error(errorData.message || "Failed to fetch users");
       }
       const data = await response.json();
-      console.log("Fetched users:", data);
       setUsers(data);
     } catch (error) {
       setError(error.message);
-      console.error("Error fetching users:", error);
     } finally {
       setLoading(false);
     }
@@ -343,9 +369,15 @@ const UserManagement = () => {
                     <td className="p-3">{user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString("vi-VN") : "N/A"}</td>
                     <td className="p-3">{user.role}</td>
                     <td className="p-3">
-                      <span className={userStatuses[user._id] === "online" ? "text-green-600" : "text-red-600"}>
-                        {userStatuses[user._id] === "online" ? "Online" : "Offline"}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-block w-3 h-3 rounded-full ${userStatuses[user._id] === "online" ? "bg-green-600" : "bg-black"
+                            }`}
+                        ></span>
+                        <span>
+                          {userStatuses[user._id] === "online" ? "Online" : "Offline"}
+                        </span>
+                      </div>
                     </td>
                     <td className="p-3 flex space-x-2">
                       <button onClick={() => setEditingUser(user)} className="text-blue-600"><FaEdit /></button>
