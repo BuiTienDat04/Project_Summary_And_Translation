@@ -450,59 +450,61 @@ connectDB().then(() => {
         },
     });
 
-    // Khởi động server
-    server.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+    // 🟢 Lưu trạng thái user
+let users = {}; // Lưu trạng thái người dùng
+let totalOnline = 0; // Đếm số người online
+let userSockets = {}; // Lưu danh sách socket của mỗi user
 
-    // Logic Socket.IO
-    let users = {}; // Lưu trạng thái người dùng
-    let totalOnline = 0; // Đếm số người online
-    let userSockets = {}; // Lưu danh sách các socket của mỗi user
+// 🟡 Hàm xử lý khi user disconnect
+const handleDisconnect = (socket, userId) => {
+    if (userId && userSockets[userId]) {
+        // Xóa socket ID của user khi mất kết nối
+        userSockets[userId] = userSockets[userId].filter((id) => id !== socket.id);
 
-    io.on("connection", (socket) => {
-        const userId = socket.handshake.query.userId;
+        // Nếu user không còn kết nối nào, đánh dấu offline
+        if (userSockets[userId].length === 0) {
+            users[userId] = "offline";
+            totalOnline = Math.max(0, totalOnline - 1);
+            console.log(`❌ User ${userId} went offline. Total Online: ${totalOnline}`);
 
-        if (userId) {
-            // Khởi tạo mảng socket nếu chưa có
-            if (!userSockets[userId]) {
-                userSockets[userId] = [];
-            }
+            delete userSockets[userId];
 
-            // Chỉ tăng totalOnline nếu user chuyển từ offline sang online
-            if (!users[userId] || users[userId] === "offline") {
-                totalOnline += 1;
-            }
-
-            userSockets[userId].push(socket.id);
-            users[userId] = "online";
-
-            console.log(`✅ User ${userId} is online. Total Online: ${totalOnline}`);
-
-            // Cập nhật trạng thái tới tất cả client
             io.emit("updateUsers", users);
             io.emit("updateTotalOnline", totalOnline);
         }
+    }
+};
 
-        socket.on("disconnect", () => {
-            if (userId && userSockets[userId]) {
-                // Xóa socket ID của user khi mất kết nối
-                userSockets[userId] = userSockets[userId].filter((id) => id !== socket.id);
+// 🟣 Khi có user kết nối
+io.on("connection", (socket) => {
+    const userId = socket.handshake.query.userId;
 
-                // Nếu user không còn kết nối nào, đánh dấu offline
-                if (userSockets[userId].length === 0) {
-                    users[userId] = "offline";
-                    totalOnline = Math.max(0, totalOnline - 1);
-                    console.log(`❌ User ${userId} went offline. Total Online: ${totalOnline}`);
+    if (userId) {
+        if (!userSockets[userId]) {
+            userSockets[userId] = [];
+        }
 
-                
-                    delete userSockets[userId];
+        if (!users[userId] || users[userId] === "offline") {
+            totalOnline += 1;
+        }
 
-                    
-                    io.emit("updateUsers", users);
-                    io.emit("updateTotalOnline", totalOnline);
-                }
-            }
-        });
-    });
+        userSockets[userId].push(socket.id);
+        users[userId] = "online";
+
+        console.log(`✅ User ${userId} is online. Total Online: ${totalOnline}`);
+
+        io.emit("updateUsers", users);
+        io.emit("updateTotalOnline", totalOnline);
+    }
+
+    // 🟢 Xử lý khi mất kết nối hoặc logout
+    socket.on("manualDisconnect", () => handleDisconnect(socket, userId));
+
+    socket.on("disconnect", () => handleDisconnect(socket, userId));
+});
+
+    // Khởi động server
+    server.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
 });
 
 let lastContent = "";

@@ -109,6 +109,10 @@ module.exports = (visitCountObj) => {
       console.log("🔹 /logout API called at:", new Date().toISOString());
       console.log("🔹 Cookies received:", req.cookies);
 
+      socket.emit("manualDisconnect");  // Gửi tín hiệu offline lên server
+      socket.disconnect();  // Ngắt kết nối socket
+      localStorage.removeItem("user");  // Xóa user khỏi localStorage
+
       // Kiểm tra kết nối DB
       let visitData = await Visit.findOne();
       console.log("🔹 Visit data found:", visitData);

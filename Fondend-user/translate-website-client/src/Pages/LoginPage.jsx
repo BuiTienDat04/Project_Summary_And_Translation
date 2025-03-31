@@ -20,9 +20,10 @@ import {
   FaBookOpen,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { BrowserRouter } from 'react-router-dom';
 import axios from "axios";
 import { API_BASE_URL } from "../api/api";
-import io from "socket.io-client";
+import { socket } from '../socket';
 import { motion, AnimatePresence } from "framer-motion";
 
 const PasswordInput = ({ value, onChange }) => {
@@ -55,8 +56,85 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
   const [loginSuccess, setLoginSuccess] = useState(false);
   const navigate = useNavigate();
-  const [showChat, setShowChat] = useState(false);
-  const [socketInstance, setSocketInstance] = useState(null); // Lưu socket để quản lý
+  const [socketInstance, setSocketInstance] = useState(null);
+
+  const handleLogin = async () => {
+    if (!loginEmail || !loginPassword) {
+      setLoginErrorMessage("Email and password are required!");
+      return;
+    }
+  
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
+        email: loginEmail,
+        password: loginPassword,
+      }, { withCredentials: true });
+  
+      console.log("Login response:", response.data);
+  
+      const { token, user } = response.data;
+  
+      if (!token || !user || !user._id) {
+        setLoginErrorMessage("Invalid response from server! Missing token or user ID.");
+        return;
+      }
+  
+      // Lưu token và userId vào localStorage
+      localStorage.setItem("token", token);
+      localStorage.setItem("userId", user._id); // Thêm dòng này để lưu _id
+      localStorage.setItem("loggedInUser", JSON.stringify(user)); // Giữ nguyên nếu cần toàn bộ thông tin user
+  
+      console.log("Logged in user ID:", user._id); // Log để kiểm tra
+      socket.emit("userOnline", user._id);
+      setLoginSuccess(true);
+      setLoginErrorMessage("");
+      setTimeout(() => {
+        navigate("/text", { replace: true });
+      }, 2000);
+    } catch (error) {
+      console.error("Login error:", error.response?.data || error.message);
+      setLoginErrorMessage(error.response?.data?.message || "Login failed!");
+      setLoginSuccess(false);
+    }
+  };
+
+  // Xử lý logout khi mount (chỉ chạy 1 lần)
+  useEffect(() => {
+    const handleInitialLogout = async () => {
+      try {
+        await axios.post(`${API_BASE_URL}/api/auth/logout`, {}, { 
+          withCredentials: true 
+        });
+        console.log("Cleared previous session");
+      } catch (error) {
+        console.error("Logout error:", error);
+      }
+    };
+
+    handleInitialLogout();
+  }, []);
+
+  // Cleanup socket khi unmount
+  useEffect(() => {
+    return () => {
+      if (socketInstance) {
+        socketInstance.disconnect();
+      }
+    };
+  }, [socketInstance]);
+
+  // Ẩn footer và chatbox
+  useEffect(() => {
+    const footer = document.querySelector("footer");
+    const chatbox = document.querySelector(".chatbox");
+    if (footer) footer.style.display = "none";
+    if (chatbox) chatbox.style.display = "none";
+
+    return () => {
+      if (footer) footer.style.display = "";
+      if (chatbox) chatbox.style.display = "";
+    };
+  }, []);
 
   const FeatureItem = ({ icon, title, description, delay }) => (
     <motion.div
@@ -74,116 +152,6 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
       </div>
     </motion.div>
   );
-
-  useEffect(() => {
-    const handleLogout = async () => {
-      try {
-        await axios.post(`${API_BASE_URL}/api/auth/logout`, {}, { withCredentials: true });
-        console.log("🔹 Người dùng truy cập trang login → Tự động logout");
-        if (socketInstance) {
-          socketInstance.disconnect(); // Ngắt kết nối socket cũ nếu có
-          setSocketInstance(null);
-        }
-        localStorage.clear(); // Xóa localStorage khi vào trang login
-      } catch (error) {
-        console.error("❌ Lỗi khi logout:", error);
-      }
-    };
-
-    handleLogout();
-  }, []);
-
-  useEffect(() => {
-    const footer = document.querySelector("footer");
-    const chatbox = document.querySelector(".chatbox");
-    if (footer) footer.style.display = "none";
-    if (chatbox) chatbox.style.display = "none";
-
-    return () => {
-      if (footer) footer.style.display = "";
-      if (chatbox) chatbox.style.display = "";
-    };
-  }, []);
-
-  const handleLogin = async () => {
-    if (!loginEmail || !loginPassword) {
-      setLoginErrorMessage("Email and password are required!");
-      setLoginSuccess(false);
-      return;
-    }
-
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/auth/login`,
-        { email: loginEmail, password: loginPassword },
-        { withCredentials: true }
-      );
-
-      const { token, user } = response.data;
-
-      if (!token || !user || !user._id) {
-        setLoginErrorMessage("Invalid response from server! Missing token or user ID.");
-        setLoginSuccess(false);
-        return;
-      }
-
-      localStorage.setItem("token", token);
-      localStorage.setItem("userId", user._id);
-      localStorage.setItem("loggedInUser", JSON.stringify(user));
-
-      console.log("Logged in user ID:", user._id);
-
-      // Kết nối Socket.IO ngay sau khi đăng nhập
-      const socket = io(API_BASE_URL, {
-        query: { userId: user._id },
-        auth: { token },
-        withCredentials: true,
-      });
-
-      socket.on("connect", () => {
-        console.log("Socket.IO connected with userId:", user._id);
-      });
-
-      socket.on("updateUsers", (users) => {
-        console.log("Received user statuses after login:", users);
-        // Lưu trạng thái vào window để các trang khác có thể truy cập
-        window.userStatuses = users;
-      });
-
-      socket.on("updateTotalOnline", (total) => {
-        console.log("Total online users:", total);
-      });
-
-      // Lắng nghe sự kiện disconnect từ server
-      socket.on("disconnect", (reason) => {
-        console.log("Socket.IO disconnected:", reason);
-      });
-
-      // Lưu socket vào state để quản lý
-      setSocketInstance(socket);
-
-      setLoginSuccess(true);
-      setLoginErrorMessage("");
-      setTimeout(() => {
-        setLoginSuccess(false);
-        navigate("/text", { replace: true });
-      }, 1000);
-    } catch (error) {
-      console.error("Login error:", error.response?.data || error.message);
-      setLoginErrorMessage(error.response?.data?.message || "Login failed!");
-      setLoginSuccess(false);
-    }
-  };
-
-  // Xử lý ngắt kết nối khi đóng tab/trình duyệt
-  useEffect(() => {
-    return () => {
-      if (socketInstance) {
-        socketInstance.disconnect();
-        console.log("Socket.IO disconnected on cleanup");
-      }
-    };
-  }, [socketInstance]);
 
   return (
     <div className="w-full h-screen grid grid-cols-1 lg:grid-cols-2 bg-gradient-to-br from-purple-500 to-blue-600 overflow-hidden">

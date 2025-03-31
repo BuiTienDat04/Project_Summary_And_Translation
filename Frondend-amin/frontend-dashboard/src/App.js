@@ -1,42 +1,33 @@
-import React, { useState, useEffect } from "react"; // Thêm useState, useEffect
+import React, { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import io from "socket.io-client"; // Thêm Socket.IO
-import { API_BASE_URL } from "./api/api"; // Giả sử bạn có file api.js
+import { connectSocket, disconnectSocket, socket } from "./socket"; // Import socket đúng cách
 import Dashboard from "./components/Dashboard";
 import Navbar from "./components/Navbar";
 import LoginPage from "./components/LoginPage";
 import UserManagement from "./components/UserManagement";
 
 function App() {
-  const [totalOnline, setTotalOnline] = useState(0); // State để lưu totalOnline
+  const [totalOnline, setTotalOnline] = useState(0);
 
   useEffect(() => {
-    // Khởi tạo Socket.IO
-    const socket = io(API_BASE_URL, {
-      withCredentials: true,
-    });
+    // 🟢 Kết nối WebSocket khi App mount
+    connectSocket();
 
-    socket.on("connect", () => {
-      console.log("Socket.IO connected for admin");
-    });
-
+    // Lắng nghe sự kiện cập nhật số người online
     socket.on("updateTotalOnline", (total) => {
       console.log("Total online users (admin):", total);
-      setTotalOnline(total); // Cập nhật state
+      setTotalOnline(total);
     });
 
-    socket.on("disconnect", (reason) => {
-      console.log("Socket.IO disconnected for admin:", reason);
-    });
-
-    // Cleanup khi App unmount
+    // 🔴 Cleanup khi App unmount
     return () => {
-      socket.disconnect();
+      disconnectSocket();
+      socket.off("updateTotalOnline"); // Ngừng lắng nghe sự kiện
       console.log("Socket.IO disconnected on cleanup (admin)");
     };
-  }, []); // Chỉ chạy một lần khi App mount
+  }, []);
 
   return (
     <>
@@ -46,7 +37,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/loginad" element={<LoginPage />} />
-          <Route path="/dashboard" element={<Dashboard totalOnline={totalOnline} />} /> {/* Truyền totalOnline */}
+          <Route path="/dashboard" element={<Dashboard totalOnline={totalOnline} />} />
           <Route path="/user-management" element={<UserManagement />} />
         </Routes>
       </div>
