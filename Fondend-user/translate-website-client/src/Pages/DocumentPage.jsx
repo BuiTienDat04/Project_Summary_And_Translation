@@ -86,12 +86,12 @@ const DocumentPage = () => {
             )}
 
             {/* Main Content */}
-            <div className="container mx-auto px-6 pt-16 min-h-screen">
+            <div className="container mx-auto min-h-screen">
                 <motion.header
                     initial={{ y: -50, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.8 }}
-                    className="container mx-auto mt-20 px-6 text-center"
+                    className="container mx-auto px-6 text-center"
                 >
                     <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6 flex items-center justify-center">
                         {/* Gradient Text with LED Effect */}
@@ -240,26 +240,22 @@ const DocumentPage = () => {
 
                     {/* Upload & Result Section */}
                     <DocumentSummarySection />
-
-
-                </div> {/* Đóng div max-w-7xl */}
-
+                </div>
             </div>
 
 
-
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center justify-start min-h-screen">
                 <section className="w-full min-h-screen flex flex-col items-center px-0 bg-white">
                     <div className="relative w-full max-w-none flex flex-col items-center py-24">
                         {/* Animated Header Section */}
                         <div className="text-center mb-20 w-full max-w-none px-4 animate-fade-in-up">
                             <h2 className="text-4xl xl:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 mb-8 animate-gradient-flow px-4">
-                                📑 Revolutionize Your Reading with AI-Powered Summarization
+                                📑 Master Your PDFs with AI-Powered Summarization
                             </h2>
                             <p className="text-gray-700 text-xl mb-12 leading-relaxed w-full max-w-none px-4">
-                                Discover the future of document processing with <span className="font-semibold text-blue-600">PDFSmart</span>'s cutting-edge AI technology that transforms lengthy documents into
-                                <span className="highlight-text"> concise, meaningful summaries </span>
-                                in seconds
+                                Unlock the power of quick insights with <span className="font-semibold text-blue-600">PDFSmart</span>. Upload your PDF files and let our advanced AI transform them into
+                                <span className="highlight-text"> concise, actionable summaries </span>
+                                in seconds.
                             </p>
                         </div>
 
@@ -267,24 +263,24 @@ const DocumentPage = () => {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20 bg-gradient-to-r from-blue-100 to-blue-300 p-8 rounded-xl shadow-md">
                             {[
                                 {
-                                    icon: '⏱️',
-                                    title: 'Instant Processing',
-                                    content: 'Leverage advanced NLP algorithms to analyze documents 10x faster than manual reading'
+                                    icon: "⏱️",
+                                    title: "Rapid PDF Processing",
+                                    content: "Turn lengthy PDFs into summaries instantly with lightning-fast AI analysis.",
                                 },
                                 {
-                                    icon: '🎯',
-                                    title: 'Precision Focus',
-                                    content: 'Smart context recognition identifies key arguments and data points with 98% accuracy'
+                                    icon: "🎯",
+                                    title: "Pinpoint Accuracy",
+                                    content: "Extract key points with 97% precision using smart context recognition.",
                                 },
                                 {
-                                    icon: '🔄',
-                                    title: 'Multi-format Support',
-                                    content: 'Seamlessly process PDF, DOCX, TXT, and web articles with consistent quality'
-                                }
+                                    icon: "📄",
+                                    title: "PDF Expertise",
+                                    content: "Designed to handle multi-page PDFs with seamless efficiency.",
+                                },
                             ].map((feature, index) => (
                                 <div
                                     key={index}
-                                    className="bg-red p-6 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-2 animate-fade-in-up"
+                                    className="bg-white p-6 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-2 animate-fade-in-up"
                                     style={{ animationDelay: `${index * 0.2}s` }}
                                 >
                                     <div className="text-4xl mb-4 animate-bounce-slow">{feature.icon}</div>
@@ -296,40 +292,58 @@ const DocumentPage = () => {
 
                         {/* Detailed Explanation Section */}
                         <div className="space-y-10 animate-fade-in-up">
-                            {/* Workflow Process - Enhanced */}
+                            {/* Workflow Process */}
                             <div className="bg-purple-50 p-10 rounded-3xl shadow-2xl border-l-6 border-gradient-to-r from-blue-500 to-purple-500 transition-shadow duration-500 hover:shadow-xl">
                                 <h3 className="text-3xl font-extrabold text-gray-900 mb-8 flex items-center gap-4 animate__animated animate__fadeInDown">
                                     <span className="text-blue-600 animate__animated animate__pulse animate__infinite">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M16 16l-4 4m-4-4l4-4m-4-4l-1.414 1.414a2 2 0 002.828 2.828L16 16l-1.414-1.414a2 2 0 00-2.828-2.828L10 8" />
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-8 w-8"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                            />
                                         </svg>
                                     </span>
-                                    Intelligent Document Processing: Unveiled
+                                    How PDFSmart Transforms Your PDFs
                                 </h3>
                                 <div className="space-y-8">
                                     {[
                                         {
-                                            title: '1. Advanced Contextual Analysis',
-                                            description: 'Our AI meticulously dissects document structure, establishing profound semantic connections between intricate concepts. This ensures a holistic understanding beyond mere text, capturing the essence of your documents.',
-                                            icon: '📚'
+                                            title: "1. Upload & Analyze",
+                                            description:
+                                                "Simply upload your PDF, and our AI dives deep into its structure, decoding complex layouts and text with precision.",
+                                            icon: "📤",
                                         },
                                         {
-                                            title: '2. Dynamic Concept Extraction',
-                                            description: 'Leveraging cutting-edge algorithms, we pinpoint core themes, statistical anomalies, and crucial entities. This process goes beyond keywords, extracting the underlying narrative and critical data points.',
-                                            icon: '💡'
+                                            title: "2. Core Insight Extraction",
+                                            description:
+                                                "Using advanced algorithms, we identify and pull out the most critical ideas, stripping away filler content effortlessly.",
+                                            icon: "💡",
                                         },
                                         {
-                                            title: '3. Intelligent Semantic Compression',
-                                            description: 'Through sophisticated analysis, redundant information is seamlessly eliminated while preserving the original meaning and context. This results in concise, yet comprehensive summaries that retain the document’s integrity.',
-                                            icon: '🔄'
+                                            title: "3. Smart Summarization",
+                                            description:
+                                                "Our AI condenses the PDF into a clear, concise summary, keeping the original meaning intact with no compromise.",
+                                            icon: "📝",
                                         },
                                         {
-                                            title: '4. Fluent Natural Language Synthesis',
-                                            description: 'Our AI reconstructs content with unparalleled fluency, employing human-like summarization techniques. This ensures the output is not only accurate but also engaging and easily digestible, bridging the gap between machine and human understanding.',
-                                            icon: '🗣️'
-                                        }
+                                            title: "4. Ready-to-Use Output",
+                                            description:
+                                                "Get a polished summary instantly, crafted in natural language for easy reading and immediate use.",
+                                            icon: "✅",
+                                        },
                                     ].map((item, index) => (
-                                        <div key={index} className="flex items-start gap-6 p-6 rounded-xl border border-gray-200 hover:border-blue-300 transition-colors duration-300 animate__animated animate__fadeInUp">
+                                        <div
+                                            key={index}
+                                            className="flex items-start gap-6 p-6 rounded-xl border border-gray-200 hover:border-blue-300 transition-colors duration-300 animate__animated animate__fadeInUp"
+                                        >
                                             <div className="text-3xl text-blue-500">{item.icon}</div>
                                             <div>
                                                 <h4 className="font-semibold text-xl text-gray-800 mb-2">{item.title}</h4>
@@ -340,41 +354,58 @@ const DocumentPage = () => {
                                 </div>
                             </div>
 
-                            {/* Benefits Section - Enhanced */}
+                            {/* Benefits Section */}
                             <div className="bg-gradient-to-br from-teal-500 to-purple-600 p-10 rounded-3xl text-white shadow-2xl transition-shadow duration-500 hover:shadow-xl mt-12">
-
                                 <h3 className="text-3xl font-extrabold mb-8 flex items-center gap-4 animate__animated animate__fadeInDown">
                                     <span className="bg-white/20 p-3 rounded-xl animate__animated animate__bounce animate__infinite">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0v1.5m-3 0h3m-3 12a2.684 2.684 0 01-2.77-2.576c0-2.426 1.723-4.593 4.1-5.12m1.576 0a2.684 2.684 0 012.77 2.576c0 2.426-1.723 4.593-4.1 5.12m-1.576 0v-2.16c0-.592.158-1.168.44-1.63C9.35 15.35 10.222 15 11 15h0c.778 0 1.65.35 1.96 1.17c.282-.462.44-1.038.44-1.63V19m3.18-10.41l-1.29-1.59a2.069 2.069 0 00-2.98 0L9.82 8.59m8.22 0l-1.29 1.59a2.069 2.069 0 01-2.98 0L8.18 8.59m0 0a6 6 0 1012 0a6 6 0 00-12 0z" />
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-8 w-8"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            />
                                         </svg>
                                     </span>
-                                    Unlock the Power of Seamless Document Understanding
+                                    Why Choose TextSum for PDFs?
                                 </h3>
                                 <div className="grid gap-8 md:grid-cols-2">
                                     {[
                                         {
-                                            title: '⚡ Instant Efficiency Boost',
-                                            description: 'Process extensive documents in mere minutes, achieving up to 90% reduction in processing time. Reclaim valuable hours and focus on what truly matters.',
-                                            icon: '⏱️'
+                                            title: "⚡ Speed Up Your Workflow",
+                                            description:
+                                                "Summarize multi-page PDFs in seconds, cutting down reading time by up to 85%. Focus on decisions, not details.",
+                                            icon: "⏱️",
                                         },
                                         {
-                                            title: '🎯 Unmatched Accuracy and Reliability',
-                                            description: 'Experience an industry-leading 95% content retention rate, ensuring your summaries are precise and trustworthy. Rely on our AI to deliver accurate insights every time.',
-                                            icon: '✅'
+                                            title: "🎯 Crystal-Clear Insights",
+                                            description:
+                                                "Achieve 97% accuracy in capturing key points, ensuring you never miss the essence of your documents.",
+                                            icon: "✅",
                                         },
                                         {
-                                            title: '🛡️ Fortified Security',
-                                            description: 'Your documents are safeguarded with military-grade encryption, ensuring total confidentiality and data protection. Trust in our robust security measures for all your document handling needs.',
-                                            icon: '🔒'
+                                            title: "📄 PDF Mastery",
+                                            description:
+                                                "Effortlessly handle complex PDFs, from reports to research papers, with tailored AI precision.",
+                                            icon: "📚",
                                         },
                                         {
-                                            title: '🌐 Universal Language Proficiency',
-                                            description: 'Seamlessly process documents in virtually any language. Our advanced AI transcends linguistic barriers, providing summaries that are both accurate and culturally sensitive.',
-                                            icon: '🌍'
-                                        }
+                                            title: "🛡️ Secure & Reliable",
+                                            description:
+                                                "Your PDFs are protected with top-tier encryption, guaranteeing privacy and peace of mind.",
+                                            icon: "🔒",
+                                        },
                                     ].map((item, index) => (
-                                        <div key={index} className="p-8 bg-white/10 rounded-2xl backdrop-blur-md hover:bg-white/20 transition-all duration-300 animate__animated animate__fadeInUp">
+                                        <div
+                                            key={index}
+                                            className="p-8 bg-white/10 rounded-2xl backdrop-blur-md hover:bg-white/20 transition-all duration-300 animate__animated animate__fadeInUp"
+                                        >
                                             <div className="text-4xl mb-4">{item.icon}</div>
                                             <div className="font-semibold text-xl mb-3">{item.title}</div>
                                             <div className="text-lg opacity-90 leading-relaxed">{item.description}</div>
@@ -387,10 +418,10 @@ const DocumentPage = () => {
                         {/* Animated Stats Section */}
                         <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 text-center animate-staggered-fade">
                             {[
-                                ['📚 Documents Processed', '1M+', 'text-blue-600'],
-                                ['⏱️ Avg. Time Saved', '2.7M Hours', 'text-green-600'],
-                                ['🎯 Accuracy Rate', '95%', 'text-purple-600'],
-                                ['🌍 Languages', '50+', 'text-orange-600']
+                                ["📑 PDFs Processed", "500K+", "text-blue-600"],
+                                ["⏱️ Time Saved", "1M+ Hours", "text-green-600"],
+                                ["🎯 Accuracy Rate", "97%", "text-purple-600"],
+                                ["📄 Pages Summarized", "10M+", "text-orange-600"],
                             ].map(([title, value, color], index) => (
                                 <div
                                     key={index}
@@ -403,47 +434,47 @@ const DocumentPage = () => {
                             ))}
                         </div>
                     </div>
+
                     <style jsx>{`
-        @keyframes fadeInUp {
+          @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
-        }
+          }
 
-        @keyframes bounceSlow {
+          @keyframes bounceSlow {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-10px); }
-        }
+          }
 
-        @keyframes gradient-flow {
+          @keyframes gradient-flow {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
-        }
+          }
 
-        .animate-gradient-flow {
+          .animate-gradient-flow {
             background-size: 200% auto;
             animation: gradient-flow 5s ease infinite;
-        }
+          }
 
-        .highlight-text {
+          .highlight-text {
             background-image: linear-gradient(120deg, #93c5fd 0%, #c4b5fd 100%);
             background-repeat: no-repeat;
             background-size: 100% 45%;
-            background-position: 0 95%; /* Điều chỉnh vị trí highlight */
-            padding-bottom: 2px; /* Thêm padding để chừa khoảng trống */
+            background-position: 0 95%;
+            padding-bottom: 2px;
             transition: all 0.3s ease;
-        }
+          }
 
-        .highlight-text:hover {
+          .highlight-text:hover {
             background-size: 100% 100%;
             padding-bottom: 0;
-        }
+          }
 
-        /* Đảm bảo các phần tử có khoảng cách đủ */
-        .space-y-10 > * + * {
-            margin-top: 4rem; /* Tăng khoảng cách giữa các section */
-        }
-    `}</style>
+          .space-y-10 > * + * {
+            margin-top: 4rem;
+          }
+        `}</style>
                 </section>
             </div>
 

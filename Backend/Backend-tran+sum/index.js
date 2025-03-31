@@ -212,7 +212,6 @@ app.post("/summarize", async (req, res) => {
     }
 });
 
-// ✅ API to translate text
 app.post("/translate", async (req, res) => {
     const { text, targetLang } = req.body;
     if (!text || !targetLang || text.trim().length < 10) {
@@ -220,7 +219,26 @@ app.post("/translate", async (req, res) => {
     }
 
     try {
-        const translation = await translateText(text, targetLang);
+        // Tách tên riêng được đánh dấu bằng []
+        const nameRegex = /\[(.*?)\]/g;
+        const names = {};
+        let processedText = text;
+        let match;
+        let index = 0;
+        while ((match = nameRegex.exec(text)) !== null) {
+            const placeholder = `__NAME_${index++}__`;
+            names[placeholder] = match[1];
+            processedText = processedText.replace(match[0], placeholder);
+        }
+
+        // Dịch văn bản
+        let translation = await translateText(processedText, targetLang);
+
+        // Khôi phục tên
+        for (const [placeholder, name] of Object.entries(names)) {
+            translation = translation.replace(placeholder, name);
+        }
+
         await Visit.findOneAndUpdate(
             {},
             { $inc: { translatedPosts: 1 } },

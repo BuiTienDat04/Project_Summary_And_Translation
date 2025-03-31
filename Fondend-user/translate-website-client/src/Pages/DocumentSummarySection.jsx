@@ -245,8 +245,8 @@ export default function DocumentSummarySection() {
 
     return (
         <div className="relative min-h-screen">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-h-[600px] overflow-hidden">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     {/* Upload Section */}
                     <section className="space-y-4 sm:space-y-6 p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
                         <div className="flex items-center justify-between">
@@ -262,9 +262,8 @@ export default function DocumentSummarySection() {
                             )}
                         </div>
                         <div
-                            className={`relative bg-blue-50 p-6 sm:p-12 rounded-xl border-2 border-dashed transition-all duration-300 ${
-                                dragActive ? "border-blue-400 bg-blue-100 scale-105" : "border-gray-300 hover:border-blue-300"
-                            }`}
+                            className={`relative bg-blue-50 p-6 sm:p-12 rounded-xl border-2 border-dashed transition-all duration-300 ${dragActive ? "border-blue-400 bg-blue-100 scale-105" : "border-gray-300 hover:border-blue-300"
+                                }`}
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
@@ -312,9 +311,8 @@ export default function DocumentSummarySection() {
                         <button
                             onClick={generateSummary}
                             disabled={!file || isLoading}
-                            className={`w-full bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-6 py-3 sm:px-8 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 text-base sm:text-lg ${
-                                !file || isLoading ? "opacity-50 cursor-not-allowed" : ""
-                            }`}
+                            className={`w-full bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-6 py-3 sm:px-8 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 text-base sm:text-lg ${!file || isLoading ? "opacity-50 cursor-not-allowed" : ""
+                                }`}
                         >
                             {isLoading ? "Processing..." : "Generate Summary"}
                         </button>
@@ -405,9 +403,8 @@ export default function DocumentSummarySection() {
 
                                 <button
                                     onClick={translateSummary}
-                                    className={`w-full bg-gradient-to-br from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-6 py-3 sm:px-8 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 text-base sm:text-lg ${
-                                        isLoading ? "opacity-50 cursor-not-allowed" : ""
-                                    }`}
+                                    className={`w-full bg-gradient-to-br from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-6 py-3 sm:px-8 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 text-base sm:text-lg ${isLoading ? "opacity-50 cursor-not-allowed" : ""
+                                        }`}
                                     disabled={isLoading}
                                 >
                                     {isLoading ? "Translating..." : "Translate Now"}

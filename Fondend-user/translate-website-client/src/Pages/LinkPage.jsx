@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { HelpCircle, Link2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { FaFileAlt, FaCheckCircle } from "react-icons/fa";
+import { FaFileAlt, FaCheckCircle, FaFilePdf, FaLink } from "react-icons/fa";
 import LoginPage from "../Pages/LoginPage";
 import RegisterPage from "../Pages/RegisterPage";
 import Navigation from "../Pages/Navigation";
 import Footer from "../Pages/Footer";
 import { motion } from "framer-motion";
-import { FaFilePdf, FaLink } from "react-icons/fa";
 import axios from "axios";
 import ChatBox from "../Pages/ChatBox";
 import { API_BASE_URL } from "../api/api";
@@ -44,7 +43,6 @@ const LinkPage = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
-
 
     const availableLanguages = [
         { code: "en", name: "English" },
@@ -137,9 +135,9 @@ const LinkPage = () => {
         setTranslatedContent("");
 
         try {
+            // Gửi yêu cầu đến backend để trích xuất nội dung chính và tạo tóm tắt
             const response = await axios.post(`${API_BASE_URL}/summarize-link`, {
                 url: linkInput,
-                language: "English",
             });
 
             const { summary } = response.data;
@@ -177,7 +175,6 @@ const LinkPage = () => {
         }
     };
 
-    // Nội dung gửi đến ChatBox
     const linkPageContent = `URL: ${linkInput}\nSummary: ${summaryResult}\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}): ${translatedContent}`;
 
     return (
@@ -362,8 +359,7 @@ const LinkPage = () => {
                                     placeholder="Enter URL here (e.g., https://example.com)"
                                     value={linkInput}
                                     onChange={handleLinkChange}
-                                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${error ? "border-red-500" : "border-gray-300"
-                                        }`}
+                                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${error ? "border-red-500" : "border-gray-300"}`}
                                 />
                                 {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
                             </div>
@@ -372,8 +368,7 @@ const LinkPage = () => {
                                 whileTap={{ scale: 0.95 }}
                                 onClick={handleGenerateSummary}
                                 disabled={isLoading}
-                                className={`mt-6 w-full py-3 rounded-xl font-semibold text-white transition-colors ${isLoading ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-500 hover:bg-indigo-600"
-                                    }`}
+                                className={`mt-6 w-full py-3 rounded-xl font-semibold text-white transition-colors ${isLoading ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-500 hover:bg-indigo-600"}`}
                             >
                                 {isLoading ? "Generating..." : "Generate Summary"}
                             </motion.button>
@@ -474,8 +469,7 @@ const LinkPage = () => {
                                                             />
                                                         </svg>
                                                         Translation (
-                                                        {availableLanguages.find((l) => l.code === targetLang)?.name ||
-                                                            "English"}
+                                                        {availableLanguages.find((l) => l.code === targetLang)?.name || "English"}
                                                         )
                                                     </h3>
                                                     <span className="text-sm text-gray-500 font-medium">
@@ -523,7 +517,6 @@ const LinkPage = () => {
                         </div>
                     </motion.div>
                 </div>
-
             </div>
 
             <motion.section
@@ -539,23 +532,20 @@ const LinkPage = () => {
                     transition={{ duration: 0.6, ease: "easeOut" }}
                     className="mb-12 px-4 sm:px-6 lg:px-8 text-center"
                 >
-                    {/* Highlighted Title */}
                     <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent mb-6">
                         Advanced Summarization & Translation with WebSummarizer
                     </h2>
-
-                    {/* Service Introduction */}
-                    <p className="text-base sm:text-lg md:text-xl text-gray-700 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
-                        WebSummarizer empowers you to <strong>quickly summarize web content</strong> and <strong>translate with precision</strong>.
+                    <p className="text-black sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+                        WebSummarizer empowers you to <strong className="text-blue-600 dark:text-blue-400">quickly summarize web content</strong> and
+                        <strong className="text-red-600 dark:text-red-400"> translate with precision</strong>.
                         Harnessing the power of <strong className="text-indigo-600 dark:text-indigo-400">artificial intelligence</strong>, it effortlessly condenses lengthy articles into concise summaries
                         while delivering highly accurate translations across multiple languages.
                         Save time, stay informed, and experience seamless content transformation with WebSummarizer today!
                     </p>
+
                 </motion.div>
 
-
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-14">
-                    {/* How It Works Section */}
                     <motion.div
                         initial={{ x: -50 }}
                         whileInView={{ x: 0 }}
@@ -615,10 +605,8 @@ const LinkPage = () => {
                                 </motion.li>
                             ))}
                         </motion.ul>
-
                     </motion.div>
 
-                    {/* Benefits Section */}
                     <motion.div
                         initial={{ x: 50 }}
                         whileInView={{ x: 0 }}
@@ -627,10 +615,10 @@ const LinkPage = () => {
                     >
                         <div className="flex items-center gap-4 mb-8">
                             <div className="p-4 bg-purple-100 rounded-xl">
-                                <RocketLaunchIcon className="h-8 w-8 text-purple-600" />
+                                <GlobeAltIcon className="h-8 w-8 text-purple-600" />
                             </div>
                             <h3 className="text-2xl font-bold text-gray-800">
-                                Why Choose WebSummarizer?
+                                Why Choose TextSum for URL Summarization?
                             </h3>
                         </div>
 
@@ -640,26 +628,26 @@ const LinkPage = () => {
                                     color: "bg-blue-100",
                                     icon: <ClockIcon className="h-6 w-6 text-blue-600" />,
                                     title: "Lightning-Fast Summaries",
-                                    desc: "Receive accurate and concise summaries in under 15 seconds with real-time AI processing, saving you valuable time."
+                                    desc: "Get concise summaries from URLs in under 15 seconds with real-time AI processing, saving you time on web content.",
                                 },
                                 {
                                     color: "bg-green-100",
                                     icon: <LanguageIcon className="h-6 w-6 text-green-600" />,
                                     title: "Seamless Multi-Language Support",
-                                    desc: "Translate and summarize content across 50+ languages effortlessly, ensuring global accessibility and comprehension."
+                                    desc: "Summarize and translate web content across 20+ languages instantly, making global information accessible.",
                                 },
                                 {
                                     color: "bg-orange-100",
                                     icon: <AdjustmentsHorizontalIcon className="h-6 w-6 text-orange-600" />,
-                                    title: "Flexible Summarization Styles",
-                                    desc: "Customize your summaries with structured bullet points or fluid paragraph formats to match your preferred reading style."
+                                    title: "Tailored Summarization Styles",
+                                    desc: "Choose between bullet points or paragraphs to suit your reading preference, all from any webpage.",
                                 },
                                 {
-                                    color: "bg-pink-100",
-                                    icon: <CloudArrowDownIcon className="h-6 w-6 text-pink-600" />,
-                                    title: "Effortless Export & Sharing",
-                                    desc: "Download your summaries in TXT format or copy them instantly to your clipboard for quick and easy access."
-                                }
+                                    color: "bg-purple-100",
+                                    icon: <GlobeAltIcon className="h-6 w-6 text-purple-600" />,
+                                    title: "Smart Web Extraction",
+                                    desc: "Extract key insights from URLs by filtering out ads and noise, delivering only what matters.",
+                                },
                             ].map((item, idx) => (
                                 <motion.div
                                     key={idx}
@@ -667,26 +655,18 @@ const LinkPage = () => {
                                     className={`p-5 rounded-xl ${item.color} transition-all shadow-sm hover:shadow-md`}
                                 >
                                     <div className="flex gap-4 items-center">
-                                        <div className="p-2 bg-white rounded-lg">
-                                            {item.icon}
-                                        </div>
+                                        <div className="p-2 bg-white rounded-lg">{item.icon}</div>
                                         <div>
-                                            <h4 className="text-lg font-semibold text-gray-800">
-                                                {item.title}
-                                            </h4>
-                                            <p className="text-gray-600 mt-1">
-                                                {item.desc}
-                                            </p>
+                                            <h4 className="text-lg font-semibold text-gray-800">{item.title}</h4>
+                                            <p className="text-gray-600 mt-1">{item.desc}</p>
                                         </div>
                                     </div>
                                 </motion.div>
                             ))}
                         </div>
                     </motion.div>
-
                 </div>
 
-                {/* Use Cases Section */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
@@ -738,7 +718,6 @@ const LinkPage = () => {
                     </div>
                 </motion.div>
 
-                {/* Stats Section */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
@@ -748,7 +727,7 @@ const LinkPage = () => {
                         {[
                             { number: "5M+", label: "Pages Summarized" },
                             { number: "98%", label: "Accuracy Rate" },
-                            { number: "50", label: "Languages Supported" },
+                            { number: "20", label: "Languages Supported" },
                             { number: "15s", label: "Average Processing" }
                         ].map((stat, idx) => (
                             <div key={idx} className="space-y-4">
@@ -767,7 +746,6 @@ const LinkPage = () => {
                 </motion.div>
             </motion.section>
 
-            {/* Truyền dữ liệu vào ChatBox */}
             <ChatBox linkPageContent={linkPageContent} />
         </div>
     );

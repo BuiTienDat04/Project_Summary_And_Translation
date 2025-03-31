@@ -380,9 +380,8 @@ function TextPage() {
 
                     <div className="space-y-5 border-l-2 border-indigo-100 pl-5">
                       {[
-                        { title: 'Compression Rate', value: '95%', color: 'from-indigo-400 to-purple-400' },
-                        { title: 'Speed', value: '0.2s/page', color: 'from-green-400 to-cyan-400' },
-                        { title: 'Accuracy', value: '98%', color: 'from-amber-400 to-orange-400' }
+                        { title: 'Speed', value: '15s /page', color: 'from-green-400 to-cyan-400' },
+                        { title: 'Accuracy', value: '90%', color: 'from-amber-400 to-orange-400' }
                       ].map((item, index) => (
                         <div key={index} className="relative">
                           <div className="absolute -left-5 top-3 w-3 h-3 bg-indigo-200 rounded-full transition-all duration-300 group-hover:scale-150"></div>
@@ -417,15 +416,15 @@ function TextPage() {
                     </div>
 
                     <p className="text-gray-600 mb-8 text-lg leading-relaxed flex-1">
-                      Break language barriers with real-time translation supporting 50+ languages using transformer architecture.
+                      Break language barriers with real-time translation supporting 20+ languages using transformer architecture.
                     </p>
 
                     <div className="grid grid-cols-2 gap-6">
                       {[
-                        { icon: '🌍', title: 'Languages', value: '50+' },
-                        { icon: '⚡', title: 'Speed', value: '0.1s/word' },
-                        { icon: '🤖', title: 'AI Models', value: '15+' },
-                        { icon: '🎯', title: 'Accuracy', value: '99%' }
+                        { icon: '🌍', title: 'Languages', value: '20+' },
+                        { icon: '⚡', title: 'Speed', value: '15s /Paragraph' },
+                        { icon: '🤖', title: 'AI Models', value: '1+' },
+                        { icon: '🎯', title: 'Accuracy', value: '90%' }
                       ].map((item, index) => (
                         <div key={index} className="p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
                           <div className="text-2xl mb-2">{item.icon}</div>
