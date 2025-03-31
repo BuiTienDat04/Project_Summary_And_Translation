@@ -13,12 +13,10 @@ const cookieParser = require("cookie-parser");
 const axios = require("axios");
 const cheerio = require("cheerio");
 
-// Import models
 const User = require("./models/User");
 const Visit = require("./models/Visit");
 const visitCountObj = { visitCount: 0 };
 
-// Import routes
 const authRoutes = require("./routes/auth");
 const adminRoutes = require("./routes/admin");
 const dashboardRoutes = require("./routes/dashboard");
