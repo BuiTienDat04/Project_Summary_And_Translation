@@ -108,22 +108,28 @@ app.use((err, req, res, next) => {
     next();
 });
 
-// =================== 🔹 UTILITY FUNCTIONS 🔹 ===================
 const cleanText = (text) => {
     return text
-        .replace(/[^\w\s.,!?;:'"()-]/g, " ")
-        .replace(/\s+/g, " ")
+        .replace(/[^\w\s.,!?;:'"()-]/g, " ") // Giữ lại ký tự cần thiết
+        .replace(/\s+/g, " ") // Chuẩn hóa khoảng trắng
         .trim();
 };
 
 const filterIrrelevantContent = (text) => {
+    const adKeywords = ["ad", "sponsored", "advertisement", "promotion", "brought to you by"];
+    
     return text
         .split("\n")
-        .filter((line) => !/^\s*$/.test(line))
+        .filter((line) => {
+            return (
+                !/^\s*$/.test(line) && // Bỏ dòng trống
+                !adKeywords.some((keyword) => line.toLowerCase().includes(keyword)) && // Loại quảng cáo
+                line.length > 10 // Bỏ nội dung quá ngắn (thường là tiêu đề quảng cáo)
+            );
+        })
         .join("\n")
         .trim();
 };
-
 const callGeminiAPI = async (prompt, retries = 3, delay = 2000) => {
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
