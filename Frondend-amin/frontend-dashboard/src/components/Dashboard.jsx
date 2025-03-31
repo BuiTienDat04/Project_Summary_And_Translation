@@ -67,7 +67,7 @@ const Dashboard = () => {
         </div>
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 rounded-lg shadow-lg text-white">
           <h2 className="text-lg font-semibold">Total Visits</h2>
-          <p className="text-4xl font-bold">{data.totalVisits}</p>
+          <p className="text-4xl font-bold">{data.totalOnline}</p>
         </div>
       </div>
 
@@ -80,7 +80,7 @@ const Dashboard = () => {
           data={[
             { name: "Total Users", value: data.totalUsers },
             { name: "Translated Posts", value: data.translatedPosts },
-            { name: "Total Visits", value: data.totalVisits },
+            { name: "Total Visits", value: data.totalOnline },
           ]}
         />
       </div>

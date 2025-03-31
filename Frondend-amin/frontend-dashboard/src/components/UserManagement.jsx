@@ -3,6 +3,7 @@ import { FaEdit, FaTrash } from "react-icons/fa";
 import { API_BASE_URL } from "../api/api";
 
 const UserManagement = () => {
+  const [userStatuses, setUserStatuses] = useState({});
   const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
   const [newUser, setNewUser] = useState({ name: "", email: "", phoneNumber: "", dateOfBirth: "", password: "", role: "user" });
@@ -293,8 +294,8 @@ const UserManagement = () => {
               <button
                 onClick={handleEditUser}
                 className={`p-2 rounded text-white ${editingUser.name && editingUser.email && editingUser.phoneNumber && editingUser.dateOfBirth && editingUser.password
-                    ? "bg-green-600 hover:bg-green-700"
-                    : "bg-gray-400 cursor-not-allowed"
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-gray-400 cursor-not-allowed"
                   }`}
                 disabled={
                   !editingUser.name || !editingUser.email || !editingUser.phoneNumber || !editingUser.dateOfBirth || !editingUser.password
@@ -328,6 +329,7 @@ const UserManagement = () => {
                 <th className="p-3 text-left">Phone Number</th>
                 <th className="p-3 text-left">Date of Birth</th>
                 <th className="p-3 text-left">Role</th>
+                <th className="p-3 text-left">Status</th>
                 <th className="p-3 text-left">Actions</th>
               </tr>
             </thead>
@@ -340,6 +342,11 @@ const UserManagement = () => {
                     <td className="p-3">{user.phoneNumber}</td>
                     <td className="p-3">{user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString("vi-VN") : "N/A"}</td>
                     <td className="p-3">{user.role}</td>
+                    <td className="p-3">
+                      <span className={userStatuses[user._id] === "online" ? "text-green-600" : "text-red-600"}>
+                        {userStatuses[user._id] === "online" ? "Online" : "Offline"}
+                      </span>
+                    </td>
                     <td className="p-3 flex space-x-2">
                       <button onClick={() => setEditingUser(user)} className="text-blue-600"><FaEdit /></button>
                       <button onClick={() => handleDeleteUser(user)} className="text-red-600"><FaTrash /></button>

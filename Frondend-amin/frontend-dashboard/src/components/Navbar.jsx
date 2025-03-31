@@ -1,26 +1,22 @@
-import React, { useCallback, useState } from "react";
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Dialog } from "@headlessui/react";
 import axios from "axios";
 import { API_BASE_URL } from "../api/api";
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
-
-  const handleLogout = useCallback(async () => {
+  const handleLogout = async () => {
+    const confirmLogout = window.confirm("Are you sure you want to log out?");
+    if (!confirmLogout) return; // Stop if the user cancels
+  
     try {
       await axios.post(`${API_BASE_URL}/api/auth/logout`, {}, { withCredentials: true });
-      console.log("✅ Logout successful");
-      localStorage.removeItem("token"); // Xóa token
-      navigate("/login", { replace: true }); // Điều hướng bằng React Router
-      setIsLogoutConfirmOpen(false); // Đóng dialog
+      navigate("/loginad", { replace: true });
     } catch (error) {
       console.error("❌ Logout failed:", error);
-      // Có thể thông báo lỗi mà không chuyển hướng ngay
-      // Nếu muốn chuyển hướng dù lỗi, thêm navigate vào đây
     }
-  }, [navigate]);
+  };
+  
 
   const handleUserManagementClick = () => {
     navigate("/user-management");
@@ -46,7 +42,7 @@ const Navbar = () => {
           </li>
           <li>
             <button
-              onClick={() => setIsLogoutConfirmOpen(true)}
+              onClick={handleLogout}
               className="bg-red-600 text-white px-3 py-1.5 rounded-md hover:bg-red-700 transition duration-200 text-sm font-medium"
             >
               Logout
@@ -54,36 +50,6 @@ const Navbar = () => {
           </li>
         </ul>
       </div>
-
-      {/* Logout Confirmation Dialog */}
-      <Dialog
-        open={isLogoutConfirmOpen}
-        onClose={() => setIsLogoutConfirmOpen(false)}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-      >
-        <Dialog.Panel className="w-full max-w-md bg-white rounded-lg shadow-xl p-6">
-          <Dialog.Title className="text-xl font-bold text-gray-900 mb-4">
-            Leave site?
-          </Dialog.Title>
-          <Dialog.Description className="text-gray-600 mb-6">
-            Are you sure you want to log out?
-          </Dialog.Description>
-          <div className="flex justify-end space-x-3">
-            <button
-              onClick={() => setIsLogoutConfirmOpen(false)}
-              className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-            >
-              Leave
-            </button>
-          </div>
-        </Dialog.Panel>
-      </Dialog>
     </nav>
   );
 };
