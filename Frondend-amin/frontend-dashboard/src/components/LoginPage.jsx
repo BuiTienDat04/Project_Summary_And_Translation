@@ -28,19 +28,23 @@ const LoginPage = () => {
   
       const { token, user } = response.data;
   
-      if (!token || !user) {
-        setLoginErrorMessage("Invalid response from server!");
+      if (!token || !user || !user._id) {
+        setLoginErrorMessage("Invalid response from server! Missing token or user ID.");
         return;
       }
   
+      // Lưu token và userId vào localStorage
       localStorage.setItem("token", token);
-      localStorage.setItem("loggedInUser", JSON.stringify(user));
+      localStorage.setItem("userId", user._id); // Thêm dòng này để lưu _id
+      localStorage.setItem("loggedInUser", JSON.stringify(user)); // Giữ nguyên nếu cần toàn bộ thông tin user
   
-      setLoginSuccess(true); 
+      console.log("Logged in user ID:", user._id); // Log để kiểm tra
+  
+      setLoginSuccess(true);
       setLoginErrorMessage("");
       setTimeout(() => {
-        navigate("/dashboard", { replace: true }); 
-      }, 2000); 
+        navigate("/dashboard", { replace: true });
+      }, 2000);
     } catch (error) {
       console.error("Login error:", error.response?.data || error.message);
       setLoginErrorMessage(error.response?.data?.message || "Login failed!");
