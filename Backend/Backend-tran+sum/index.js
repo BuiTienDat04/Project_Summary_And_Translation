@@ -457,15 +457,16 @@ connectDB().then(() => {
         const userId = socket.handshake.query.userId;
 
         if (userId) {
-            // Nếu user chưa có kết nối nào, tăng totalOnline
-            if (!userSockets[userId] || userSockets[userId].length === 0) {
-                totalOnline += 1;
-            }
-
-            // Lưu socket ID của user
+            // Khởi tạo mảng socket nếu chưa có
             if (!userSockets[userId]) {
                 userSockets[userId] = [];
             }
+
+            // Chỉ tăng totalOnline nếu user chuyển từ offline sang online
+            if (!users[userId] || users[userId] === "offline") {
+                totalOnline += 1;
+            }
+
             userSockets[userId].push(socket.id);
             users[userId] = "online";
 
@@ -484,13 +485,16 @@ connectDB().then(() => {
                 // Nếu user không còn kết nối nào, đánh dấu offline
                 if (userSockets[userId].length === 0) {
                     users[userId] = "offline";
-                    totalOnline = Math.max(0, totalOnline - 1); // Tránh giảm dưới 0
+                    totalOnline = Math.max(0, totalOnline - 1);
                     console.log(`❌ User ${userId} went offline. Total Online: ${totalOnline}`);
-                }
 
-                // Gửi cập nhật tới tất cả client
-                io.emit("updateUsers", users);
-                io.emit("updateTotalOnline", totalOnline);
+                    // Dọn dẹp userSockets để tiết kiệm bộ nhớ
+                    delete userSockets[userId];
+
+                    // Gửi cập nhật tới tất cả client
+                    io.emit("updateUsers", users);
+                    io.emit("updateTotalOnline", totalOnline);
+                }
             }
         });
     });
