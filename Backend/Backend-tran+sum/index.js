@@ -414,11 +414,24 @@ const connectDB = async () => {
 // ✅ Start server
 let server;
 connectDB().then(() => {
+    // Tạo server HTTP từ ứng dụng Express
     server = http.createServer(app);
-    server = app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
 
+    // Khởi tạo Socket.IO và gắn vào server
+    const io = new Server(server, {
+        cors: {
+            origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online"],
+            methods: ["GET", "POST"],
+            credentials: true,
+        },
+    });
+
+    // Khởi động server
+    server.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+
+    // Logic Socket.IO
     let users = {}; // Lưu trạng thái người dùng
-    let totalOnline = 0; // Đếm số người online (không bị trừ sai)
+    let totalOnline = 0; // Đếm số người online
     let userSockets = {}; // Lưu danh sách các socket của mỗi user
 
     io.on("connection", (socket) => {
@@ -447,7 +460,7 @@ connectDB().then(() => {
         socket.on("disconnect", () => {
             if (userId && userSockets[userId]) {
                 // Xóa socket ID của user khi mất kết nối
-                userSockets[userId] = userSockets[userId].filter(id => id !== socket.id);
+                userSockets[userId] = userSockets[userId].filter((id) => id !== socket.id);
 
                 // Nếu user không còn kết nối nào, đánh dấu offline
                 if (userSockets[userId].length === 0) {
@@ -462,7 +475,6 @@ connectDB().then(() => {
             }
         });
     });
-
 });
 
 let lastContent = "";
