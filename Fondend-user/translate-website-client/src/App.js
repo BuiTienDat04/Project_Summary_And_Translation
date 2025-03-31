@@ -37,7 +37,7 @@ export default function App() {
       localStorage.removeItem("loggedInUser");
 
       // Chuyển hướng về trang đăng nhập
-      window.location.href = "/login";
+      window.location.href = "/";
     } catch (error) {
       console.error("❌ Logout API failed:", error);
 
