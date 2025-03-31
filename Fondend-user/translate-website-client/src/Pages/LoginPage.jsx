@@ -10,13 +10,19 @@ import {
   FaFilePdf,
   FaFileContract,
   FaFileAlt,
-  FaFileWord, FaListAlt, FaGlobe, FaListUl, FaMagic, FaLanguage, FaRobot, FaBookOpen,
+  FaFileWord,
+  FaListAlt,
+  FaGlobe,
+  FaListUl,
+  FaMagic,
+  FaLanguage,
+  FaRobot,
+  FaBookOpen,
 } from "react-icons/fa";
-// Or similar names based on what you find in the react-icons documentation
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_BASE_URL } from "../api/api";
-
+import io from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
 
 const PasswordInput = ({ value, onChange }) => {
@@ -42,6 +48,7 @@ const PasswordInput = ({ value, onChange }) => {
     </div>
   );
 };
+
 const LoginPage = ({ onClose, onOpenRegister }) => {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -49,6 +56,8 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
   const [loginSuccess, setLoginSuccess] = useState(false);
   const navigate = useNavigate();
   const [showChat, setShowChat] = useState(false);
+  const [socketInstance, setSocketInstance] = useState(null); // Lưu socket để quản lý
+
   const FeatureItem = ({ icon, title, description, delay }) => (
     <motion.div
       className="bg-white/5 backdrop-blur-md rounded-lg p-5 shadow-md border border-white/10 flex items-center space-x-4"
@@ -68,31 +77,33 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
 
   useEffect(() => {
     const handleLogout = async () => {
-        try {
-            await axios.post(`${API_BASE_URL}/api/auth/logout`, {}, { withCredentials: true });
-            console.log("🔹 Người dùng truy cập trang login → Tự động logout");
-        } catch (error) {
-            console.error("❌ Lỗi khi logout:", error);
+      try {
+        await axios.post(`${API_BASE_URL}/api/auth/logout`, {}, { withCredentials: true });
+        console.log("🔹 Người dùng truy cập trang login → Tự động logout");
+        if (socketInstance) {
+          socketInstance.disconnect(); // Ngắt kết nối socket cũ nếu có
+          setSocketInstance(null);
         }
+        localStorage.clear(); // Xóa localStorage khi vào trang login
+      } catch (error) {
+        console.error("❌ Lỗi khi logout:", error);
+      }
     };
 
-    handleLogout(); // Gọi logout ngay khi vào trang Login
-}, []);
+    handleLogout();
+  }, []);
 
   useEffect(() => {
-    // Ẩn footer và chatbot khi mở form login
     const footer = document.querySelector("footer");
     const chatbox = document.querySelector(".chatbox");
     if (footer) footer.style.display = "none";
     if (chatbox) chatbox.style.display = "none";
 
     return () => {
-      // Hiển thị lại footer và chatbot khi đóng form login
       if (footer) footer.style.display = "";
       if (chatbox) chatbox.style.display = "";
     };
   }, []);
-
 
   const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {
@@ -100,37 +111,62 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
       setLoginSuccess(false);
       return;
     }
-  
+
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/auth/login`,
-        {
-          email: loginEmail,
-          password: loginPassword,
-        },
-        { withCredentials: true } // Thêm để hỗ trợ cookie nếu backend dùng
+        { email: loginEmail, password: loginPassword },
+        { withCredentials: true }
       );
-  
+
       const { token, user } = response.data;
-  
+
       if (!token || !user || !user._id) {
         setLoginErrorMessage("Invalid response from server! Missing token or user ID.");
         setLoginSuccess(false);
         return;
       }
-  
-      // Lưu dữ liệu vào localStorage
+
       localStorage.setItem("token", token);
-      localStorage.setItem("userId", user._id); // Thêm để đồng bộ với UserManagement
+      localStorage.setItem("userId", user._id);
       localStorage.setItem("loggedInUser", JSON.stringify(user));
-  
-      console.log("Logged in user ID:", user._id); // Log để kiểm tra
-  
+
+      console.log("Logged in user ID:", user._id);
+
+      // Kết nối Socket.IO ngay sau khi đăng nhập
+      const socket = io(API_BASE_URL, {
+        query: { userId: user._id },
+        auth: { token },
+        withCredentials: true,
+      });
+
+      socket.on("connect", () => {
+        console.log("Socket.IO connected with userId:", user._id);
+      });
+
+      socket.on("updateUsers", (users) => {
+        console.log("Received user statuses after login:", users);
+        // Lưu trạng thái vào window để các trang khác có thể truy cập
+        window.userStatuses = users;
+      });
+
+      socket.on("updateTotalOnline", (total) => {
+        console.log("Total online users:", total);
+      });
+
+      // Lắng nghe sự kiện disconnect từ server
+      socket.on("disconnect", (reason) => {
+        console.log("Socket.IO disconnected:", reason);
+      });
+
+      // Lưu socket vào state để quản lý
+      setSocketInstance(socket);
+
       setLoginSuccess(true);
-      setLoginErrorMessage(""); // Xóa thông báo lỗi nếu có
+      setLoginErrorMessage("");
       setTimeout(() => {
         setLoginSuccess(false);
-        navigate("/text", { replace: true }); // Thêm replace để không quay lại login
+        navigate("/text", { replace: true });
       }, 1000);
     } catch (error) {
       console.error("Login error:", error.response?.data || error.message);
@@ -139,6 +175,16 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
     }
   };
 
+  // Xử lý ngắt kết nối khi đóng tab/trình duyệt
+  useEffect(() => {
+    return () => {
+      if (socketInstance) {
+        socketInstance.disconnect();
+        console.log("Socket.IO disconnected on cleanup");
+      }
+    };
+  }, [socketInstance]);
+
   return (
     <div className="w-full h-screen grid grid-cols-1 lg:grid-cols-2 bg-gradient-to-br from-purple-500 to-blue-600 overflow-hidden">
       {/* Left Side - App Visual */}
@@ -146,14 +192,14 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
         {/* Dynamic Curvy Background */}
         <motion.div
           className="absolute inset-0 bg-gradient-to-br from-purple-600 to-blue-700 opacity-30"
-          style={{ clipPath: 'polygon(0 0, 100% 0, 60% 100%, 20% 100%)' }}
+          style={{ clipPath: "polygon(0 0, 100% 0, 60% 100%, 20% 100%)" }}
           animate={{ skewY: [0, 5, 0], scale: [1, 1.02, 1] }}
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
           className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagonal-striped-brick.png')] opacity-10"
           animate={{ opacity: [0.05, 0.15, 0.05] }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+          transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
         />
 
         {/* Abstract Floating Shapes with Color Hints */}
@@ -161,7 +207,8 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
           const startX = Math.random() * 100;
           const startY = Math.random() * 100;
           const size = Math.random() * 8 + 5;
-          const colorClass = i % 3 === 0 ? 'bg-cyan-300/20' : i % 3 === 1 ? 'bg-lime-300/20' : 'bg-yellow-300/20';
+          const colorClass =
+            i % 3 === 0 ? "bg-cyan-300/20" : i % 3 === 1 ? "bg-lime-300/20" : "bg-yellow-300/20";
           const speed = Math.random() * 6 + 8;
           const directionX = Math.random() > 0.5 ? 1 : -1;
           const directionY = Math.random() > 0.5 ? 1 : -1;
@@ -176,7 +223,7 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
                 y: [`${startY}%`, `${startY + directionY * (20 + Math.random() * 30)}%`],
                 opacity: [0.3, 0.7, 0.3],
               }}
-              transition={{ duration: speed, repeat: Infinity, ease: 'easeInOut', delay: Math.random() * 5 }}
+              transition={{ duration: speed, repeat: Infinity, ease: "easeInOut", delay: Math.random() * 5 }}
             />
           );
         })}
@@ -190,10 +237,10 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
           {/* Striking Title with Subtle Animation */}
           <motion.h1
             className="text-5xl md:text-6xl font-extrabold text-white drop-shadow-lg animate-pulse"
-            style={{ textShadow: '0 4px 6px rgba(0, 0, 0, 0.3)' }}
+            style={{ textShadow: "0 4px 6px rgba(0, 0, 0, 0.3)" }}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
           >
             <span className="bg-gradient-to-r from-cyan-300 to-lime-200 bg-clip-text text-transparent">
               PDFSmart
@@ -203,7 +250,7 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
             className="text-xl md:text-2xl font-semibold text-white/90 drop-shadow-sm"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
+            transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
           >
             Intelligent Document Solutions, Simplified.
           </motion.h2>
@@ -240,9 +287,9 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
         {/* Subtle Wavy Bottom Animation */}
         <motion.div
           className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-blue-500/20 to-transparent"
-          style={{ clipPath: 'polygon(0 30%, 20% 10%, 80% 0%, 100% 20%, 100% 100%, 0 100%)' }}
+          style={{ clipPath: "polygon(0 30%, 20% 10%, 80% 0%, 100% 20%, 100% 100%, 0 100%)" }}
           animate={{ y: [0, -3, 0] }}
-          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
         />
       </div>
 
@@ -253,15 +300,14 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
           className="w-full max-w-md space-y-8 rounded-xl shadow-lg p-8 md:p-12 backdrop-filter backdrop-blur-md bg-white/20 relative z-10"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+          transition={{ type: "spring", stiffness: 100, damping: 20 }}
         >
-
           {/* Form Header */}
           <div className="text-center">
             <motion.div
               className="inline-block mb-6 p-3 bg-blue-100 rounded-full"
               animate={{ rotate: [0, -15, 15, 0] }}
-              transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+              transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
             >
               <FaFileContract className="h-10 w-10 text-blue-600" />
             </motion.div>
@@ -362,7 +408,7 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
           >
-            Don't have an account?{' '}
+            Don&apos;t have an account?{" "}
             <motion.button
               className="text-cyan-300 hover:text-cyan-200 font-medium focus:outline-none focus:underline transition-colors"
               onClick={() => navigate("/register")}
