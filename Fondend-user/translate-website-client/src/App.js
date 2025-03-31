@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import io from "socket.io-client";
+import { socket, connectSocket, disconnectSocket } from "./socket";
 import { API_BASE_URL } from "./api/api";
 import LoginPage from "./Pages/LoginPage";
 import RegisterPage from "./Pages/RegisterPage";
@@ -18,87 +18,43 @@ export default function App() {
   const [textSummarizerContent, setTextSummarizerContent] = useState("");
   const [linkPageContent, setLinkPageContent] = useState("");
   const [documentSummaryContent, setDocumentSummaryContent] = useState("");
-  const [socket, setSocket] = useState(null);
+  const [isOnline, setIsOnline] = useState(false);
 
   const protectedRoutes = ["/text", "/document", "/link"];
+  
+  // Kiểm tra xem người dùng đã đăng nhập hay chưa
   const isAuthenticated = () => !!localStorage.getItem("token");
 
-  // Quản lý Socket.IO dựa trên trạng thái đăng nhập
+  const [totalOnline, setTotalOnline] = useState(0);
+
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId");
+    // 🟢 Kết nối WebSocket khi App mount
+    connectSocket();
 
-    if (token && userId && !socket) {
-      const socketInstance = io(API_BASE_URL, {
-        query: { userId },
-        auth: { token },
-        withCredentials: true,
-      });
+    // Lắng nghe sự kiện cập nhật số người online
+    socket.on("updateTotalOnline", (total) => {
+      console.log("Total online users (admin):", total);
+      setTotalOnline(total);
+    });
 
-      socketInstance.on("connect", () => {
-        console.log("Socket.IO connected with userId:", userId);
-      });
-
-      socketInstance.on("updateUsers", (users) => {
-        console.log("Received user statuses:", users);
-        window.userStatuses = users; // Lưu trạng thái toàn cục
-      });
-
-      socketInstance.on("updateTotalOnline", (total) => {
-        console.log("Total online users:", total);
-      });
-
-      socketInstance.on("disconnect", (reason) => {
-        console.log("Socket.IO disconnected:", reason);
-      });
-
-      setSocket(socketInstance);
-    } else if ((!token || !userId) && socket) {
-      // Ngắt kết nối khi không còn đăng nhập
-      socket.disconnect();
-      setSocket(null);
-      console.log("Socket.IO disconnected due to logout");
-    }
-
+    // 🔴 Cleanup khi App unmount
     return () => {
-      if (socket) {
-        socket.disconnect();
-        console.log("Socket.IO disconnected on cleanup");
-        setSocket(null);
-      }
+      disconnectSocket();
+      socket.off("updateTotalOnline"); // Ngừng lắng nghe sự kiện
+      console.log("Socket.IO disconnected on cleanup (admin)");
     };
-  }, [socket]); // Theo dõi socket để tránh tạo nhiều kết nối
+  }, []);
 
-  const connectSocketIfAuthenticated = () => {
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId");
-
-    if (token && userId && !socket) {
-      const socketInstance = io(API_BASE_URL, {
-        query: { userId },
-        auth: { token },
-        withCredentials: true,
-      });
-
-      socketInstance.on("connect", () => {
-        console.log("Socket.IO reconnected with userId:", userId);
-      });
-
-      socketInstance.on("updateUsers", (users) => {
-        console.log("Received user statuses:", users);
-        window.userStatuses = users;
-      });
-
-      setSocket(socketInstance);
-    }
-  };
-
-  const ProtectedRoute = ({ children, path }) => {
+  // ProtectedRoute component
+  const ProtectedRoute = ({ children }) => {
     useEffect(() => {
-      if (protectedRoutes.includes(path) && isAuthenticated()) {
-        connectSocketIfAuthenticated();
+      if (isAuthenticated()) {
+        // Đảm bảo socket đã kết nối khi vào trang protected
+        if (!socket.connected) {
+          connectSocket();
+        }
       }
-    }, [path]);
+    }, []);
 
     if (!isAuthenticated()) {
       return <Navigate to="/login" replace />;
@@ -109,13 +65,14 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="App">
+        <Navigation isOnline={isOnline} />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route
             path="/text"
             element={
-              <ProtectedRoute path="/text">
+              <ProtectedRoute>
                 <TextPage updateTextSummarizerContent={setTextSummarizerContent} />
               </ProtectedRoute>
             }
@@ -123,7 +80,7 @@ export default function App() {
           <Route
             path="/document"
             element={
-              <ProtectedRoute path="/document">
+              <ProtectedRoute>
                 <DocumentPage updateDocumentSummaryContent={setDocumentSummaryContent} />
               </ProtectedRoute>
             }
@@ -131,7 +88,7 @@ export default function App() {
           <Route
             path="/link"
             element={
-              <ProtectedRoute path="/link">
+              <ProtectedRoute>
                 <LinkPage updateLinkPageContent={setLinkPageContent} />
               </ProtectedRoute>
             }

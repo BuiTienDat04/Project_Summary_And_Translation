@@ -1,20 +1,47 @@
 import React, { useEffect, useState } from "react";
 import StatisticsChart from "../components/StatisticsChart";
 import { API_BASE_URL } from "../api/api";
+import { io } from "socket.io-client";
 
-const Dashboard = ({ totalOnline }) => { // Nhận totalOnline từ props
-  const [data, setData] = useState({ totalUsers: 0, translatedPosts: 0 });
+const Dashboard = () => {
+  const [data, setData] = useState({ 
+    totalUsers: 0, 
+    translatedPosts: 0,
+    total: 0 // Đổi tên thành total thay vì totalOnline
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // 1. Kết nối Socket.IO
+    const socket = io("wss://api.pdfsmart.online", {
+      path: "/socket.io",
+      query: { userId: "dashboard" }
+    });
+
+    // Lắng nghe sự kiện cập nhật
+    socket.on("updateTotalOnline", (count) => {
+      setData(prev => ({ ...prev, total: count })); // Cập nhật total thay vì totalOnline
+      console.log("Received visit count:", count);
+    });
+
+    // Xử lý lỗi kết nối
+    socket.on("connect_error", (err) => {
+      console.error("Socket connection error:", err);
+    });
+
+    // 2. Fetch dữ liệu từ REST API
     const fetchData = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/dashboard`);
         if (!response.ok) throw new Error("Failed to fetch data");
 
         const result = await response.json();
-        setData({ totalUsers: result.totalUsers, translatedPosts: result.translatedPosts });
+        setData(prev => ({
+          ...prev,
+          totalUsers: result.totalUsers,
+          translatedPosts: result.translatedPosts
+        }));
       } catch (err) {
         setError(err.message);
       } finally {
@@ -24,24 +51,13 @@ const Dashboard = ({ totalOnline }) => { // Nhận totalOnline từ props
 
     fetchData();
     const interval = setInterval(fetchData, 3000);
-    return () => clearInterval(interval);
+
+    // Cleanup
+    return () => {
+      clearInterval(interval);
+      socket.disconnect();
+    };
   }, []);
-
-  if (loading) {
-    return (
-      <div className="p-6 flex items-center justify-center min-h-screen">
-        <p className="text-gray-500 text-lg">Loading dashboard...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6 flex items-center justify-center min-h-screen">
-        <p className="text-red-500 text-lg">Error: {error}</p>
-      </div>
-    );
-  }
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -58,7 +74,7 @@ const Dashboard = ({ totalOnline }) => { // Nhận totalOnline từ props
         </div>
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 rounded-lg shadow-lg text-white">
           <h2 className="text-lg font-semibold">Total Visits</h2>
-          <p className="text-4xl font-bold">{totalOnline}</p> {/* Dùng totalOnline từ props */}
+          <p className="text-4xl font-bold">{data.total}</p> {/* Sử dụng data.total */}
         </div>
       </div>
 
@@ -70,7 +86,7 @@ const Dashboard = ({ totalOnline }) => { // Nhận totalOnline từ props
           data={[
             { name: "Total Users", value: data.totalUsers },
             { name: "Translated Posts", value: data.translatedPosts },
-            { name: "Total Visits", value: totalOnline }, // Dùng totalOnline từ props
+            { name: "Total Visits", value: data.total }, {/* Sử dụng data.total */}
           ]}
         />
       </div>
