@@ -488,10 +488,10 @@ connectDB().then(() => {
                     totalOnline = Math.max(0, totalOnline - 1);
                     console.log(`❌ User ${userId} went offline. Total Online: ${totalOnline}`);
 
-                    // Dọn dẹp userSockets để tiết kiệm bộ nhớ
+                
                     delete userSockets[userId];
 
-                    // Gửi cập nhật tới tất cả client
+                    
                     io.emit("updateUsers", users);
                     io.emit("updateTotalOnline", totalOnline);
                 }
