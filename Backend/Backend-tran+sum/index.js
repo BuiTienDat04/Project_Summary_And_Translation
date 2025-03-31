@@ -264,16 +264,14 @@ app.post("/summarize-link", async (req, res) => {
         } else {
             summary = await summarizeText(content, language || "English");
             console.log(`Generated summary (first 200 chars): ${summary.slice(0, 200)}...`);
-            console.log(`Summary length: ${summary.length} characters`);
         }
 
-        lastContent = content;
-        cache.set("lastLinkPageContent", summary, 600);
         latestContent = {
             type: "link",
             content: content, // Lưu nội dung gốc
             timestamp: Date.now()
         };
+        cache.set("lastLinkPageContent", summary, 600);
 
         await Visit.findOneAndUpdate(
             {},
@@ -435,24 +433,44 @@ async function fetchContent(url) {
         const $ = cheerio.load(html);
         let text = "";
 
+        // Các từ khóa và class thường liên quan đến quảng cáo hoặc nội dung không cần thiết
+        const irrelevantKeywords = [
+            "ad", "advertisement", "sponsored", "promo", "promotion",
+            "banner", "popup", "widget", "sidebar", "footer", "nav",
+            "newsletter", "subscribe", "login", "signup"
+        ];
+
+        // Lọc các thẻ có khả năng chứa nội dung chính
         const contentElements = $(
-            "p, h1, h2, h3, h4, h5, h6, article, div, section, span, li"
+            "p, h1, h2, h3, h4, h5, h6, article, section, div"
         ).filter((_, el) => {
-            const content = $(el).text().trim();
-            return (
-                content &&
-                content.length > 5 &&
-                !$(el).hasClass("ad") &&
-                !$(el).hasClass("advertisement") &&
-                !$(el).hasClass("nav") &&
-                !$(el).hasClass("footer") &&
-                !$(el).is("script") &&
-                !$(el).is("style") &&
-                !$(el).is("header") &&
-                !$(el).is("nav")
-            );
+            const $el = $(el);
+            const content = $el.text().trim();
+            const tagName = el.tagName.toLowerCase();
+            const className = ($el.attr("class") || "").toLowerCase();
+            const idName = ($el.attr("id") || "").toLowerCase();
+
+            // Loại bỏ nếu:
+            // 1. Nội dung quá ngắn (< 10 ký tự)
+            // 2. Là thẻ script/style
+            // 3. Có class/id liên quan đến quảng cáo hoặc nội dung không mong muốn
+            // 4. Là menu, footer, header
+            if (
+                !content || content.length < 10 ||
+                ["script", "style"].includes(tagName) ||
+                irrelevantKeywords.some(keyword => 
+                    className.includes(keyword) || idName.includes(keyword) || content.toLowerCase().includes(keyword)
+                ) ||
+                $el.parents("header, nav, footer, aside").length > 0
+            ) {
+                return false;
+            }
+
+            // Ưu tiên các đoạn văn dài hoặc tiêu đề
+            return content.length > 20 || ["h1", "h2", "h3", "article"].includes(tagName);
         });
 
+        // Trích xuất nội dung từ các phần tử đã lọc
         contentElements.each((_, element) => {
             const content = $(element).text().trim();
             if (content) {
@@ -460,19 +478,40 @@ async function fetchContent(url) {
             }
         });
 
+        // Nếu không tìm thấy nội dung chính, thử lấy từ body nhưng vẫn lọc
         if (!text.trim()) {
-            console.warn(`Không tìm thấy nội dung cụ thể trên ${url}, lấy toàn bộ text từ body.`);
-            text = $("body").text().trim();
+            console.warn(`Không tìm thấy nội dung cụ thể trên ${url}, lấy toàn bộ text từ body với bộ lọc.`);
+            text = $("body").contents()
+                .filter((_, el) => {
+                    const $el = $(el);
+                    const content = $el.text().trim();
+                    const className = ($el.attr("class") || "").toLowerCase();
+                    const idName = ($el.attr("id") || "").toLowerCase();
+
+                    return (
+                        content && content.length > 20 &&
+                        !irrelevantKeywords.some(keyword => 
+                            className.includes(keyword) || idName.includes(keyword) || content.toLowerCase().includes(keyword)
+                        ) &&
+                        !$el.is("script, style, header, nav, footer, aside")
+                    );
+                })
+                .text()
+                .trim();
         }
 
+        // Nếu vẫn không có nội dung
         if (!text.trim()) {
             console.warn(`Không có nội dung text nào trên ${url}.`);
             text = "Trang web này không chứa nội dung text có thể tóm tắt (có thể chủ yếu là hình ảnh hoặc video).";
         }
 
+        // Chuẩn hóa văn bản
+        text = filterIrrelevantContent(text); // Áp dụng hàm lọc đã có
         text = text.replace(/\n+/g, "\n").trim();
         console.log(`Extracted content length: ${text.length} characters`);
 
+        // Giới hạn độ dài để tránh vượt quá khả năng xử lý của API
         const MAX_CONTENT_LENGTH = 50000;
         if (text.length > MAX_CONTENT_LENGTH) {
             text = text.substring(0, MAX_CONTENT_LENGTH);
