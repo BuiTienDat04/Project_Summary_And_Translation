@@ -436,14 +436,19 @@ connectDB().then(() => {
     // Tạo server HTTP từ ứng dụng Express
     server = http.createServer(app);
 
-    // Khởi tạo Socket.IO và gắn vào server
     const io = new Server(server, {
         cors: {
-            origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online, https://admin.pdfsmart.online"],
+            origin: [
+                "http://localhost:3000",
+                "http://localhost:3001",
+                "https://pdfsmart.online",
+                "https://admin.pdfsmart.online"
+            ],
             methods: ["GET", "POST"],
             credentials: true,
         },
     });
+    
 
     // Khởi động server
     server.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
