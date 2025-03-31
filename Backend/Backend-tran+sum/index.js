@@ -226,36 +226,37 @@ app.post("/translate", async (req, res) => {
     }
 
     try {
-        // Tách tên riêng được đánh dấu bằng []
         const nameRegex = /\[(.*?)\]/g;
         const names = {};
         let processedText = text;
         let match;
         let index = 0;
+
+        console.log("Received text:", text); // Kiểm tra văn bản nhận được
+
         while ((match = nameRegex.exec(text)) !== null) {
             const placeholder = `__NAME_${index++}__`;
             names[placeholder] = match[1];
             processedText = processedText.replace(match[0], placeholder);
         }
+        console.log("Processed text (before translation):", processedText); // Văn bản sau khi thay thế
+        console.log("Names to restore:", names); // Các tên sẽ khôi phục
 
-        // Dịch văn bản
         let translation = await translateText(processedText, targetLang);
+        console.log("Translated text (before restoring):", translation); // Văn bản sau khi dịch
 
-        // Khôi phục tên
         for (const [placeholder, name] of Object.entries(names)) {
             translation = translation.replace(placeholder, name);
         }
+        console.log("Final translation:", translation); // Văn bản cuối cùng
 
-        await Visit.findOneAndUpdate(
-            {},
-            { $inc: { translatedPosts: 1 } },
-            { upsert: true, new: true }
-        );
         res.json({ translation });
     } catch (error) {
+        console.error("Translation error:", error);
         res.status(500).json({ error: `Error translating: ${error.message}` });
     }
 });
+
 
 // ✅ API to summarize a URL
 app.post("/summarize-link", async (req, res) => {

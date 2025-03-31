@@ -138,7 +138,7 @@ const TextSummaryFeatures = () => {
                   <ul className="mt-3 space-y-2">
                     {[
                       "Concise summaries tailored to your content",
-                      "Supports over 50 languages effortlessly",
+                      "Supports over 20 languages effortlessly",
                       "Integrates smoothly across all platforms"
                     ].map((item, idx) => (
                       <li key={idx} className="flex items-center">

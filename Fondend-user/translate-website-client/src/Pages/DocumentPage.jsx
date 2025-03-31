@@ -86,12 +86,12 @@ const DocumentPage = () => {
             )}
 
             {/* Main Content */}
-            <div className="container mx-auto min-h-screen">
+            <div className="container mx-auto px-6 pt-16 min-h-screen">
                 <motion.header
                     initial={{ y: -50, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.8 }}
-                    className="container mx-auto px-6 text-center"
+                    className="container mx-auto mt-20 px-6 text-center"
                 >
                     <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6 flex items-center justify-center">
                         {/* Gradient Text with LED Effect */}
@@ -240,11 +240,15 @@ const DocumentPage = () => {
 
                     {/* Upload & Result Section */}
                     <DocumentSummarySection />
-                </div>
+
+
+                </div> {/* Đóng div max-w-7xl */}
+
             </div>
 
 
-            <div className="flex flex-col items-center justify-start min-h-screen">
+
+            <div className="flex flex-col items-center">
                 <section className="w-full min-h-screen flex flex-col items-center px-0 bg-white">
                     <div className="relative w-full max-w-none flex flex-col items-center py-24">
                         {/* Animated Header Section */}
@@ -253,7 +257,7 @@ const DocumentPage = () => {
                                 📑 Master Your PDFs with AI-Powered Summarization
                             </h2>
                             <p className="text-gray-700 text-xl mb-12 leading-relaxed w-full max-w-none px-4">
-                                Unlock the power of quick insights with <span className="font-semibold text-blue-600">PDFSmart</span>. Upload your PDF files and let our advanced AI transform them into
+                                Unlock the power of quick insights with <span className="font-semibold text-blue-600">TextSum</span>. Upload your PDF files and let our advanced AI transform them into
                                 <span className="highlight-text"> concise, actionable summaries </span>
                                 in seconds.
                             </p>
@@ -311,7 +315,7 @@ const DocumentPage = () => {
                                             />
                                         </svg>
                                     </span>
-                                    How PDFSmart Transforms Your PDFs
+                                    How TextSum Transforms Your PDFs
                                 </h3>
                                 <div className="space-y-8">
                                     {[
@@ -477,7 +481,6 @@ const DocumentPage = () => {
         `}</style>
                 </section>
             </div>
-
         </div>
     );
 };

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Upload, Download, Trash2 } from "lucide-react";
 import ChatBox from "../Pages/ChatBox";
 import { API_BASE_URL } from "../api/api";
+import nlp from "compromise";
 
 export default function DocumentSummarySection() {
     const [file, setFile] = useState(null);
@@ -19,26 +20,26 @@ export default function DocumentSummarySection() {
     const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
 
     const availableLanguages = [
-        { code: "en", name: "English" },
-        { code: "vi", name: "Vietnamese" },
-        { code: "fr", name: "French" },
-        { code: "es", name: "Spanish" },
-        { code: "de", name: "German" },
-        { code: "zh", name: "Chinese" },
-        { code: "ja", name: "Japanese" },
-        { code: "ko", name: "Korean" },
-        { code: "ru", name: "Russian" },
-        { code: "it", name: "Italian" },
-        { code: "pt", name: "Portuguese" },
-        { code: "ar", name: "Arabic" },
-        { code: "hi", name: "Hindi" },
-        { code: "tr", name: "Turkish" },
-        { code: "nl", name: "Dutch" },
-        { code: "pl", name: "Polish" },
-        { code: "th", name: "Thai" },
-        { code: "sv", name: "Swedish" },
-        { code: "fi", name: "Finnish" },
-        { code: "no", name: "Norwegian" },
+        { code: "en", name: "English (United States)" },
+        { code: "vi", name: "Vietnamese (Vietnam)" },
+        { code: "fr", name: "French (France)" },
+        { code: "es", name: "Spanish (Spain)" },
+        { code: "de", name: "German (Germany)" },
+        { code: "zh", name: "Chinese (Simplified, China)" },
+        { code: "ja", name: "Japanese (Japan)" },
+        { code: "ko", name: "Korean (South Korea)" },
+        { code: "ru", name: "Russian (Russia)" },
+        { code: "it", name: "Italian (Italy)" },
+        { code: "pt", name: "Portuguese (Portugal)" },
+        { code: "ar", name: "Arabic (Standard Arabic)" },
+        { code: "hi", name: "Hindi (India)" },
+        { code: "tr", name: "Turkish (Turkey)" },
+        { code: "nl", name: "Dutch (Netherlands)" },
+        { code: "pl", name: "Polish (Poland)" },
+        { code: "sv", name: "Swedish (Sweden)" },
+        { code: "fi", name: "Finnish (Finland)" },
+        { code: "no", name: "Norwegian (Norway)" },
+        { code: "da", name: "Danish (Denmark)" },
     ];
 
     const filteredLanguages = availableLanguages.filter((lang) =>
@@ -200,7 +201,16 @@ export default function DocumentSummarySection() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-        const cleanedSummary = cleanText(summaryContent);
+        let cleanedSummary = cleanText(summaryContent);
+        const doc = nlp(cleanedSummary);
+        const people = doc.people().out("array");
+
+        people.forEach((name) => {
+            cleanedSummary = cleanedSummary.replace(
+                new RegExp(`\\b${name}\\b`, "g"),
+                `[${name}]`
+            );
+        });
 
         try {
             const token = localStorage.getItem("token");
@@ -221,6 +231,7 @@ export default function DocumentSummarySection() {
             }
 
             const data = await response.json();
+            console.log("Translation response:", data); // Debug để kiểm tra dữ liệu trả về
             setTranslatedContent(data.translation || "Unable to translate content.");
 
             const content = `File Name: ${file?.name || "document"}\n\nOriginal Text:\n${originalContent}\n\nSummary:\n${summaryContent}\n\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}):\n${data.translation || "No translation"}`;
@@ -245,16 +256,15 @@ export default function DocumentSummarySection() {
 
     return (
         <div className="relative min-h-screen">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-h-[600px] overflow-hidden">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                    {/* Upload Section */}
                     <section className="space-y-4 sm:space-y-6 p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">Upload Document</h2>
+                            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">Upload PDF</h2>
                             {file && (
                                 <button
                                     onClick={handleRemoveFile}
-                                    className="text-red-500 hover:text-red-700 transition-colors"
+                                    className="text-red-500 hover:text-red-700 transition-colors flex-shrink-0 ml-2"
                                     title="Remove file"
                                 >
                                     <Trash2 className="w-6 h-6 sm:w-7 sm:h-7" />
@@ -262,8 +272,7 @@ export default function DocumentSummarySection() {
                             )}
                         </div>
                         <div
-                            className={`relative bg-blue-50 p-6 sm:p-12 rounded-xl border-2 border-dashed transition-all duration-300 ${dragActive ? "border-blue-400 bg-blue-100 scale-105" : "border-gray-300 hover:border-blue-300"
-                                }`}
+                            className={`relative bg-blue-50 p-6 sm:p-12 rounded-xl border-2 border-dashed transition-all duration-300 ${dragActive ? "border-blue-400 bg-blue-100 scale-105" : "border-gray-300 hover:border-blue-300"}`}
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
@@ -283,16 +292,16 @@ export default function DocumentSummarySection() {
                                     <>
                                         <Upload className="w-12 h-12 sm:w-20 sm:h-20 text-blue-400 animate-bounce" />
                                         <p className="text-center text-gray-600 text-base sm:text-lg font-medium mt-2 sm:mt-4">
-                                            Drag and drop file or<br />
+                                            Drag and drop PDF or<br />
                                             <span className="text-blue-500 underline">browse files</span>
                                         </p>
                                     </>
                                 ) : (
                                     <div className="mt-4 sm:mt-6 w-full">
-                                        <div className="bg-green-100 px-3 py-2 sm:px-4 sm:py-2 rounded-md flex items-center justify-between mb-3 sm:mb-4">
-                                            <div className="flex items-center">
-                                                <span className="text-green-600 mr-2">✓</span>
-                                                <span className="text-green-700 font-medium text-sm sm:text-base truncate">
+                                        <div className="bg-green-100 px-3 py-2 sm:px-4 sm:py-2 rounded-md flex items-center justify-between mb-3 sm:mb-4 overflow-hidden">
+                                            <div className="flex items-center overflow-hidden">
+                                                <span className="text-green-600 mr-2 flex-shrink-0">✓</span>
+                                                <span className="text-green-700 font-medium text-sm sm:text-base truncate flex-shrink-1 min-w-0">
                                                     {file.name}
                                                 </span>
                                             </div>
@@ -311,18 +320,17 @@ export default function DocumentSummarySection() {
                         <button
                             onClick={generateSummary}
                             disabled={!file || isLoading}
-                            className={`w-full bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-6 py-3 sm:px-8 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 text-base sm:text-lg ${!file || isLoading ? "opacity-50 cursor-not-allowed" : ""
-                                }`}
+                            className={`w-full bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-6 py-3 sm:px-8 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 text-base sm:text-lg ${!file || isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                         >
                             {isLoading ? "Processing..." : "Generate Summary"}
                         </button>
                         {error && <p className="text-red-500 text-sm sm:text-base">{error}</p>}
                     </section>
 
-                    {/* Summary Section */}
+                    {/* Summary & Translation Section */}
                     <section className="space-y-4 sm:space-y-6 p-4 sm:p-6 bg-gray-50 rounded-2xl border-2 border-gray-100 shadow-inner">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
-                            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Summary Result</h2>
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Summary & Translation</h2>
                             {summaryFile && (
                                 <a
                                     href={summaryFile}
@@ -335,8 +343,9 @@ export default function DocumentSummarySection() {
                             )}
                         </div>
 
+                        {/* Summary Display */}
                         {summaryContent && (
-                            <article className="bg-white rounded-xl border-2 border-gray-200 p-4 sm:p-5 shadow-sm">
+                            <article className="bg-white rounded-xl border-2 border-gray-200 p-4 sm:p-5 shadow-sm mb-4">
                                 <div className="flex items-center justify-between mb-3 sm:mb-4">
                                     <h3 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center gap-2">
                                         <svg
@@ -392,7 +401,7 @@ export default function DocumentSummarySection() {
                                                 <li
                                                     key={lang.code}
                                                     className="px-3 py-2 sm:px-4 sm:py-2 hover:bg-emerald-100 cursor-pointer text-sm sm:text-base"
-                                                    onClick={() => handleLanguageSelect(lang.code, lang.name)}
+                                                    onMouseDown={() => handleLanguageSelect(lang.code, lang.name)} // Dùng onMouseDown thay onClick để tránh onBlur chạy trước
                                                 >
                                                     {lang.name}
                                                 </li>
@@ -403,8 +412,7 @@ export default function DocumentSummarySection() {
 
                                 <button
                                     onClick={translateSummary}
-                                    className={`w-full bg-gradient-to-br from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-6 py-3 sm:px-8 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 text-base sm:text-lg ${isLoading ? "opacity-50 cursor-not-allowed" : ""
-                                        }`}
+                                    className={`w-full bg-gradient-to-br from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-6 py-3 sm:px-8 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 text-base sm:text-lg ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                                     disabled={isLoading}
                                 >
                                     {isLoading ? "Translating..." : "Translate Now"}
@@ -446,7 +454,7 @@ export default function DocumentSummarySection() {
                                 )}
                             </div>
                         )}
-
+                        {/* Status Messages */}
                         {error && <p className="text-red-500 text-sm sm:text-base">{error}</p>}
                         {!summaryContent && !error && !isLoading && (
                             <p className="text-gray-400 italic text-center text-sm sm:text-base">
