@@ -29,6 +29,8 @@ const PORT = process.env.PORT || 5001;
 const MONGODB_URI = process.env.MONGODB_URI;
 const API_KEY = process.env.API_KEY;
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+const { Server } = require("socket.io"); // Import Socket.IO
+const http = require("http"); // Import Node.js HTTP module
 
 // ✅ Kiểm tra cấu hình quan trọng
 if (!API_KEY) {
@@ -117,7 +119,7 @@ const cleanText = (text) => {
 
 const filterIrrelevantContent = (text) => {
     const adKeywords = ["ad", "sponsored", "advertisement", "promotion", "brought to you by"];
-    
+
     return text
         .split("\n")
         .filter((line) => {
@@ -398,67 +400,69 @@ app.get("/last-content", (req, res) => {
 // ✅ Kết nối MongoDB
 const connectDB = async () => {
     try {
-      await mongoose.connect(MONGODB_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
-      console.log("✅ Connected to MongoDB");
+        await mongoose.connect(MONGODB_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+        console.log("✅ Connected to MongoDB");
     } catch (error) {
-      console.error("❌ MongoDB Connection Error:", error);
-      process.exit(1);
+        console.error("❌ MongoDB Connection Error:", error);
+        process.exit(1);
     }
-  };
+};
 
 // ✅ Start server
 let server;
 connectDB().then(() => {
+    server = http.createServer(app);
     server = app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
-});
 
-let users = {}; // Lưu trạng thái người dùng
-let totalOnline = 0; // Đếm số người online (không bị trừ sai)
-let userSockets = {}; // Lưu danh sách các socket của mỗi user
+    let users = {}; // Lưu trạng thái người dùng
+    let totalOnline = 0; // Đếm số người online (không bị trừ sai)
+    let userSockets = {}; // Lưu danh sách các socket của mỗi user
 
-io.on("connection", (socket) => {
-  const userId = socket.handshake.query.userId;
+    io.on("connection", (socket) => {
+        const userId = socket.handshake.query.userId;
 
-  if (userId) {
-    // Nếu user chưa có kết nối nào, tăng totalOnline
-    if (!userSockets[userId] || userSockets[userId].length === 0) {
-      totalOnline += 1;
-    }
+        if (userId) {
+            // Nếu user chưa có kết nối nào, tăng totalOnline
+            if (!userSockets[userId] || userSockets[userId].length === 0) {
+                totalOnline += 1;
+            }
 
-    // Lưu socket ID của user
-    if (!userSockets[userId]) {
-      userSockets[userId] = [];
-    }
-    userSockets[userId].push(socket.id);
-    users[userId] = "online";
+            // Lưu socket ID của user
+            if (!userSockets[userId]) {
+                userSockets[userId] = [];
+            }
+            userSockets[userId].push(socket.id);
+            users[userId] = "online";
 
-    console.log(`✅ User ${userId} is online. Total Online: ${totalOnline}`);
+            console.log(`✅ User ${userId} is online. Total Online: ${totalOnline}`);
 
-    // Cập nhật trạng thái tới tất cả client
-    io.emit("updateUsers", users);
-    io.emit("updateTotalOnline", totalOnline);
-  }
+            // Cập nhật trạng thái tới tất cả client
+            io.emit("updateUsers", users);
+            io.emit("updateTotalOnline", totalOnline);
+        }
 
-  socket.on("disconnect", () => {
-    if (userId && userSockets[userId]) {
-      // Xóa socket ID của user khi mất kết nối
-      userSockets[userId] = userSockets[userId].filter(id => id !== socket.id);
+        socket.on("disconnect", () => {
+            if (userId && userSockets[userId]) {
+                // Xóa socket ID của user khi mất kết nối
+                userSockets[userId] = userSockets[userId].filter(id => id !== socket.id);
 
-      // Nếu user không còn kết nối nào, đánh dấu offline
-      if (userSockets[userId].length === 0) {
-        users[userId] = "offline";
-        totalOnline = Math.max(0, totalOnline - 1); // Tránh giảm dưới 0
-        console.log(`❌ User ${userId} went offline. Total Online: ${totalOnline}`);
-      }
+                // Nếu user không còn kết nối nào, đánh dấu offline
+                if (userSockets[userId].length === 0) {
+                    users[userId] = "offline";
+                    totalOnline = Math.max(0, totalOnline - 1); // Tránh giảm dưới 0
+                    console.log(`❌ User ${userId} went offline. Total Online: ${totalOnline}`);
+                }
 
-      // Gửi cập nhật tới tất cả client
-      io.emit("updateUsers", users);
-      io.emit("updateTotalOnline", totalOnline);
-    }
-  });
+                // Gửi cập nhật tới tất cả client
+                io.emit("updateUsers", users);
+                io.emit("updateTotalOnline", totalOnline);
+            }
+        });
+    });
+
 });
 
 let lastContent = "";
@@ -504,7 +508,7 @@ async function fetchContent(url) {
             if (
                 !content || content.length < 10 ||
                 ["script", "style"].includes(tagName) ||
-                irrelevantKeywords.some(keyword => 
+                irrelevantKeywords.some(keyword =>
                     className.includes(keyword) || idName.includes(keyword) || content.toLowerCase().includes(keyword)
                 ) ||
                 $el.parents("header, nav, footer, aside").length > 0
@@ -536,7 +540,7 @@ async function fetchContent(url) {
 
                     return (
                         content && content.length > 20 &&
-                        !irrelevantKeywords.some(keyword => 
+                        !irrelevantKeywords.some(keyword =>
                             className.includes(keyword) || idName.includes(keyword) || content.toLowerCase().includes(keyword)
                         ) &&
                         !$el.is("script, style, header, nav, footer, aside")
