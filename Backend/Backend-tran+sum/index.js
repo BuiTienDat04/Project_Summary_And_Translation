@@ -58,17 +58,12 @@ const cors = require("cors");
 app.use(
     cors({
         origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online"],
-        credentials: true,  // 👈 Bắt buộc! Cho phép cookie
+        credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"],
     })
 );
 
-// Xử lý Preflight request (OPTIONS)
-app.options("*", cors());
-
-
-// Xử lý request OPTIONS (Preflight request)
 app.options("*", cors());
 
 app.use(helmet());
@@ -108,10 +103,35 @@ app.use((err, req, res, next) => {
     next();
 });
 
+// Hàm bảo vệ tên riêng
+const protectProperNouns = (text) => {
+    const properNounRegex = /\b[A-Z][a-z]*\b(?!\s*(Inc|Corp|Ltd|LLC|[.,:;]))/g;
+    const placeholders = new Map();
+    let index = 0;
+
+    const protectedText = text.replace(properNounRegex, (match) => {
+        if (!placeholders.has(match)) {
+            placeholders.set(match, `__NOUN_${index++}__`);
+        }
+        return placeholders.get(match);
+    });
+
+    return { protectedText, placeholders };
+};
+
+// Hàm khôi phục tên riêng
+const restoreProperNouns = (translatedText, placeholders) => {
+    let result = translatedText;
+    placeholders.forEach((placeholder, original) => {
+        result = result.replace(placeholder, original);
+    });
+    return result;
+};
+
 const cleanText = (text) => {
     return text
-        .replace(/[^\w\s.,!?;:'"()-]/g, " ") // Giữ lại ký tự cần thiết
-        .replace(/\s+/g, " ") // Chuẩn hóa khoảng trắng
+        .replace(/[^\w\s.,!?;:'"()-]/g, " ")
+        .replace(/\s+/g, " ")
         .trim();
 };
 
@@ -122,14 +142,15 @@ const filterIrrelevantContent = (text) => {
         .split("\n")
         .filter((line) => {
             return (
-                !/^\s*$/.test(line) && // Bỏ dòng trống
-                !adKeywords.some((keyword) => line.toLowerCase().includes(keyword)) && // Loại quảng cáo
-                line.length > 10 // Bỏ nội dung quá ngắn (thường là tiêu đề quảng cáo)
+                !/^\s*$/.test(line) &&
+                !adKeywords.some((keyword) => line.toLowerCase().includes(keyword)) &&
+                line.length > 10
             );
         })
         .join("\n")
         .trim();
 };
+
 const callGeminiAPI = async (prompt, retries = 3, delay = 2000) => {
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
@@ -174,12 +195,16 @@ const callGeminiAPI = async (prompt, retries = 3, delay = 2000) => {
 };
 
 const summarizeText = async (text, lang = "English") => {
-    const prompt = `Summarize the following text in ${lang}. Provide a detailed summary that captures the main ideas, key points, and important details in at least 150-300 words, ensuring the summary is concise yet comprehensive:\n\n${cleanText(text)}`;
-    return callGeminiAPI(prompt);
+    const { protectedText, placeholders } = protectProperNouns(text);
+    const prompt = `Summarize the following text in ${lang}. Provide a detailed summary that captures the main ideas, key points, and important details in at least 150-300 words, ensuring the summary is concise yet comprehensive:\n\n${cleanText(protectedText)}`;
+    const summaryProtected = await callGeminiAPI(prompt);
+    return restoreProperNouns(summaryProtected, placeholders);
 };
 
 const translateText = async (text, targetLang) => {
-    return callGeminiAPI(`Translate to ${targetLang}:\n\n${cleanText(text)}`);
+    const { protectedText, placeholders } = protectProperNouns(text);
+    const translatedProtected = await callGeminiAPI(`Translate to ${targetLang}:\n\n${cleanText(protectedText)}`);
+    return restoreProperNouns(translatedProtected, placeholders);
 };
 
 // ✅ Biến toàn cục để theo dõi số lượng người dùng online
@@ -202,7 +227,7 @@ app.post("/summarize", async (req, res) => {
         cache.set("lastTextSummarizerContent", summary, 600);
         latestContent = {
             type: "text",
-            content: text, // Lưu nội dung gốc
+            content: text,
             timestamp: Date.now()
         };
         await Visit.findOneAndUpdate(
@@ -268,7 +293,7 @@ app.post("/summarize-link", async (req, res) => {
 
         latestContent = {
             type: "link",
-            content: content, // Lưu nội dung gốc
+            content: content,
             timestamp: Date.now()
         };
         cache.set("lastLinkPageContent", summary, 600);
@@ -312,7 +337,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
         cache.set("lastDocumentContent", filteredText, 600);
         latestContent = {
             type: "pdf",
-            content: filteredText, // Lưu nội dung gốc
+            content: filteredText,
             timestamp: Date.now()
         };
 
@@ -343,7 +368,6 @@ app.post("/chat", async (req, res) => {
 
         const lowerQuestion = question.toLowerCase();
 
-        // Kiểm tra xem có nội dung mới nhất không
         if (!latestContent.content || !latestContent.timestamp) {
             return res.status(400).json({
                 error: "Vui lòng tải lên nội dung (text, PDF, hoặc link) trước khi đặt câu hỏi.",
@@ -351,7 +375,6 @@ app.post("/chat", async (req, res) => {
             });
         }
 
-        // Hàm tạo prompt
         const createPrompt = (content, question) => {
             if (lowerQuestion.includes("tóm tắt") || lowerQuestion.includes("summary")) {
                 return `Tóm tắt nội dung sau một cách ngắn gọn và chính xác:\n\n${content}`;
@@ -362,11 +385,9 @@ app.post("/chat", async (req, res) => {
             return `Dựa vào nội dung sau để trả lời câu hỏi một cách ngắn gọn và chính xác:\n\n${content}\n\nCâu hỏi: ${question}`;
         };
 
-        // Trả lời dựa trên nội dung mới nhất
         const answer = await callGeminiAPI(createPrompt(latestContent.content, question));
         const source = `${latestContent.type} vừa tải lên lúc ${new Date(latestContent.timestamp).toLocaleString()}`;
 
-        // Lưu vào cache
         cache.set(`chat:${Date.now()}`, { question, answer }, 3600);
 
         res.json({
@@ -398,16 +419,16 @@ app.get("/last-content", (req, res) => {
 // ✅ Kết nối MongoDB
 const connectDB = async () => {
     try {
-      await mongoose.connect(MONGODB_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
-      console.log("✅ Connected to MongoDB");
+        await mongoose.connect(MONGODB_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+        console.log("✅ Connected to MongoDB");
     } catch (error) {
-      console.error("❌ MongoDB Connection Error:", error);
-      process.exit(1);
+        console.error("❌ MongoDB Connection Error:", error);
+        process.exit(1);
     }
-  };
+};
 
 // ✅ Start server
 let server;
@@ -415,7 +436,6 @@ connectDB().then(() => {
     server = app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
 });
 
-let lastContent = "";
 async function fetchContent(url) {
     try {
         if (!url || !url.match(/^https?:\/\//)) {
@@ -433,14 +453,12 @@ async function fetchContent(url) {
         const $ = cheerio.load(html);
         let text = "";
 
-        // Các từ khóa và class thường liên quan đến quảng cáo hoặc nội dung không cần thiết
         const irrelevantKeywords = [
             "ad", "advertisement", "sponsored", "promo", "promotion",
             "banner", "popup", "widget", "sidebar", "footer", "nav",
             "newsletter", "subscribe", "login", "signup"
         ];
 
-        // Lọc các thẻ có khả năng chứa nội dung chính
         const contentElements = $(
             "p, h1, h2, h3, h4, h5, h6, article, section, div"
         ).filter((_, el) => {
@@ -450,11 +468,6 @@ async function fetchContent(url) {
             const className = ($el.attr("class") || "").toLowerCase();
             const idName = ($el.attr("id") || "").toLowerCase();
 
-            // Loại bỏ nếu:
-            // 1. Nội dung quá ngắn (< 10 ký tự)
-            // 2. Là thẻ script/style
-            // 3. Có class/id liên quan đến quảng cáo hoặc nội dung không mong muốn
-            // 4. Là menu, footer, header
             if (
                 !content || content.length < 10 ||
                 ["script", "style"].includes(tagName) ||
@@ -466,11 +479,9 @@ async function fetchContent(url) {
                 return false;
             }
 
-            // Ưu tiên các đoạn văn dài hoặc tiêu đề
             return content.length > 20 || ["h1", "h2", "h3", "article"].includes(tagName);
         });
 
-        // Trích xuất nội dung từ các phần tử đã lọc
         contentElements.each((_, element) => {
             const content = $(element).text().trim();
             if (content) {
@@ -478,7 +489,6 @@ async function fetchContent(url) {
             }
         });
 
-        // Nếu không tìm thấy nội dung chính, thử lấy từ body nhưng vẫn lọc
         if (!text.trim()) {
             console.warn(`Không tìm thấy nội dung cụ thể trên ${url}, lấy toàn bộ text từ body với bộ lọc.`);
             text = $("body").contents()
@@ -500,18 +510,15 @@ async function fetchContent(url) {
                 .trim();
         }
 
-        // Nếu vẫn không có nội dung
         if (!text.trim()) {
             console.warn(`Không có nội dung text nào trên ${url}.`);
             text = "Trang web này không chứa nội dung text có thể tóm tắt (có thể chủ yếu là hình ảnh hoặc video).";
         }
 
-        // Chuẩn hóa văn bản
-        text = filterIrrelevantContent(text); // Áp dụng hàm lọc đã có
+        text = filterIrrelevantContent(text);
         text = text.replace(/\n+/g, "\n").trim();
         console.log(`Extracted content length: ${text.length} characters`);
 
-        // Giới hạn độ dài để tránh vượt quá khả năng xử lý của API
         const MAX_CONTENT_LENGTH = 50000;
         if (text.length > MAX_CONTENT_LENGTH) {
             text = text.substring(0, MAX_CONTENT_LENGTH);
