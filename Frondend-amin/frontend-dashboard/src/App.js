@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import LoginPage from "./components/LoginPage";
 import Dashboard from "./components/Dashboard";
@@ -7,29 +7,25 @@ import UserManagement from "./components/UserManagement";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
-import { API_BASE_URL } from "./api/api"; // Cập nhật đường dẫn
+import { API_BASE_URL } from "./api/api";
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    const token = localStorage.getItem("token");
-    console.log("Token from localStorage:", token);
-    const isAuth = !!token;
-    console.log("Initial isAuthenticated:", isAuth);
-    return isAuth;
-  });
-
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Thêm loading state
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setIsLoading(false); // Giả lập hoàn tất khởi tạo
+  }, []);
 
   const handleLogout = async () => {
     console.log("handleLogout triggered");
-
     try {
       await axios.post(`${API_BASE_URL}/api/auth/logout`, {}, { withCredentials: true });
       console.log("API logout called successfully");
     } catch (error) {
       console.error("Error calling logout API:", error);
     }
-
     console.log("Token before removal:", localStorage.getItem("token"));
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
@@ -46,6 +42,10 @@ function App() {
     console.log("ProtectedRoute check, isLoggedIn:", isLoggedIn);
     return isLoggedIn ? children : <Navigate to="/loginad" replace />;
   };
+
+  if (isLoading) {
+    return <div>Loading...</div>; // Hiển thị loading trong khi chờ
+  }
 
   return (
     <>
