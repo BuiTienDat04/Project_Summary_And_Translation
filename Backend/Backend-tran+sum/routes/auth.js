@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Visit = require("../models/Visit");
 const { parsePhoneNumberFromString } = require("libphonenumber-js");
+const socketModule = require('./socket');
 
 const router = express.Router();
 
@@ -108,31 +109,16 @@ module.exports = (visitCountObj) => {
     try {
       console.log("🔹 /logout API called at:", new Date().toISOString());
       console.log("🔹 Cookies received:", req.cookies);
-
-      socket.emit("manualDisconnect");  // Gửi tín hiệu offline lên server
-      socket.disconnect();  // Ngắt kết nối socket
-      localStorage.removeItem("user");  // Xóa user khỏi localStorage
-
-      // Kiểm tra kết nối DB
-      let visitData = await Visit.findOne();
-      console.log("🔹 Visit data found:", visitData);
-      if (!visitData) {
-        visitData = await Visit.create({ totalVisits: 0 });
-        console.log("🔹 Created new visit data:", visitData);
+  
+      // Sử dụng socket từ socket.js
+      const io = socketModule.io; // Giả sử socket.js xuất 'io' (instance của Socket.IO)
+      if (io) {
+        io.emit("manualDisconnect"); // Gửi tín hiệu đến tất cả clients
+        console.log("🔹 Manual disconnect signal sent to all clients");
+      } else {
+        console.warn("⚠️ Socket.IO not initialized in socket.js");
       }
-
-      // Cập nhật totalVisits với logic an toàn
-      const updatedVisit = await Visit.findOneAndUpdate(
-        {},
-        { $inc: { totalVisits: -1 } },
-        { new: true }
-      );
-      if (updatedVisit.totalVisits < 0) {
-        updatedVisit.totalVisits = 0;
-        await updatedVisit.save();
-      }
-      console.log("🔹 Total visits after update:", updatedVisit.totalVisits);
-
+  
       // Xóa cookie
       res.clearCookie("token", {
         path: "/",
@@ -141,12 +127,13 @@ module.exports = (visitCountObj) => {
         sameSite: "Strict",
       });
       console.log("🔹 Cookie 'token' cleared");
-
+  
       res.status(200).json({ message: "Logout successful" });
     } catch (error) {
-      console.error("❌ Error in /logout:", error.stack); // Log chi tiết lỗi
+      console.error("❌ Error in /logout:", error.stack);
       res.status(500).json({ message: "Server error", error: error.message });
     }
   });
-  return router; // 🟢 Trả về router
+  
+  module.exports = router;
 };

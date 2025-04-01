@@ -1,42 +1,57 @@
 import { io } from "socket.io-client";
 
-// 🟢 Lấy userId từ localStorage
 const getUserId = () => {
     const user = JSON.parse(localStorage.getItem("user"));
     return user ? user.id : null;
 };
 
-// Khởi tạo Socket.IO
 const socket = io("https://admin.pdfsmart.online", {
     transports: ["websocket", "polling"],
     query: { userId: getUserId() },
-    autoConnect: false, // Chỉ kết nối khi cần
+    autoConnect: false,
 });
 
-// 🟢 Kết nối WebSocket khi user đăng nhập
+// 🟢 Kết nối và thông báo online
 export const connectSocket = () => {
-    socket.io.opts.query = { userId: getUserId() }; // Cập nhật userId
+    const userId = getUserId();
+    if (!userId) return;
+
+    socket.io.opts.query = { userId };
     socket.connect();
+
+    // Gửi sự kiện khi kết nối thành công
+    socket.once('connect', () => {
+        socket.emit('userOnline', userId);
+        console.log('Socket connected and online status sent');
+    });
 };
 
-// 🔴 Ngắt kết nối WebSocket khi user logout
+// 🔴 Ngắt kết nối và thông báo offline
 export const disconnectSocket = () => {
-    socket.emit("manualDisconnect"); // Thông báo offline tới server
-    socket.disconnect();
-};
+    const userId = getUserId();
+    if (!userId) return;
 
-// 🟡 Lắng nghe sự kiện đóng tab, mất kết nối mạng, và thông báo offline
-const notifyOffline = () => {
     if (socket.connected) {
-        socket.emit("manualDisconnect");
+        socket.emit('userOffline', userId);
+        socket.disconnect();
+        console.log('Socket disconnected and offline status sent');
     }
 };
 
-// Lắng nghe sự kiện đóng tab hoặc chuyển trang
-window.addEventListener("beforeunload", notifyOffline);
+// 🛠️ Xử lý sự kiện mất kết nối
+const notifyOffline = () => {
+    if (socket.connected) {
+        socket.emit('userOffline', getUserId());
+    }
+};
 
-// Lắng nghe sự kiện mất kết nối mạng
+// 🎯 Lắng nghe các sự kiện quan trọng
+socket.on('connect_error', (err) => {
+    console.error('Socket connection error:', err);
+});
+
+window.addEventListener("beforeunload", notifyOffline);
 window.addEventListener("offline", notifyOffline);
 
-export { socket }; // Xuất socket để có thể sử dụng ở nơi khác
-export default socket; // Giữ lại export mặc định để thuận tiện trong việc import
+export { socket };
+export default socket;

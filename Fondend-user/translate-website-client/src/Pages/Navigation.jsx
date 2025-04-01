@@ -22,7 +22,9 @@ const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout,
                 console.log("Logout successful:", response.data); // Kiểm tra phản hồi
                 localStorage.removeItem("token");
                 console.log("Token removed, navigating to login");
-                navigate("/"); // Chuyển hướng ngay trong khối này
+                setTimeout(() => {
+                    navigate("/"); 
+                }, 1000); 
             })
             .catch(err => {
                 console.error("❌ Logout error:", err.response ? err.response.data : err.message); // Log lỗi chi tiết
