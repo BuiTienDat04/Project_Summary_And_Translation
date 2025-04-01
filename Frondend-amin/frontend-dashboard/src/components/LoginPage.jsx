@@ -1,10 +1,26 @@
 import { useState } from "react";
-import { FaSignInAlt, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebook, FaTwitter, FaGithub, FaApple, FaInstagram, FaLinkedin, FaYoutube, FaDiscord, FaSlack } from "react-icons/fa";
+import {
+  FaSignInAlt,
+  FaEnvelope,
+  FaLock,
+  FaEye,
+  FaEyeSlash,
+  FaGoogle,
+  FaFacebook,
+  FaTwitter,
+  FaGithub,
+  FaApple,
+  FaInstagram,
+  FaLinkedin,
+  FaYoutube,
+  FaDiscord,
+  FaSlack,
+} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_BASE_URL } from "../api/api";
 
-const LoginPage = () => {
+const LoginPage = ({ setIsAuthenticated }) => {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
@@ -17,31 +33,35 @@ const LoginPage = () => {
       setLoginErrorMessage("Email and password are required!");
       return;
     }
-  
+
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
-        email: loginEmail,
-        password: loginPassword,
-      }, { withCredentials: true });
-  
+      const response = await axios.post(
+        `${API_BASE_URL}/api/auth/login`,
+        {
+          email: loginEmail,
+          password: loginPassword,
+        },
+        { withCredentials: true }
+      );
+
       console.log("Login response:", response.data);
-  
+
       const { token, user } = response.data;
-  
+
       if (!token || !user || !user._id) {
         setLoginErrorMessage("Invalid response from server! Missing token or user ID.");
         return;
       }
-  
-      // Lưu token và userId vào localStorage
+
       localStorage.setItem("token", token);
-      localStorage.setItem("userId", user._id); // Thêm dòng này để lưu _id
-      localStorage.setItem("loggedInUser", JSON.stringify(user)); // Giữ nguyên nếu cần toàn bộ thông tin user
-  
-      console.log("Logged in user ID:", user._id); // Log để kiểm tra
-  
+      localStorage.setItem("userId", user._id);
+      localStorage.setItem("loggedInUser", JSON.stringify(user));
+
+      console.log("Logged in user ID:", user._id);
+
       setLoginSuccess(true);
       setLoginErrorMessage("");
+      setIsAuthenticated(true);
       setTimeout(() => {
         navigate("/dashboard", { replace: true });
       }, 2000);
@@ -54,12 +74,7 @@ const LoginPage = () => {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 overflow-hidden">
-      {/* Background gradient với nhiều icon logo */}
-      <div 
-        className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-800"
-        style={{ backgroundPosition: "0% 50%" }}
-      >
-        {/* Các icon logo trang trí - tăng số lượng và độ rõ */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-800">
         <FaGoogle className="absolute top-10 left-20 text-white/70 h-12 w-12 animate-[pulse_4s_ease_infinite]" />
         <FaFacebook className="absolute bottom-16 right-24 text-white/70 h-14 w-14 animate-[float_5s_ease_infinite]" />
         <FaTwitter className="absolute top-1/3 right-10 text-white/70 h-10 w-10 animate-[pulse_3s_ease_infinite]" />
@@ -73,9 +88,8 @@ const LoginPage = () => {
         <FaGoogle className="absolute bottom-1/2 left-10 text-white/70 h-9 w-9 animate-[pulse_3s_ease_infinite]" />
         <FaTwitter className="absolute top-10 right-1/2 text-white/70 h-10 w-10 animate-[spin_6s_linear_infinite]" />
       </div>
-      {/* Lớp phủ mờ - giảm độ mờ để icon nổi hơn */}
       <div className="absolute inset-0 bg-gray-900/10 backdrop-blur-sm"></div>
-      
+
       <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 relative z-10">
         <div className="text-center mb-6">
           <div className="flex justify-center">
@@ -153,31 +167,18 @@ const LoginPage = () => {
         </div>
       </div>
 
-      {/* Inline keyframes cho animation */}
       <style jsx>{`
         @keyframes pulse {
-          0%, 100% {
-            opacity: 0.5;
-          }
-          50% {
-            opacity: 0.7;
-          }
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 0.7; }
         }
         @keyframes float {
-          0%, 100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
         }
         @keyframes spin {
-          0% {
-            transform: rotate(0deg);
-          }
-          100% {
-            transform: rotate(360deg);
-          }
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
       `}</style>
     </div>

@@ -1,25 +1,18 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { API_BASE_URL } from "../api/api";
 
-const Navbar = () => {
+const Navbar = ({ onLogout }) => { // Nhận onLogout từ App.js
   const navigate = useNavigate();
-  const handleLogout = async () => {
-    const confirmLogout = window.confirm("Are you sure you want to log out?");
-    if (!confirmLogout) return; // Stop if the user cancels
-  
-    try {
-      await axios.post(`${API_BASE_URL}/api/auth/logout`, {}, { withCredentials: true });
-      navigate("/loginad", { replace: true });
-    } catch (error) {
-      console.error("❌ Logout failed:", error);
-    }
-  };
-  
 
   const handleUserManagementClick = () => {
     navigate("/user-management");
+  };
+
+  const handleLogoutClick = () => {
+    const confirmLogout = window.confirm("Are you sure you want to log out?");
+    if (confirmLogout) {
+      onLogout(); // Gọi hàm handleLogout từ App.js
+    }
   };
 
   return (
@@ -42,7 +35,7 @@ const Navbar = () => {
           </li>
           <li>
             <button
-              onClick={handleLogout}
+              onClick={handleLogoutClick} // Sử dụng hàm mới
               className="bg-red-600 text-white px-3 py-1.5 rounded-md hover:bg-red-700 transition duration-200 text-sm font-medium"
             >
               Logout
