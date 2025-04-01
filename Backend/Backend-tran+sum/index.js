@@ -23,16 +23,12 @@ const dashboardRoutes = require("./routes/dashboard");
 const summaryRoutes = require("./routes/summary");
 const uploadRoutes = require("./routes/upload");
 const userRoutes = require("./routes/userRoutes");
-const socketServer = require("./socket");
-
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 const MONGODB_URI = process.env.MONGODB_URI;
 const API_KEY = process.env.API_KEY;
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
-const { Server } = require("socket.io"); // Import Socket.IO
-const http = require("http"); // Import Node.js HTTP module
 
 // ✅ Kiểm tra cấu hình quan trọng
 if (!API_KEY) {
@@ -130,6 +126,7 @@ const filterIrrelevantContent = (text) => {
         .join("\n")
         .trim();
 };
+
 const callGeminiAPI = async (prompt, retries = 3, delay = 2000) => {
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
@@ -182,11 +179,8 @@ const translateText = async (text, targetLang) => {
     return callGeminiAPI(`Translate to ${targetLang}:\n\n${cleanText(text)}`);
 };
 
-// ✅ Biến toàn cục để theo dõi số lượng người dùng online
-let visitCount = 0;
-
 // ✅ API lấy số lượng người dùng online
-app.get("/api/visitCount", (req, res) => res.status(200).json({ visitCount }));
+app.get("/api/visitCount", (req, res) => res.status(200).json({ visitCount: 0 }));
 
 app.use("/auth", authRoutes);
 
@@ -254,7 +248,6 @@ app.post("/translate", async (req, res) => {
         res.status(500).json({ error: `Error translating: ${error.message}` });
     }
 });
-
 
 // ✅ API to summarize a URL
 app.post("/summarize-link", async (req, res) => {
@@ -429,84 +422,10 @@ const connectDB = async () => {
 };
 
 // ✅ Start server
-let server;
 connectDB().then(() => {
-    // Tạo server HTTP từ ứng dụng Express
-    server = http.createServer(app);
-
-    // Khởi tạo Socket.IO và gắn vào server
-    const io = new Server(server, {
-        cors: {
-            origin: [
-                "http://localhost:3000",
-                "http://localhost:3001",
-                "https://pdfsmart.online",
-                "https://admin.pdfsmart.online",
-                "https://api.pdfsmart.online",
-            ],
-            methods: ["GET", "POST"],
-            credentials: true,
-        },
-    });
-
-    // 🟢 Lưu trạng thái user
-let users = {}; // Lưu trạng thái người dùng
-let totalOnline = 0; // Đếm số người online
-let userSockets = {}; // Lưu danh sách socket của mỗi user
-
-// 🟡 Hàm xử lý khi user disconnect
-const handleDisconnect = (socket, userId) => {
-    if (userId && userSockets[userId]) {
-        // Xóa socket ID của user khi mất kết nối
-        userSockets[userId] = userSockets[userId].filter((id) => id !== socket.id);
-
-        // Nếu user không còn kết nối nào, đánh dấu offline
-        if (userSockets[userId].length === 0) {
-            users[userId] = "offline";
-            totalOnline = Math.max(0, totalOnline - 1);
-            console.log(`❌ User ${userId} went offline. Total Online: ${totalOnline}`);
-
-            delete userSockets[userId];
-
-            io.emit("updateUsers", users);
-            io.emit("updateTotalOnline", totalOnline);
-        }
-    }
-};
-
-// 🟣 Khi có user kết nối
-io.on("connection", (socket) => {
-    const userId = socket.handshake.query.userId;
-
-    if (userId) {
-        if (!userSockets[userId]) {
-            userSockets[userId] = [];
-        }
-
-        if (!users[userId] || users[userId] === "offline") {
-            totalOnline += 1;
-        }
-
-        userSockets[userId].push(socket.id);
-        users[userId] = "online";
-
-        console.log(`✅ User ${userId} is online. Total Online: ${totalOnline}`);
-
-        io.emit("updateUsers", users);
-        io.emit("updateTotalOnline", totalOnline);
-    }
-
-    // 🟢 Xử lý khi mất kết nối hoặc logout
-    socket.on("manualDisconnect", () => handleDisconnect(socket, userId));
-
-    socket.on("disconnect", () => handleDisconnect(socket, userId));
+    app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
 });
 
-    // Khởi động server
-    server.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
-});
-
-let lastContent = "";
 async function fetchContent(url) {
     try {
         if (!url || !url.match(/^https?:\/\//)) {

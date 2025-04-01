@@ -7,23 +7,23 @@ import {
   FaEyeSlash,
   FaExclamationTriangle,
   FaCheckCircle,
-  FaFilePdf,
+  FaFilePdf, // Giữ lại nếu dùng ở đâu đó khác hoặc xóa nếu không cần
   FaFileContract,
-  FaFileAlt,
-  FaFileWord,
-  FaListAlt,
-  FaGlobe,
-  FaListUl,
+  FaFileAlt, // Giữ lại nếu dùng ở đâu đó khác hoặc xóa nếu không cần
+  FaFileWord, // Giữ lại nếu dùng ở đâu đó khác hoặc xóa nếu không cần
+  FaListAlt, // Giữ lại nếu dùng ở đâu đó khác hoặc xóa nếu không cần
+  FaGlobe, // Giữ lại nếu dùng ở đâu đó khác hoặc xóa nếu không cần
+  FaListUl, // Giữ lại nếu dùng ở đâu đó khác hoặc xóa nếu không cần
   FaMagic,
   FaLanguage,
-  FaRobot,
+  FaRobot, // Giữ lại nếu dùng ở đâu đó khác hoặc xóa nếu không cần
   FaBookOpen,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { BrowserRouter } from 'react-router-dom';
+// import { BrowserRouter } from 'react-router-dom'; // Thường không cần import BrowserRouter ở component con
 import axios from "axios";
 import { API_BASE_URL } from "../api/api";
-import { socket } from '../socket';
+// import { socket } from '../socket'; // Đã loại bỏ
 import { motion, AnimatePresence } from "framer-motion";
 
 const PasswordInput = ({ value, onChange }) => {
@@ -34,7 +34,7 @@ const PasswordInput = ({ value, onChange }) => {
       <input
         type={showPassword ? "text" : "password"}
         id="loginPassword"
-        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-lg"
+        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-lg bg-white/80 backdrop-blur-sm text-gray-700" // Thêm style input giống email
         placeholder="Enter your password"
         value={value}
         onChange={onChange}
@@ -50,46 +50,46 @@ const PasswordInput = ({ value, onChange }) => {
   );
 };
 
-const LoginPage = ({ onClose, onOpenRegister }) => {
+const LoginPage = ({ onClose, onOpenRegister }) => { // Giữ lại props nếu cần, nếu không thì xóa
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
   const [loginSuccess, setLoginSuccess] = useState(false);
   const navigate = useNavigate();
-  const [socketInstance, setSocketInstance] = useState(null);
+  // const [socketInstance, setSocketInstance] = useState(null); // Đã loại bỏ
 
   const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {
       setLoginErrorMessage("Email and password are required!");
       return;
     }
-  
+
     try {
       const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
         email: loginEmail,
         password: loginPassword,
       }, { withCredentials: true });
-  
+
       console.log("Login response:", response.data);
-  
+
       const { token, user } = response.data;
-  
+
       if (!token || !user || !user._id) {
         setLoginErrorMessage("Invalid response from server! Missing token or user ID.");
         return;
       }
-  
+
       // Lưu token và userId vào localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("userId", user._id); // Thêm dòng này để lưu _id
       localStorage.setItem("loggedInUser", JSON.stringify(user)); // Giữ nguyên nếu cần toàn bộ thông tin user
-  
+
       console.log("Logged in user ID:", user._id); // Log để kiểm tra
-      socket.emit("userOnline", user._id);
+      // socket.emit("userOnline", user._id); // Đã loại bỏ
       setLoginSuccess(true);
       setLoginErrorMessage("");
       setTimeout(() => {
-        navigate("/text", { replace: true });
+        navigate("/text", { replace: true }); // Điều hướng đến trang /text
       }, 2000);
     } catch (error) {
       console.error("Login error:", error.response?.data || error.message);
@@ -102,37 +102,34 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
   useEffect(() => {
     const handleInitialLogout = async () => {
       try {
-        await axios.post(`${API_BASE_URL}/api/auth/logout`, {}, { 
-          withCredentials: true 
+        await axios.post(`${API_BASE_URL}/api/auth/logout`, {}, {
+          withCredentials: true
         });
         console.log("Cleared previous session");
+        // Xóa thông tin người dùng khỏi localStorage khi vào trang login
+        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("loggedInUser");
       } catch (error) {
-        console.error("Logout error:", error);
+        // Không cần hiển thị lỗi này cho người dùng, chỉ log ra console
+        console.error("Logout error on mount (ignore if no previous session):", error.message);
       }
     };
 
     handleInitialLogout();
-  }, []);
-
-  // Cleanup socket khi unmount
-  useEffect(() => {
-    return () => {
-      if (socketInstance) {
-        socketInstance.disconnect();
-      }
-    };
-  }, [socketInstance]);
+  }, []); // Dependency array rỗng đảm bảo chỉ chạy 1 lần khi mount
 
   // Ẩn footer và chatbox
   useEffect(() => {
     const footer = document.querySelector("footer");
-    const chatbox = document.querySelector(".chatbox");
+    const chatbox = document.querySelector(".chatbox"); // Đảm bảo selector này đúng
     if (footer) footer.style.display = "none";
     if (chatbox) chatbox.style.display = "none";
 
     return () => {
-      if (footer) footer.style.display = "";
-      if (chatbox) chatbox.style.display = "";
+      // Khôi phục lại hiển thị khi component unmount
+      if (footer) footer.style.display = ""; // Hoặc giá trị display mặc định của footer
+      if (chatbox) chatbox.style.display = ""; // Hoặc giá trị display mặc định của chatbox
     };
   }, []);
 
@@ -344,7 +341,7 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
             <div>
               <motion.label
                 className="block text-sm font-medium text-white mb-2"
-                htmlFor="password"
+                htmlFor="password" // Thay đổi htmlFor thành "loginPassword" cho khớp id input bên trong
                 whileHover={{ scale: 1.02 }}
                 transition={{ duration: 0.2 }}
               >
@@ -364,9 +361,10 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
             onClick={handleLogin}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
+            disabled={loginSuccess} // Vô hiệu hóa nút khi đang đăng nhập thành công
           >
-            <FaSignInAlt className="mr-2 animate-pulse" />
-            Log In
+            <FaSignInAlt className={`mr-2 ${loginSuccess ? '' : 'animate-pulse'}`} />
+            {loginSuccess ? "Redirecting..." : "Log In"}
           </motion.button>
 
           {/* Registration Link with Animation */}
@@ -379,7 +377,7 @@ const LoginPage = ({ onClose, onOpenRegister }) => {
             Don&apos;t have an account?{" "}
             <motion.button
               className="text-cyan-300 hover:text-cyan-200 font-medium focus:outline-none focus:underline transition-colors"
-              onClick={() => navigate("/register")}
+              onClick={() => navigate("/register")} // Sử dụng navigate để chuyển trang
               whileHover={{ scale: 1.08, textShadow: "0 0 5px rgba(139, 228, 255, 0.8)" }}
               transition={{ duration: 0.3 }}
             >
