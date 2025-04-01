@@ -1,36 +1,36 @@
-import { io } from "socket.io-client";
 
+const { Server } = require("socket.io");
 const getUserId = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   return user ? user.id : null;
 };
 
 // Khởi tạo socket với cấu hình rõ ràng
-const socket = io("https://api.pdfsmart.online", {
-  path: "/socket.io", // Thêm path mặc định của Socket.IO
-  transports: ["websocket", "polling"], // Ưu tiên websocket, fallback polling
-  query: { userId: getUserId() }, // Truyền userId qua query
-  autoConnect: false, // Không tự động kết nối
+const io = new Server({
+  cors: {
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "https://pdfsmart.online",
+      "https://admin.pdfsmart.online",
+      "https://api.pdfsmart.online"
+    ],
+    methods: ["GET", "POST"],
+    credentials: true,
+  }
 });
 
-export const connectSocket = () => {
-  socket.io.opts.query = { userId: getUserId() }; // Cập nhật query trước khi kết nối
-  socket.connect();
-};
+io.on("connection", (socket) => {
+  console.log(`✅ Client connected: ${socket.id}`);
 
-export const disconnectSocket = () => {
-  socket.emit("manualDisconnect");
-  socket.disconnect();
-};
+  socket.on("manualDisconnect", () => {
+    console.log(`❌ Client disconnected: ${socket.id}`);
+    socket.disconnect();
+  });
 
-const notifyOffline = () => {
-  if (socket.connected) {
-    socket.emit("manualDisconnect");
-  }
-};
+  socket.on("disconnect", () => {
+    console.log(`🔹 Socket ${socket.id} disconnected`);
+  });
+});
 
-window.addEventListener("beforeunload", notifyOffline);
-window.addEventListener("offline", notifyOffline);
-
-export { socket };
-export default socket;
+module.exports = { io };
