@@ -57,7 +57,7 @@ const cors = require("cors");
 
 app.use(
     cors({
-        origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online", "https://admin.pdfsmart.online", "https://api.pdfsmart.online"],
+        origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online"],
         credentials: true,  // 👈 Bắt buộc! Cho phép cookie
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"],
@@ -65,6 +65,10 @@ app.use(
 );
 
 // Xử lý Preflight request (OPTIONS)
+app.options("*", cors());
+
+
+// Xử lý request OPTIONS (Preflight request)
 app.options("*", cors());
 
 app.use(helmet());
@@ -113,7 +117,7 @@ const cleanText = (text) => {
 
 const filterIrrelevantContent = (text) => {
     const adKeywords = ["ad", "sponsored", "advertisement", "promotion", "brought to you by"];
-
+    
     return text
         .split("\n")
         .filter((line) => {
@@ -126,7 +130,6 @@ const filterIrrelevantContent = (text) => {
         .join("\n")
         .trim();
 };
-
 const callGeminiAPI = async (prompt, retries = 3, delay = 2000) => {
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
@@ -179,10 +182,13 @@ const translateText = async (text, targetLang) => {
     return callGeminiAPI(`Translate to ${targetLang}:\n\n${cleanText(text)}`);
 };
 
-// ✅ API lấy số lượng người dùng online
-app.get("/api/visitCount", (req, res) => res.status(200).json({ visitCount: 0 }));
+// ✅ Biến toàn cục để theo dõi số lượng người dùng online
+let visitCount = 0;
 
-app.use('/api/auth', authRoutes({ visitCountObj }));
+// ✅ API lấy số lượng người dùng online
+app.get("/api/visitCount", (req, res) => res.status(200).json({ visitCount }));
+
+app.use("/api/auth", authRoutes(visitCountObj));
 
 // ✅ API to summarize text
 app.post("/summarize", async (req, res) => {
@@ -211,6 +217,7 @@ app.post("/summarize", async (req, res) => {
     }
 });
 
+// ✅ API to translate text
 app.post("/translate", async (req, res) => {
     const { text, targetLang } = req.body;
     if (!text || !targetLang || text.trim().length < 10) {
@@ -218,33 +225,14 @@ app.post("/translate", async (req, res) => {
     }
 
     try {
-        const nameRegex = /\[(.*?)\]/g;
-        const names = {};
-        let processedText = text;
-        let match;
-        let index = 0;
-
-        console.log("Received text:", text); // Kiểm tra văn bản nhận được
-
-        while ((match = nameRegex.exec(text)) !== null) {
-            const placeholder = `__NAME_${index++}__`;
-            names[placeholder] = match[1];
-            processedText = processedText.replace(match[0], placeholder);
-        }
-        console.log("Processed text (before translation):", processedText); // Văn bản sau khi thay thế
-        console.log("Names to restore:", names); // Các tên sẽ khôi phục
-
-        let translation = await translateText(processedText, targetLang);
-        console.log("Translated text (before restoring):", translation); // Văn bản sau khi dịch
-
-        for (const [placeholder, name] of Object.entries(names)) {
-            translation = translation.replace(placeholder, name);
-        }
-        console.log("Final translation:", translation); // Văn bản cuối cùng
-
+        const translation = await translateText(text, targetLang);
+        await Visit.findOneAndUpdate(
+            {},
+            { $inc: { translatedPosts: 1 } },
+            { upsert: true, new: true }
+        );
         res.json({ translation });
     } catch (error) {
-        console.error("Translation error:", error);
         res.status(500).json({ error: `Error translating: ${error.message}` });
     }
 });
@@ -410,22 +398,24 @@ app.get("/last-content", (req, res) => {
 // ✅ Kết nối MongoDB
 const connectDB = async () => {
     try {
-        await mongoose.connect(MONGODB_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-        console.log("✅ Connected to MongoDB");
+      await mongoose.connect(MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+      console.log("✅ Connected to MongoDB");
     } catch (error) {
-        console.error("❌ MongoDB Connection Error:", error);
-        process.exit(1);
+      console.error("❌ MongoDB Connection Error:", error);
+      process.exit(1);
     }
-};
+  };
 
 // ✅ Start server
+let server;
 connectDB().then(() => {
-    app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+    server = app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
 });
 
+let lastContent = "";
 async function fetchContent(url) {
     try {
         if (!url || !url.match(/^https?:\/\//)) {
@@ -468,7 +458,7 @@ async function fetchContent(url) {
             if (
                 !content || content.length < 10 ||
                 ["script", "style"].includes(tagName) ||
-                irrelevantKeywords.some(keyword =>
+                irrelevantKeywords.some(keyword => 
                     className.includes(keyword) || idName.includes(keyword) || content.toLowerCase().includes(keyword)
                 ) ||
                 $el.parents("header, nav, footer, aside").length > 0
@@ -500,7 +490,7 @@ async function fetchContent(url) {
 
                     return (
                         content && content.length > 20 &&
-                        !irrelevantKeywords.some(keyword =>
+                        !irrelevantKeywords.some(keyword => 
                             className.includes(keyword) || idName.includes(keyword) || content.toLowerCase().includes(keyword)
                         ) &&
                         !$el.is("script, style, header, nav, footer, aside")

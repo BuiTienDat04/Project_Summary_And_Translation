@@ -38,7 +38,7 @@ const Footer = () => {
 
         {/* Cột 3: Social Icons */}
         <div className="flex space-x-4 mt-4">
-            <a href="https://www.facebook.com/people/Nguy%E1%BB%85n-%C4%90%C3%ACnh-Hi%E1%BA%BFu/pfbid02GdryD7MoU1VE6qEjwPk7HUMTHUVEXwcnbvyRHQxUd7Gn47QNU22ciW1jBNsqtUJdl/" className="text-gray-400 hover:text-white"><FaFacebook size={24} /></a>
+            <a href="https://www.facebook.com/begau.cung.5/" className="text-gray-400 hover:text-white"><FaFacebook size={24} /></a>
             <a href="https://x.com/dinhhieu1210?s=21" className="text-gray-400 hover:text-white"><FaTwitter size={24} /></a>
             <a href="https://www.linkedin.com/in/nguyendinhhieu2004"className="text-gray-400 hover:text-white"><FaLinkedin size={24} /></a>
             <a href="https://github.com/nguyendinhhieu1210" className="text-gray-400 hover:text-white"><FaGithub size={24} /></a>
