@@ -15,7 +15,6 @@ const cheerio = require("cheerio");
 
 const User = require("./models/User");
 const Visit = require("./models/Visit");
-const visitCountObj = { visitCount: 0 };
 const ChatHistory = require("./models/ChatHistory");
 const ContentHistory = require("./models/ContentHistory");
 const authRoutes = require("./routes/auth");
@@ -24,14 +23,14 @@ const dashboardRoutes = require("./routes/dashboard");
 const summaryRoutes = require("./routes/summary");
 const uploadRoutes = require("./routes/upload");
 const userRoutes = require("./routes/userRoutes");
-
+const { verifyToken, verifyAdmin } = require("./middleware/authMiddleware");
 const app = express();
 const PORT = process.env.PORT || 5001;
 const MONGODB_URI = process.env.MONGODB_URI;
 const API_KEY = process.env.API_KEY;
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
-// ✅ Kiểm tra cấu hình quan trọng
+// Kiểm tra cấu hình
 if (!API_KEY) {
     console.error("❌ API_KEY is missing in the .env file");
     process.exit(1);
@@ -40,43 +39,36 @@ if (!MONGODB_URI) {
     console.error("❌ MONGODB_URI is missing in the .env file");
     process.exit(1);
 }
+if (!process.env.JWT_SECRET) {
+    console.error("❌ JWT_SECRET is missing in the .env file");
+    process.exit(1);
+}
 
-// ✅ Initialize cache (10 minutes)
+// Initialize cache
 const cache = new NodeCache({ stdTTL: 600 });
 
-// ✅ Biến theo dõi nội dung mới nhất
-// Biến lưu trữ nội dung mới nhất (giữ cho tương thích với code cũ)
+// Biến lưu trữ nội dung mới nhất
 let latestContent = { type: null, content: null, timestamp: null };
 
-
-// =================== 🔹 MIDDLEWARE 🔹 ===================
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const cors = require("cors");
-
-app.use(
-    cors({
-        origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online"],
-        credentials: true,  // 👈 Bắt buộc! Cho phép cookie
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"],
-    })
-);
-
-// Xử lý Preflight request (OPTIONS)
-app.options("*", cors());
-
-
-// Xử lý request OPTIONS (Preflight request)
+app.use(cors({
+    origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"],
+}));
 app.options("*", cors());
 
 app.use(helmet());
 app.use(morgan("combined"));
 app.use(cookieParser());
-app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/users", userRoutes);
+app.use("/api/dashboard", verifyToken, dashboardRoutes); // Bảo vệ dashboard routes
+app.use("/api/users", verifyToken, userRoutes); // Bảo vệ user routes
 
-// 🚀 Rate limiting to prevent DDoS
+// Rate limiting to prevent DDoS
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
@@ -84,7 +76,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// ✅ Multer configuration for PDF uploads
+// Multer configuration for PDF uploads
 const upload = multer({
     dest: "uploads/",
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
@@ -94,7 +86,7 @@ const upload = multer({
     },
 });
 
-// ✅ Middleware để xử lý lỗi của Multer
+// Middleware xử lý lỗi của Multer
 app.use((err, req, res, next) => {
     if (err instanceof multer.MulterError) {
         if (err.code === "LIMIT_FILE_SIZE") {
@@ -108,34 +100,23 @@ app.use((err, req, res, next) => {
 });
 
 const cleanText = (text) => {
-    return text
-        .replace(/[^\w\s.,!?;:'"()-]/g, " ") // Giữ lại ký tự cần thiết
-        .replace(/\s+/g, " ") // Chuẩn hóa khoảng trắng
-        .trim();
+    return text.replace(/[^\w\s.,!?;:'"()-]/g, " ").replace(/\s+/g, " ").trim();
 };
 
 const filterIrrelevantContent = (text) => {
     const adKeywords = ["ad", "sponsored", "advertisement", "promotion", "brought to you by"];
-    
-    return text
-        .split("\n")
-        .filter((line) => {
-            return (
-                !/^\s*$/.test(line) && // Bỏ dòng trống
-                !adKeywords.some((keyword) => line.toLowerCase().includes(keyword)) && // Loại quảng cáo
-                line.length > 10 // Bỏ nội dung quá ngắn (thường là tiêu đề quảng cáo)
-            );
-        })
-        .join("\n")
-        .trim();
+    return text.split("\n")
+        .filter(line => !/^\s*$/.test(line) && !adKeywords.some(keyword => line.toLowerCase().includes(keyword)) && line.length > 10)
+        .join("\n").trim();
 };
 
-// Rate limit
-const chatLimiter = require("express-rate-limit")({
+// Rate limit cho chat
+const chatLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 10,
     message: { error: "Quá nhiều yêu cầu chat, vui lòng thử lại sau 1 phút." },
 });
+
 const callGeminiAPI = async (prompt, retries = 3, delay = 2000) => {
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
@@ -151,25 +132,22 @@ const callGeminiAPI = async (prompt, retries = 3, delay = 2000) => {
                     },
                 }),
             });
-
             if (!response.ok) {
                 if (response.status === 503 && attempt < retries) {
                     console.log(`Attempt ${attempt} failed with 503, retrying after ${delay}ms...`);
-                    await new Promise((resolve) => setTimeout(resolve, delay));
+                    await new Promise(resolve => setTimeout(resolve, delay));
                     continue;
                 }
                 throw new Error(`HTTP Error: ${response.status}`);
             }
-
             const data = await response.json();
             const result = data.candidates?.[0]?.content?.parts?.[0]?.text;
             if (!result) throw new Error("No valid response from Gemini API");
-
             return result;
         } catch (error) {
             if (error.message.includes("ECONNRESET") && attempt < retries) {
                 console.log(`Attempt ${attempt} failed with ECONNRESET, retrying after ${delay}ms...`);
-                await new Promise((resolve) => setTimeout(resolve, delay));
+                await new Promise(resolve => setTimeout(resolve, delay));
                 continue;
             }
             console.error("❌ Gemini API Error:", error.message);
@@ -188,19 +166,21 @@ const translateText = async (text, targetLang) => {
     return callGeminiAPI(`Translate to ${targetLang}:\n\n${cleanText(text)}`);
 };
 
-// ✅ Biến toàn cục để theo dõi số lượng người dùng online
+// Biến toàn cục để theo dõi số lượng người dùng online
 let visitCount = 0;
 
-// ✅ API lấy số lượng người dùng online
+// API lấy số lượng người dùng online
 app.get("/api/visitCount", (req, res) => res.status(200).json({ visitCount }));
 
-app.use("/api/auth", authRoutes(visitCountObj));
+app.use("/api/auth", authRoutes({ visitCount })); // Truyền visitCount trực tiếp
 
-// ✅ API to summarize text
-app.post("/summarize", async (req, res) => {
-    const { text, language = "English", userId } = req.body;
-    if (!text || text.trim().length < 10 || !mongoose.Types.ObjectId.isValid(userId)) {
-        return res.status(400).json({ error: "Text hoặc userId không hợp lệ." });
+// API to summarize text
+app.post("/summarize", verifyToken, async (req, res) => {
+    const { text, language = "English" } = req.body;
+    const userId = req.user.userId; // Lấy userId từ token
+
+    if (!text || text.trim().length < 10) {
+        return res.status(400).json({ error: "Text quá ngắn hoặc không hợp lệ." });
     }
 
     try {
@@ -222,8 +202,8 @@ app.post("/summarize", async (req, res) => {
     }
 });
 
-// ✅ API to translate text
-app.post("/translate", async (req, res) => {
+// API to translate text
+app.post("/translate", verifyToken, async (req, res) => {
     const { text, targetLang } = req.body;
     if (!text || !targetLang || text.trim().length < 10) {
         return res.status(400).json({ error: "Missing or invalid text/targetLang." });
@@ -238,22 +218,34 @@ app.post("/translate", async (req, res) => {
     }
 });
 
-// ✅ API to summarize a URL
-app.post("/summarize-link", async (req, res) => {
-    const { url, language = "English", userId } = req.body;
-    if (!url || !url.match(/^https?:\/\//) || !mongoose.Types.ObjectId.isValid(userId)) {
-        return res.status(400).json({ error: "Invalid URL hoặc userId không hợp lệ." });
+// API to summarize a URL
+app.post("/summarize-link", verifyToken, async (req, res) => {
+    const { url, language = "English" } = req.body;
+    const userId = req.user.userId; // Lấy userId từ token
+
+    if (!url || !url.match(/^https?:\/\//)) {
+        return res.status(400).json({ error: "Invalid URL. Please provide a valid URL starting with http:// or https://." });
     }
 
     const cacheKey = `summarize-link:${url}:${language}`;
     const cachedResult = cache.get(cacheKey);
     if (cachedResult) {
+        console.log(`Returning cached result for ${url}`);
         return res.json(cachedResult);
     }
 
     try {
         const content = await fetchContent(url);
-        let summary = content.trim().length < 50 ? "Không đủ nội dung để tóm tắt từ trang web này." : await summarizeText(content, language);
+        console.log(`Extracted content (first 200 chars): ${content.slice(0, 200)}...`);
+
+        let summary;
+        if (content.trim().length < 50) {
+            summary = "Không đủ nội dung để tóm tắt từ trang web này.";
+        } else {
+            summary = await summarizeText(content, language);
+            console.log(`Generated summary (first 200 chars): ${summary.slice(0, 200)}...`);
+        }
+
         latestContent = { type: "link", content, timestamp: Date.now() };
         cache.set("lastLinkPageContent", summary, 600);
 
@@ -264,23 +256,32 @@ app.post("/summarize-link", async (req, res) => {
         );
 
         await Visit.findOneAndUpdate({}, { $inc: { translatedPosts: 1 } }, { upsert: true, new: true });
-        const result = { originalText: content, summary, timestamp: new Date().toISOString(), status: "success" };
+
+        const result = {
+            originalText: content,
+            summary,
+            timestamp: new Date().toISOString(),
+            status: "success",
+        };
+
         cache.set(cacheKey, result, 600);
         res.json(result);
     } catch (error) {
         console.error("❌ Error summarizing URL:", error.message);
-        res.status(500).json({ error: `Error summarizing URL: ${error.message}`, timestamp: new Date().toISOString() });
+        res.status(500).json({
+            error: `Error summarizing URL: ${error.message}`,
+            timestamp: new Date().toISOString(),
+        });
     }
 });
 
-// ✅ API to upload and summarize PDF
-app.post("/upload", upload.single("file"), async (req, res) => {
+// API to upload and summarize PDF
+app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
     let filePath;
     try {
-        const { userId } = req.body;
-        if (!req.file || !mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(400).json({ error: "Không có file hoặc userId không hợp lệ." });
-        }
+        const userId = req.user.userId; // Lấy userId từ token
+        if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
+
         filePath = req.file.path;
         const dataBuffer = await fs.readFile(filePath);
         const pdfResult = await pdfParse(dataBuffer);
@@ -306,95 +307,86 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     }
 });
 
-// ✅ Health Check
-app.get("/", (req, res) => res.status(200).json({ message: "🚀 API is running!" }));
-
-// ✅ API to handle chat
-app.get("/chat-history/:userId", async (req, res) => {
+// API to handle chat
+// API to handle chat
+app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
     try {
-        const { userId } = req.params;
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(400).json({ error: "User ID không hợp lệ" });
+        const { question, language = "English", detailLevel = "normal" } = req.body;
+        const userId = req.user.userId; // Lấy userId từ token
+
+        if (!question || question.trim().length < 3) {
+            return res.status(400).json({
+                error: "Câu hỏi quá ngắn hoặc không hợp lệ",
+                timestamp: new Date().toISOString(),
+            });
         }
-        const history = await ChatHistory.findOne({ userId }).select("messages");
+
+        if (!latestContent.content || !latestContent.timestamp) {
+            return res.status(400).json({
+                error: "Vui lòng tải lên nội dung (text, PDF, hoặc link) trước khi đặt câu hỏi.",
+                timestamp: new Date().toISOString(),
+            });
+        }
+
+        const lowerQuestion = question.toLowerCase();
+        const createPrompt = async () => { // Thêm async vào đây
+            let prompt = `Bạn là trợ lý AI thông minh. Trả lời chi tiết bằng ${language}, độ chi tiết: ${detailLevel === "high" ? "rất cao" : "bình thường"}.\n\n`;
+            const chatHistory = await ChatHistory.findOne({ userId }); // Bây giờ await hợp lệ
+            if (chatHistory && chatHistory.messages.length > 0) {
+                prompt += "Lịch sử chat:\n";
+                chatHistory.messages.slice(-5).forEach(msg => {
+                    prompt += `Hỏi: ${msg.question}\nTrả lời: ${msg.answer}\n\n`;
+                });
+            }
+            prompt += `Nội dung: ${latestContent.content}\n\n`;
+            if (lowerQuestion.includes("tóm tắt") || lowerQuestion.includes("summary")) {
+                prompt += "Tóm tắt nội dung trên một cách chi tiết, bao gồm các ý chính và chi tiết quan trọng.";
+            } else if (lowerQuestion.includes("dịch") || lowerQuestion.includes("translate")) {
+                const targetLang = lowerQuestion.match(/dịch sang (.+)$/i)?.[1] || language;
+                prompt += `Dịch nội dung sang ${targetLang}.`;
+            } else {
+                prompt += `Câu hỏi: ${question}\nHãy trả lời dựa trên nội dung trên, giải thích rõ ràng.`;
+            }
+            return prompt;
+        };
+
+        const prompt = await createPrompt(); // Thêm await khi gọi createPrompt
+        const answer = await callGeminiAPI(prompt);
+        const source = `${latestContent.type} vừa tải lên lúc ${new Date(latestContent.timestamp).toLocaleString()}`;
+
+        await ChatHistory.findOneAndUpdate(
+            { userId },
+            { $push: { messages: { question, answer, source } }, $set: { lastUpdated: Date.now() } },
+            { upsert: true }
+        );
+
+        const updatedHistory = await ChatHistory.findOne({ userId }).select("messages");
+        cache.set(`chat:${userId}:${Date.now()}`, { question, answer }, 3600);
+
         res.json({
-            userId,
-            history: history ? history.messages : [],
+            question,
+            answer,
+            source,
+            history: updatedHistory.messages,
             timestamp: new Date().toISOString(),
             status: "success",
         });
     } catch (error) {
-        res.status(500).json({ error: `Lỗi lấy lịch sử chat: ${error.message}` });
+        console.error("❌ Lỗi khi xử lý câu hỏi:", error.message);
+        res.status(500).json({
+            error: error.message || "Lỗi trong quá trình chat",
+            question: req.body.question,
+            timestamp: new Date().toISOString(),
+        });
     }
 });
 
-async function fetchContent(url) {
-    try {
-        if (!url || !url.match(/^https?:\/\//)) throw new Error("URL không hợp lệ");
-        const { data: html } = await axios.get(url, {
-            timeout: 15000,
-            headers: { "User-Agent": "Mozilla/5.0 (compatible; WebSummarizer/1.0; +http://yoursite.com)" },
-        });
-        const $ = cheerio.load(html);
-        let text = "";
-        const irrelevantKeywords = ["ad", "advertisement", "sponsored", "promo", "promotion", "banner", "popup", "widget", "sidebar", "footer", "nav", "newsletter", "subscribe", "login", "signup"];
-        const contentElements = $("p, h1, h2, h3, h4, h5, h6, article, section, div").filter((_, el) => {
-            const $el = $(el);
-            const content = $el.text().trim();
-            const tagName = el.tagName.toLowerCase();
-            const className = ($el.attr("class") || "").toLowerCase();
-            const idName = ($el.attr("id") || "").toLowerCase();
-            if (!content || content.length < 10 || ["script", "style"].includes(tagName) || irrelevantKeywords.some(keyword => className.includes(keyword) || idName.includes(keyword) || content.toLowerCase().includes(keyword)) || $el.parents("header, nav, footer, aside").length > 0) {
-                return false;
-            }
-            return content.length > 20 || ["h1", "h2", "h3", "article"].includes(tagName);
-        });
-        contentElements.each((_, element) => {
-            const content = $(element).text().trim();
-            if (content) text += content + "\n";
-        });
-        if (!text.trim()) {
-            text = $("body").contents().filter((_, el) => {
-                const $el = $(el);
-                const content = $el.text().trim();
-                const className = ($el.attr("class") || "").toLowerCase();
-                const idName = ($el.attr("id") || "").toLowerCase();
-                return content && content.length > 20 && !irrelevantKeywords.some(keyword => className.includes(keyword) || idName.includes(keyword) || content.toLowerCase().includes(keyword)) && !$el.is("script, style, header, nav, footer, aside");
-            }).text().trim();
-        }
-        if (!text.trim()) text = "Trang web này không chứa nội dung text có thể tóm tắt.";
-        text = filterIrrelevantContent(text).replace(/\n+/g, "\n").trim();
-        const MAX_CONTENT_LENGTH = 50000;
-        if (text.length > MAX_CONTENT_LENGTH) text = text.substring(0, MAX_CONTENT_LENGTH);
-        return text;
-    } catch (error) {
-        console.error(`Lỗi khi tải nội dung từ ${url}:`, error.message);
-        throw new Error(`Lỗi lấy nội dung: ${error.message}`);
-    }
-}
 
+// Health Check
+app.get("/", (req, res) => res.status(200).json({ message: "🚀 API is running!" }));
 
-
-// ✅ Kết nối MongoDB
-const connectDB = async () => {
-    try {
-      await mongoose.connect(MONGODB_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
-      console.log("✅ Connected to MongoDB");
-    } catch (error) {
-      console.error("❌ MongoDB Connection Error:", error);
-      process.exit(1);
-    }
-  };
-
-// ✅ Start server
-let server;
-connectDB().then(() => {
-    server = app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
-});
-app.get("/last-content", (req, res) => {
+// API to get last content
+app.get("/last-content", verifyToken, (req, res) => {
     res.json({
         lastContent: latestContent.content,
         type: latestContent.type,
@@ -402,11 +394,16 @@ app.get("/last-content", (req, res) => {
         status: "success",
     });
 });
-app.get("/content-history/:userId", async (req, res) => {
+
+// API to get content history
+app.get("/content-history/:userId", verifyToken, async (req, res) => {
     try {
         const { userId } = req.params;
         if (!mongoose.Types.ObjectId.isValid(userId)) {
             return res.status(400).json({ error: "User ID không hợp lệ" });
+        }
+        if (req.user.userId !== userId && req.user.role !== "admin") {
+            return res.status(403).json({ error: "Bạn không có quyền truy cập lịch sử của user này." });
         }
         const history = await ContentHistory.findOne({ userId }).select("contents");
         res.json({
@@ -419,11 +416,16 @@ app.get("/content-history/:userId", async (req, res) => {
         res.status(500).json({ error: `Lỗi lấy lịch sử nội dung: ${error.message}` });
     }
 });
-app.get("/chat-history/:userId", async (req, res) => {
+
+// API to get chat history
+app.get("/chat-history/:userId", verifyToken, async (req, res) => {
     try {
         const { userId } = req.params;
         if (!mongoose.Types.ObjectId.isValid(userId)) {
             return res.status(400).json({ error: "User ID không hợp lệ" });
+        }
+        if (req.user.userId !== userId && req.user.role !== "admin") {
+            return res.status(403).json({ error: "Bạn không có quyền truy cập lịch sử chat của user này." });
         }
         const history = await ChatHistory.findOne({ userId }).select("messages");
         res.json({
@@ -436,6 +438,7 @@ app.get("/chat-history/:userId", async (req, res) => {
         res.status(500).json({ error: `Lỗi lấy lịch sử chat: ${error.message}` });
     }
 });
+
 async function fetchContent(url) {
     try {
         if (!url || !url.match(/^https?:\/\//)) throw new Error("URL không hợp lệ");
@@ -480,6 +483,26 @@ async function fetchContent(url) {
         throw new Error(`Lỗi lấy nội dung: ${error.message}`);
     }
 }
+
+// Kết nối MongoDB
+const connectDB = async () => {
+    try {
+        await mongoose.connect(MONGODB_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+        console.log("✅ Connected to MongoDB");
+    } catch (error) {
+        console.error("❌ MongoDB Connection Error:", error);
+        process.exit(1);
+    }
+};
+
+// Start server
+let server;
+connectDB().then(() => {
+    server = app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+});
 
 app.use((req, res) => {
     res.status(404).json({ error: "Không tìm thấy endpoint", timestamp: new Date().toISOString() });
