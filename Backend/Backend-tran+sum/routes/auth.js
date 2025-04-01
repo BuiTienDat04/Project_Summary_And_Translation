@@ -3,10 +3,11 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Visit = require("../models/Visit");
-const { parsePhoneNumberFromString } = require("libphonenumber-js");
-const socketModule = require('./socket');
-
+const { parsePhoneNumberFromString } = require("libphonenumber-js");  
+const cors = require('cors');
 const router = express.Router();
+const { io } = require('../socket');
+
 
 // Regular Expressions for Validation
 const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/; // Only @gmail.com emails
@@ -16,6 +17,7 @@ const DEFAULT_COUNTRY_CODE = "VN"; // Default country (Vietnam)
 
 module.exports = (visitCountObj) => {
   const { visitCount } = visitCountObj;
+
 
   // ================== 🟢 REGISTER API ==================
   router.post("/register", async (req, res) => {
@@ -103,6 +105,7 @@ module.exports = (visitCountObj) => {
       res.status(500).json({ message: "Server error", error: error.message });
     }
   });
+
 
   // ================== 🟢 LOGOUT API ==================
   router.post("/logout", async (req, res) => {

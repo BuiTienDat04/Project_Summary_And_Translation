@@ -23,6 +23,8 @@ const dashboardRoutes = require("./routes/dashboard");
 const summaryRoutes = require("./routes/summary");
 const uploadRoutes = require("./routes/upload");
 const userRoutes = require("./routes/userRoutes");
+const socketServer = require("./socket");
+
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -67,10 +69,6 @@ app.use(
 );
 
 // Xử lý Preflight request (OPTIONS)
-app.options("*", cors());
-
-
-// Xử lý request OPTIONS (Preflight request)
 app.options("*", cors());
 
 app.use(helmet());
@@ -190,7 +188,7 @@ let visitCount = 0;
 // ✅ API lấy số lượng người dùng online
 app.get("/api/visitCount", (req, res) => res.status(200).json({ visitCount }));
 
-app.use("/api/auth", authRoutes(visitCountObj));
+app.use("/auth", authRoutes);
 
 // ✅ API to summarize text
 app.post("/summarize", async (req, res) => {
@@ -444,7 +442,7 @@ connectDB().then(() => {
                 "http://localhost:3001",
                 "https://pdfsmart.online",
                 "https://admin.pdfsmart.online",
-                "https://api.pdfsmart.online"
+                "https://api.pdfsmart.online",
             ],
             methods: ["GET", "POST"],
             credentials: true,
