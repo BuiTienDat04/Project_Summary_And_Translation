@@ -1,75 +1,91 @@
-import React, { useState, useEffect } from "react";
-import { Routes, Route, Navigate, BrowserRouter } from "react-router-dom"; 
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import React, { useState } from "react";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import LoginPage from "./components/LoginPage";
 import Dashboard from "./components/Dashboard";
 import Navbar from "./components/Navbar";
-import LoginPage from "./components/LoginPage"; 
 import UserManagement from "./components/UserManagement";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
+import { API_BASE_URL } from "./api/api"; // Cập nhật đường dẫn
 
 function App() {
-  // Kiểm tra trạng thái đăng nhập ban đầu từ localStorage
-  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem("token"));
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const token = localStorage.getItem("token");
+    console.log("Token from localStorage:", token);
+    const isAuth = !!token;
+    console.log("Initial isAuthenticated:", isAuth);
+    return isAuth;
+  });
 
-  // Cập nhật useEffect để lắng nghe thay đổi localStorage từ tab khác (tùy chọn)
-  useEffect(() => {
-    const handleStorageChange = () => {
-       setIsAuthenticated(!!localStorage.getItem("token"));
-    };
+  const navigate = useNavigate();
 
-    window.addEventListener('storage', handleStorageChange);
+  const handleLogout = async () => {
+    console.log("handleLogout triggered");
 
-    // Cleanup listener khi component unmount
-    return () => {
-       window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
+    try {
+      await axios.post(`${API_BASE_URL}/api/auth/logout`, {}, { withCredentials: true });
+      console.log("API logout called successfully");
+    } catch (error) {
+      console.error("Error calling logout API:", error);
+    }
 
-  const handleLogout = () => {
+    console.log("Token before removal:", localStorage.getItem("token"));
     localStorage.removeItem("token");
-    localStorage.removeItem("userId"); // Nên xóa cả userId nếu có lưu
-    localStorage.removeItem("loggedInUser"); // Xóa cả thông tin user nếu có
+    localStorage.removeItem("userId");
+    localStorage.removeItem("loggedInUser");
+    console.log("Token after removal:", localStorage.getItem("token"));
     setIsAuthenticated(false);
+    console.log("Logged out, isAuthenticated set to false");
+    navigate("/loginad", { replace: true });
+    console.log("Navigated to /loginad");
   };
 
-  // Component ProtectedRoute cho admin (giữ nguyên)
   const ProtectedRoute = ({ children }) => {
-    // Kiểm tra lại trạng thái xác thực mỗi lần render Route
     const isLoggedIn = !!localStorage.getItem("token");
-    if (!isLoggedIn) {
-      // Nếu không đăng nhập, chuyển hướng đến trang login của admin
-      return <Navigate to="/loginad" replace />;
-    }
-    // Nếu đã đăng nhập, hiển thị component con
-    return children;
+    console.log("ProtectedRoute check, isLoggedIn:", isLoggedIn);
+    return isLoggedIn ? children : <Navigate to="/loginad" replace />;
   };
 
   return (
     <>
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+      {console.log("App rendering, isAuthenticated:", isAuthenticated)}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
       <div className="min-h-screen bg-gray-100">
-         {/* Chỉ hiển thị Navbar nếu đã đăng nhập */}
-         {isAuthenticated && <Navbar /* totalOnline={totalOnline} */ onLogout={handleLogout} /> } {/* Đã loại bỏ props totalOnline */}
-        <main className={isAuthenticated ? "pt-16" : ""}> {/* Thêm padding top nếu Navbar hiển thị */}
+        {isAuthenticated && <Navbar onLogout={handleLogout} />}
+        <main className={isAuthenticated ? "pt-16" : ""}>
           <Routes>
-             {/* Route cho trang Login Admin */}
-             {/* Nếu đã đăng nhập thì chuyển hướng khỏi trang login */}
             <Route
-               path="/loginad"
-               element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage setIsAuthenticated={setIsAuthenticated} /* Đây là hàm để LoginPage cập nhật trạng thái sau khi login thành công */ />}
+              path="/loginad"
+              element={
+                <>
+                  {console.log("Route /loginad, isAuthenticated:", isAuthenticated)}
+                  {isAuthenticated ? (
+                    <Navigate to="/dashboard" replace />
+                  ) : (
+                    <LoginPage setIsAuthenticated={setIsAuthenticated} />
+                  )}
+                </>
+              }
             />
-
-             {/* Route cho Dashboard */}
             <Route
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <Dashboard /> {/* Đã loại bỏ props totalOnline */}
+                  <Dashboard />
                 </ProtectedRoute>
               }
             />
-
-             {/* Route cho User Management */}
             <Route
               path="/user-management"
               element={
@@ -78,21 +94,26 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
-            {/* Route mặc định: Chuyển hướng đến login nếu chưa đăng nhập, đến dashboard nếu đã đăng nhập */}
             <Route
-               path="/"
-               element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/loginad" replace />}
+              path="/"
+              element={
+                isAuthenticated ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <Navigate to="/loginad" replace />
+                )
+              }
             />
-
-             {/* Route bắt các đường dẫn không khớp (404 Not Found) */}
-             <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/loginad"} replace />} />
-
+            <Route
+              path="*"
+              element={
+                <Navigate to={isAuthenticated ? "/dashboard" : "/loginad"} replace />
+              }
+            />
           </Routes>
         </main>
       </div>
     </>
-    // </BrowserRouter>
   );
 }
 
