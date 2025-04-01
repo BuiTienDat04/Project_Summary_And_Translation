@@ -91,10 +91,11 @@ const LinkPage = () => {
     const handleLoginClick = () => setShowLogin(true);
     const handleRegisterClick = () => setShowRegister(true);
 
-    const onLoginSuccess = (user) => {
+    const onLoginSuccess = (user, token) => {
         setLoggedInUser(user);
         setLoggedInUsername(user.email);
         localStorage.setItem("loggedInUser", JSON.stringify(user));
+        localStorage.setItem("token", token); // Lưu token vào localStorage
         setShowLogin(false);
     };
 
@@ -122,24 +123,30 @@ const LinkPage = () => {
             setError("Please enter a valid URL.");
             return;
         }
-
+    
         const urlPattern = /^https?:\/\//;
         if (!urlPattern.test(linkInput)) {
             setError("URL must start with http:// or https://");
             return;
         }
-
+    
         setIsLoading(true);
         setError("");
         setSummaryResult("");
         setTranslatedContent("");
-
+    
         try {
-            // Gửi yêu cầu đến backend để trích xuất nội dung chính và tạo tóm tắt
-            const response = await axios.post(`${API_BASE_URL}/summarize-link`, {
-                url: linkInput,
-            });
-
+            const token = localStorage.getItem("token"); // Lấy token từ localStorage
+            const response = await axios.post(
+                `${API_BASE_URL}/summarize-link`,
+                { url: linkInput },
+                {
+                    headers: {
+                        Authorization: token ? `Bearer ${token}` : "", // Thêm header Authorization
+                    },
+                }
+            );
+    
             const { summary } = response.data;
             setSummaryResult(summary || "No summary generated.");
         } catch (error) {
@@ -149,22 +156,28 @@ const LinkPage = () => {
             setIsLoading(false);
         }
     };
-
+    
     const translateSummary = async () => {
         if (!summaryResult || !targetLang) {
             setError("Please generate a summary first and select a target language.");
             return;
         }
-
+    
         setIsLoading(true);
         setError("");
-
+    
         try {
-            const response = await axios.post(`${API_BASE_URL}/translate`, {
-                text: summaryResult,
-                targetLang,
-            });
-
+            const token = localStorage.getItem("token"); // Lấy token từ localStorage
+            const response = await axios.post(
+                `${API_BASE_URL}/translate`,
+                { text: summaryResult, targetLang },
+                {
+                    headers: {
+                        Authorization: token ? `Bearer ${token}` : "", // Thêm header Authorization
+                    },
+                }
+            );
+    
             const { translation } = response.data;
             setTranslatedContent(translation || "No translation generated.");
         } catch (error) {
@@ -174,7 +187,6 @@ const LinkPage = () => {
             setIsLoading(false);
         }
     };
-
     const linkPageContent = `URL: ${linkInput}\nSummary: ${summaryResult}\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}): ${translatedContent}`;
 
     return (

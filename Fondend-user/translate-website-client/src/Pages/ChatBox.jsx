@@ -51,18 +51,25 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
             setError("The question is too long, please keep it under 500 characters.");
             return;
         }
-
+    
         const newMessage = { role: "user", content: userInput };
         setMessages((prev) => [...prev, newMessage]);
         setUserInput("");
         setError("");
         setIsLoading(true);
-
+    
         try {
-            const response = await axios.post(`${API_BASE_URL}/chat`, {
-                question: userInput,
-            });
-
+            const token = localStorage.getItem("token"); // Lấy token từ localStorage
+            const response = await axios.post(
+                `${API_BASE_URL}/chat`,
+                { question: userInput },
+                {
+                    headers: {
+                        Authorization: token ? `Bearer ${token}` : "", // Thêm header Authorization
+                    },
+                }
+            );
+    
             const { answer, source } = response.data;
             setMessages((prev) => [...prev, { role: "bot", content: answer, source }]);
         } catch (error) {
