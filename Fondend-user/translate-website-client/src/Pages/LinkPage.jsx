@@ -7,9 +7,8 @@ import RegisterPage from "../Pages/RegisterPage";
 import Navigation from "../Pages/Navigation";
 import Footer from "../Pages/Footer";
 import { motion } from "framer-motion";
-import axios from "axios";
 import ChatBox from "../Pages/ChatBox";
-import { API_BASE_URL } from "../api/api";
+import api from "../api/api"; // Thêm import này
 import {
     SparklesIcon,
     CpuChipIcon,
@@ -111,35 +110,35 @@ const LinkPage = () => {
         setError("");
     };
 
-    const handleLanguageSelect = (code, name) => {
-        setTargetLang(code);
-        setSearchTerm(name);
-        setIsDropdownOpen(false);
-    };
-
     const handleGenerateSummary = async () => {
+        const token = localStorage.getItem("token");
+        if (!loggedInUser || !token) {
+            setError("Please log in to generate a summary.");
+            setShowLogin(true);
+            return;
+        }
+    
         if (!linkInput) {
             setError("Please enter a valid URL.");
             return;
         }
-
+    
         const urlPattern = /^https?:\/\//;
         if (!urlPattern.test(linkInput)) {
             setError("URL must start with http:// or https://");
             return;
         }
-
+    
         setIsLoading(true);
         setError("");
         setSummaryResult("");
         setTranslatedContent("");
-
+    
         try {
-            // Gửi yêu cầu đến backend để trích xuất nội dung chính và tạo tóm tắt
-            const response = await axios.post(`${API_BASE_URL}/summarize-link`, {
+            const response = await api.post("/summarize-link", {
                 url: linkInput,
             });
-
+    
             const { summary } = response.data;
             setSummaryResult(summary || "No summary generated.");
         } catch (error) {

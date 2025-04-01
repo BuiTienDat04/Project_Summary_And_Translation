@@ -64,7 +64,8 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
     };
 
     const handleSummarize = async () => {
-        if (!loggedInUser) {
+        const token = localStorage.getItem("token");
+        if (!loggedInUser || !token) {
             setLoginPromptVisible(true);
             return;
         }
@@ -72,15 +73,15 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
             setError("Vui lòng nhập văn bản trước khi tạo tóm tắt.");
             return;
         }
-
+    
         setIsLoading(true);
         setError(null);
-
+    
         try {
             const response = await api.post("/summarize", {
                 text,
             });
-
+    
             const data = response.data;
             setSummary(data.summary || "Không thể tóm tắt nội dung.");
             setError(null);
