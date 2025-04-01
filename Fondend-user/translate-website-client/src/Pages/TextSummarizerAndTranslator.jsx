@@ -73,27 +73,31 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
             setError("Vui lòng nhập văn bản trước khi tạo tóm tắt.");
             return;
         }
-
+    
         setIsLoading(true);
         setError(null);
-
+    
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
-
+    
         try {
+            const token = localStorage.getItem("token"); // Lấy token từ localStorage
             const response = await fetch(`${API_BASE_URL}/summarize`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: token ? `Bearer ${token}` : "", // Thêm header Authorization
+                },
                 body: JSON.stringify({ text }),
                 signal: controller.signal,
             });
-
+    
             clearTimeout(timeoutId);
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || "Lỗi khi tóm tắt văn bản.");
             }
-
+    
             const data = await response.json();
             setSummary(data.summary || "Không thể tóm tắt nội dung.");
             setError(null);
@@ -103,49 +107,9 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
         } finally {
             setIsLoading(false);
         }
-    };
+    };  
 
-    const handleTranslate = async () => {
-        if (!summary || !targetLang) {
-            setError("Vui lòng tóm tắt văn bản trước và chọn ngôn ngữ mục tiêu.");
-            return;
-        }
-
-        setIsLoading(true);
-        setError(null);
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-        const cleanedSummary = cleanText(summary);
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/translate`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    text: cleanedSummary,
-                    targetLang,
-                }),
-                signal: controller.signal,
-            });
-
-            clearTimeout(timeoutId);
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || "Lỗi khi dịch văn bản.");
-            }
-
-            const data = await response.json();
-            setTranslation(data.translation || "Không thể dịch nội dung.");
-            setError(null);
-        } catch (err) {
-            setError(err.name === "AbortError" ? "Yêu cầu quá thời gian." : err.message);
-            console.error("Lỗi handleTranslate:", err);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    
 
     const handleLanguageSelect = (code, name) => {
         setTargetLang(code);

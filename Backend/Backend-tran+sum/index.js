@@ -516,18 +516,3 @@ app.use((err, req, res, next) => {
     });
 });
 
-process.on("SIGTERM", () => {
-    console.log("👋 Đang tắt server...");
-    server.close(() => {
-        console.log("✅ Server đã tắt");
-        process.exit(0);
-    });
-});
-
-process.on("SIGINT", () => {
-    console.log("👋 Nhận tín hiệu ngắt (Ctrl+C), đang tắt server...");
-    server.close(() => {
-        console.log("✅ Server đã tắt");
-        process.exit(0);
-    });
-});
