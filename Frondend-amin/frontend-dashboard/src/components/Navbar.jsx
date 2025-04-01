@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-const Navbar = ({ onLogout }) => { // Nhận onLogout từ App.js
+const Navbar = ({ onLogout }) => {
   const navigate = useNavigate();
 
   const handleUserManagementClick = () => {
@@ -11,9 +11,10 @@ const Navbar = ({ onLogout }) => { // Nhận onLogout từ App.js
   const handleLogoutClick = () => {
     const confirmLogout = window.confirm("Are you sure you want to log out?");
     if (confirmLogout) {
-      onLogout(); // Gọi hàm handleLogout từ App.js
+      onLogout();
     }
   };
+
 
   return (
     <nav className="bg-gray-800 p-4 shadow-md w-full">
@@ -35,7 +36,7 @@ const Navbar = ({ onLogout }) => { // Nhận onLogout từ App.js
           </li>
           <li>
             <button
-              onClick={handleLogoutClick} // Sử dụng hàm mới
+              onClick={handleLogoutClick}
               className="bg-red-600 text-white px-3 py-1.5 rounded-md hover:bg-red-700 transition duration-200 text-sm font-medium"
             >
               Logout

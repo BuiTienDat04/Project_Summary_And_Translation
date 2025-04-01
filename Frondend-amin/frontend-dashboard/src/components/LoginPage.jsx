@@ -64,7 +64,7 @@ const LoginPage = ({ setIsAuthenticated }) => {
       setIsAuthenticated(true);
       setTimeout(() => {
         navigate("/dashboard", { replace: true });
-      }, 2000);
+      });
     } catch (error) {
       console.error("Login error:", error.response?.data || error.message);
       setLoginErrorMessage(error.response?.data?.message || "Login failed!");
