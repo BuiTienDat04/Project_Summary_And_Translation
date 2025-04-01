@@ -24,6 +24,7 @@ const summaryRoutes = require("./routes/summary");
 const uploadRoutes = require("./routes/upload");
 const userRoutes = require("./routes/userRoutes");
 const { verifyToken, verifyAdmin } = require("./middleware/authMiddleware");
+
 const app = express();
 const PORT = process.env.PORT || 5001;
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -65,8 +66,8 @@ app.options("*", cors());
 app.use(helmet());
 app.use(morgan("combined"));
 app.use(cookieParser());
-app.use("/api/dashboard", verifyToken, dashboardRoutes); // Bảo vệ dashboard routes
-app.use("/api/users", verifyToken, userRoutes); // Bảo vệ user routes
+app.use("/api/dashboard", verifyToken, dashboardRoutes);
+app.use("/api/users", verifyToken, userRoutes);
 
 // Rate limiting to prevent DDoS
 const limiter = rateLimit({
@@ -172,12 +173,12 @@ let visitCount = 0;
 // API lấy số lượng người dùng online
 app.get("/api/visitCount", (req, res) => res.status(200).json({ visitCount }));
 
-app.use("/api/auth", authRoutes({ visitCount })); // Truyền visitCount trực tiếp
+app.use("/api/auth", authRoutes({ visitCount }));
 
 // API to summarize text
 app.post("/summarize", verifyToken, async (req, res) => {
     const { text, language = "English" } = req.body;
-    const userId = req.user.userId; // Lấy userId từ token
+    const userId = req.user.userId;
 
     if (!text || text.trim().length < 10) {
         return res.status(400).json({ error: "Text quá ngắn hoặc không hợp lệ." });
@@ -221,7 +222,7 @@ app.post("/translate", verifyToken, async (req, res) => {
 // API to summarize a URL
 app.post("/summarize-link", verifyToken, async (req, res) => {
     const { url, language = "English" } = req.body;
-    const userId = req.user.userId; // Lấy userId từ token
+    const userId = req.user.userId;
 
     if (!url || !url.match(/^https?:\/\//)) {
         return res.status(400).json({ error: "Invalid URL. Please provide a valid URL starting with http:// or https://." });
@@ -279,7 +280,7 @@ app.post("/summarize-link", verifyToken, async (req, res) => {
 app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
     let filePath;
     try {
-        const userId = req.user.userId; // Lấy userId từ token
+        const userId = req.user.userId;
         if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
 
         filePath = req.file.path;
@@ -308,11 +309,10 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
 });
 
 // API to handle chat
-// API to handle chat
 app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
     try {
         const { question, language = "English", detailLevel = "normal" } = req.body;
-        const userId = req.user.userId; // Lấy userId từ token
+        const userId = req.user.userId;
 
         if (!question || question.trim().length < 3) {
             return res.status(400).json({
@@ -329,9 +329,9 @@ app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
         }
 
         const lowerQuestion = question.toLowerCase();
-        const createPrompt = async () => { // Thêm async vào đây
+        const createPrompt = async () => {
             let prompt = `Bạn là trợ lý AI thông minh. Trả lời chi tiết bằng ${language}, độ chi tiết: ${detailLevel === "high" ? "rất cao" : "bình thường"}.\n\n`;
-            const chatHistory = await ChatHistory.findOne({ userId }); // Bây giờ await hợp lệ
+            const chatHistory = await ChatHistory.findOne({ userId });
             if (chatHistory && chatHistory.messages.length > 0) {
                 prompt += "Lịch sử chat:\n";
                 chatHistory.messages.slice(-5).forEach(msg => {
@@ -350,7 +350,7 @@ app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
             return prompt;
         };
 
-        const prompt = await createPrompt(); // Thêm await khi gọi createPrompt
+        const prompt = await createPrompt();
         const answer = await callGeminiAPI(prompt);
         const source = `${latestContent.type} vừa tải lên lúc ${new Date(latestContent.timestamp).toLocaleString()}`;
 
@@ -380,7 +380,6 @@ app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
         });
     }
 });
-
 
 // Health Check
 app.get("/", (req, res) => res.status(200).json({ message: "🚀 API is running!" }));
