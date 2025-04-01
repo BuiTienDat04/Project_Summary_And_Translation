@@ -182,7 +182,7 @@ const translateText = async (text, targetLang) => {
 // ✅ API lấy số lượng người dùng online
 app.get("/api/visitCount", (req, res) => res.status(200).json({ visitCount: 0 }));
 
-app.use("/auth", authRoutes);
+app.use('/api/auth', authRoutes({ visitCountObj }));
 
 // ✅ API to summarize text
 app.post("/summarize", async (req, res) => {
