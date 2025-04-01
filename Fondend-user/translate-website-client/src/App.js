@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { socket, connectSocket, disconnectSocket } from "./socket";
-import { API_BASE_URL } from "./api/api";
+// import { socket, connectSocket, disconnectSocket } from "./socket"; // Đã loại bỏ
+import { API_BASE_URL } from "./api/api"; // Giữ lại nếu API_BASE_URL được dùng ở đâu đó khác hoặc xóa nếu không
 import LoginPage from "./Pages/LoginPage";
 import RegisterPage from "./Pages/RegisterPage";
 import TextPage from "./Pages/TextPage";
@@ -18,62 +18,35 @@ export default function App() {
   const [textSummarizerContent, setTextSummarizerContent] = useState("");
   const [linkPageContent, setLinkPageContent] = useState("");
   const [documentSummaryContent, setDocumentSummaryContent] = useState("");
-  const [isOnline, setIsOnline] = useState(false); // Trạng thái kết nối socket
-  const [totalOnline, setTotalOnline] = useState(0); // Tổng số người online
 
-  const protectedRoutes = ["/text", "/document", "/link"];
-  
   // Kiểm tra đăng nhập dựa trên token
   const isAuthenticated = () => !!localStorage.getItem("token");
 
-  useEffect(() => {
-    // Chỉ kết nối socket nếu đã đăng nhập
-    if (isAuthenticated()) {
-      connectSocket();
-      setIsOnline(true);
 
-      // Lắng nghe tổng số người online
-      socket.on("updateTotalOnline", (total) => {
-        setTotalOnline(total);
-        console.log("Total online users:", total);
-      });
-
-      // (Tùy chọn) Lắng nghe trạng thái users nếu cần
-      socket.on("updateUsers", (users) => {
-        console.log("User status:", users);
-      });
-
-      // Cleanup khi component unmount hoặc logout
-      return () => {
-        socket.off("updateTotalOnline");
-        socket.off("updateUsers");
-      };
-    }
-  }, []); // Chạy một lần khi mount, sẽ cập nhật qua isAuthenticated
-
-  // Hàm logout thủ công
-  const handleLogout = () => {
-    disconnectSocket();
-    localStorage.removeItem("token");
-    setIsOnline(false);
-    setTotalOnline(0); // Reset khi logout
-  };
-
-  // ProtectedRoute component
+  // ProtectedRoute component (Giữ nguyên vì dựa trên localStorage)
   const ProtectedRoute = ({ children }) => {
     if (!isAuthenticated()) {
+      // Người dùng chưa đăng nhập, chuyển hướng đến trang login
       return <Navigate to="/login" replace />;
     }
+    // Người dùng đã đăng nhập, hiển thị component con
     return children;
   };
 
   return (
     <BrowserRouter>
       <div className="App">
-        <Navigation isOnline={isOnline} totalOnline={totalOnline} /> {/* Truyền totalOnline nếu cần */}
+        {/* Truyền hàm xử lý logout hoặc trạng thái đăng nhập vào Navigation nếu cần */}
+        <Navigation /* isOnline={isOnline} totalOnline={totalOnline} */ /> {/* Đã loại bỏ props socket */}
         <Routes>
+          {/* Các Route công khai */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/service" element={<ServicesSection />} />
+          <Route path="/" element={<Homepage />} />
+          <Route path="/aboutus" element={<NaAboutus />} />
+
+          {/* Các Route cần bảo vệ */}
           <Route
             path="/text"
             element={
@@ -98,16 +71,21 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/service" element={<ServicesSection />} />
-          <Route path="/" element={<Homepage />} />
-          <Route path="/aboutus" element={<NaAboutus />} />
+
+          {/* Route mặc định hoặc trang 404 (Tùy chọn) */}
+          {/* <Route path="*" element={<Navigate to="/" replace />} /> */}
+
         </Routes>
         <Footer />
-        <ChatBox
-          textSummarizerContent={textSummarizerContent}
-          linkPageContent={linkPageContent}
-          documentSummaryContent={documentSummaryContent}
-        />
+        {/* ChatBox có thể cần kiểm tra isAuthenticated() trước khi hiển thị nếu chỉ dành cho người dùng đăng nhập */}
+        {isAuthenticated() && (
+             <ChatBox
+                textSummarizerContent={textSummarizerContent}
+                linkPageContent={linkPageContent}
+                documentSummaryContent={documentSummaryContent}
+             />
+        )}
+
       </div>
     </BrowserRouter>
   );

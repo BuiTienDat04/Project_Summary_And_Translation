@@ -4,10 +4,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Visit = require("../models/Visit");
 const { parsePhoneNumberFromString } = require("libphonenumber-js");  
-const cors = require('cors');
 const router = express.Router();
-const { io } = require('../socket');
-
 
 // Regular Expressions for Validation
 const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/; // Only @gmail.com emails
@@ -17,7 +14,6 @@ const DEFAULT_COUNTRY_CODE = "VN"; // Default country (Vietnam)
 
 module.exports = (visitCountObj) => {
   const { visitCount } = visitCountObj;
-
 
   // ================== 🟢 REGISTER API ==================
   router.post("/register", async (req, res) => {
@@ -106,22 +102,12 @@ module.exports = (visitCountObj) => {
     }
   });
 
-
   // ================== 🟢 LOGOUT API ==================
   router.post("/logout", async (req, res) => {
     try {
       console.log("🔹 /logout API called at:", new Date().toISOString());
       console.log("🔹 Cookies received:", req.cookies);
-  
-      // Sử dụng socket từ socket.js
-      const io = socketModule.io; // Giả sử socket.js xuất 'io' (instance của Socket.IO)
-      if (io) {
-        io.emit("manualDisconnect"); // Gửi tín hiệu đến tất cả clients
-        console.log("🔹 Manual disconnect signal sent to all clients");
-      } else {
-        console.warn("⚠️ Socket.IO not initialized in socket.js");
-      }
-  
+
       // Xóa cookie
       res.clearCookie("token", {
         path: "/",
@@ -130,7 +116,7 @@ module.exports = (visitCountObj) => {
         sameSite: "Strict",
       });
       console.log("🔹 Cookie 'token' cleared");
-  
+
       res.status(200).json({ message: "Logout successful" });
     } catch (error) {
       console.error("❌ Error in /logout:", error.stack);
@@ -138,5 +124,5 @@ module.exports = (visitCountObj) => {
     }
   });
   
-  module.exports = router;
+  return router;
 };

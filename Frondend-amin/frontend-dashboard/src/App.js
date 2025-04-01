@@ -1,81 +1,98 @@
 import React, { useState, useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, BrowserRouter } from "react-router-dom"; 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { connectSocket, disconnectSocket, socket } from "./socket";
 import Dashboard from "./components/Dashboard";
 import Navbar from "./components/Navbar";
-import LoginPage from "./components/LoginPage";
+import LoginPage from "./components/LoginPage"; 
 import UserManagement from "./components/UserManagement";
 
 function App() {
-  const [totalOnline, setTotalOnline] = useState(0);
-  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
+  // Kiểm tra trạng thái đăng nhập ban đầu từ localStorage
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem("token"));
 
+  // Cập nhật useEffect để lắng nghe thay đổi localStorage từ tab khác (tùy chọn)
   useEffect(() => {
-    // Chỉ kết nối socket nếu đã đăng nhập
-    if (isAuthenticated) {
-      connectSocket();
+    const handleStorageChange = () => {
+       setIsAuthenticated(!!localStorage.getItem("token"));
+    };
 
-      socket.on("updateTotalOnline", (total) => {
-        setTotalOnline(total);
-        console.log("Total online users (admin):", total);
-      });
+    window.addEventListener('storage', handleStorageChange);
 
-      socket.on("updateUsers", (users) => {
-        console.log("User status (admin):", users);
-      });
+    // Cleanup listener khi component unmount
+    return () => {
+       window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
-      return () => {
-        socket.off("updateTotalOnline");
-        socket.off("updateUsers");
-      };
-    }
-  }, [isAuthenticated]); // Phụ thuộc vào trạng thái đăng nhập
-
-  // Hàm logout thủ công
   const handleLogout = () => {
-    disconnectSocket();
     localStorage.removeItem("token");
+    localStorage.removeItem("userId"); // Nên xóa cả userId nếu có lưu
+    localStorage.removeItem("loggedInUser"); // Xóa cả thông tin user nếu có
     setIsAuthenticated(false);
-    setTotalOnline(0);
   };
 
-  // ProtectedRoute cho admin
+  // Component ProtectedRoute cho admin (giữ nguyên)
   const ProtectedRoute = ({ children }) => {
-    if (!isAuthenticated) {
+    // Kiểm tra lại trạng thái xác thực mỗi lần render Route
+    const isLoggedIn = !!localStorage.getItem("token");
+    if (!isLoggedIn) {
+      // Nếu không đăng nhập, chuyển hướng đến trang login của admin
       return <Navigate to="/loginad" replace />;
     }
+    // Nếu đã đăng nhập, hiển thị component con
     return children;
   };
 
   return (
     <>
-      <ToastContainer position="top-right" autoClose={3000} />
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
       <div className="min-h-screen bg-gray-100">
-        <Navbar totalOnline={totalOnline} onLogout={handleLogout} /> {/* Truyền totalOnline và logout */}
-        <Routes>
-          <Route path="/" element={<LoginPage />} />
-          <Route path="/loginad" element={<LoginPage />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard totalOnline={totalOnline} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/user-management"
-            element={
-              <ProtectedRoute>
-                <UserManagement />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
+         {/* Chỉ hiển thị Navbar nếu đã đăng nhập */}
+         {isAuthenticated && <Navbar /* totalOnline={totalOnline} */ onLogout={handleLogout} /> } {/* Đã loại bỏ props totalOnline */}
+        <main className={isAuthenticated ? "pt-16" : ""}> {/* Thêm padding top nếu Navbar hiển thị */}
+          <Routes>
+             {/* Route cho trang Login Admin */}
+             {/* Nếu đã đăng nhập thì chuyển hướng khỏi trang login */}
+            <Route
+               path="/loginad"
+               element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage setIsAuthenticated={setIsAuthenticated} /* Đây là hàm để LoginPage cập nhật trạng thái sau khi login thành công */ />}
+            />
+
+             {/* Route cho Dashboard */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard /> {/* Đã loại bỏ props totalOnline */}
+                </ProtectedRoute>
+              }
+            />
+
+             {/* Route cho User Management */}
+            <Route
+              path="/user-management"
+              element={
+                <ProtectedRoute>
+                  <UserManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Route mặc định: Chuyển hướng đến login nếu chưa đăng nhập, đến dashboard nếu đã đăng nhập */}
+            <Route
+               path="/"
+               element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/loginad" replace />}
+            />
+
+             {/* Route bắt các đường dẫn không khớp (404 Not Found) */}
+             <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/loginad"} replace />} />
+
+          </Routes>
+        </main>
       </div>
     </>
+    // </BrowserRouter>
   );
 }
 
