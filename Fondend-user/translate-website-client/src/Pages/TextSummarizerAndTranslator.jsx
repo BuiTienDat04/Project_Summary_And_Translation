@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaSignInAlt } from "react-icons/fa";
 import { Trash2 } from "lucide-react";
 import ChatBox from "../Pages/ChatBox";
-import { API_BASE_URL } from "../api/api";
+import api from "../api/api"; // Import instance api
 
 const TextSummarizerAndTranslator = ({ loggedInUser }) => {
     const [text, setText] = useState("");
@@ -14,9 +14,8 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
     const [error, setError] = useState("");
     const [charCount, setCharCount] = useState(0);
     const [loginPromptVisible, setLoginPromptVisible] = useState(false);
-    const [isLoading, setIsLoading] = useState(false); // Thêm trạng thái loading
+    const [isLoading, setIsLoading] = useState(false);
     const maxCharLimit = 10000;
-
 
     const languages = [
         { code: "en", name: "English" },
@@ -73,89 +72,53 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
             setError("Vui lòng nhập văn bản trước khi tạo tóm tắt.");
             return;
         }
-    
+
         setIsLoading(true);
         setError(null);
-    
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-    
+
         try {
-            const token = localStorage.getItem("token"); // Lấy token từ localStorage
-            const response = await fetch(`${API_BASE_URL}/summarize`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: token ? `Bearer ${token}` : "", // Thêm header Authorization
-                },
-                body: JSON.stringify({ text }),
-                signal: controller.signal,
+            const response = await api.post("/summarize", {
+                text,
             });
-    
-            clearTimeout(timeoutId);
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || "Lỗi khi tóm tắt văn bản.");
-            }
-    
-            const data = await response.json();
+
+            const data = response.data;
             setSummary(data.summary || "Không thể tóm tắt nội dung.");
             setError(null);
         } catch (err) {
-            setError(err.name === "AbortError" ? "Yêu cầu quá thời gian." : err.message);
+            setError(err.response?.data?.error || "Lỗi khi tóm tắt văn bản.");
             console.error("Lỗi handleSummarize:", err);
         } finally {
             setIsLoading(false);
         }
     };
-    
+
     const handleTranslate = async () => {
         if (!summary || !targetLang) {
             setError("Vui lòng tóm tắt văn bản trước và chọn ngôn ngữ mục tiêu.");
             return;
         }
-    
+
         setIsLoading(true);
         setError(null);
-    
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-    
+
         const cleanedSummary = cleanText(summary);
-    
+
         try {
-            const token = localStorage.getItem("token"); // Lấy token từ localStorage
-            const response = await fetch(`${API_BASE_URL}/translate`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: token ? `Bearer ${token}` : "", // Thêm header Authorization
-                },
-                body: JSON.stringify({
-                    text: cleanedSummary,
-                    targetLang,
-                }),
-                signal: controller.signal,
+            const response = await api.post("/translate", {
+                text: cleanedSummary,
+                targetLang,
             });
-    
-            clearTimeout(timeoutId);
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || "Lỗi khi dịch văn bản.");
-            }
-    
-            const data = await response.json();
+
+            const data = response.data;
             setTranslation(data.translation || "Không thể dịch nội dung.");
             setError(null);
         } catch (err) {
-            setError(err.name === "AbortError" ? "Yêu cầu quá thời gian." : err.message);
+            setError(err.response?.data?.error || "Lỗi khi dịch văn bản.");
             console.error("Lỗi handleTranslate:", err);
         } finally {
             setIsLoading(false);
         }
     };
-
-    
 
     const handleLanguageSelect = (code, name) => {
         setTargetLang(code);
@@ -212,7 +175,7 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
                                 <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M6 15h.01M6 11h.01M9 11h.01M9 15h.01" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 0 002-2M9 5a2 2 0 012-2h2a2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M6 15h.01M6 11h.01M9 11h.01M9 15h.01" />
                                 </svg>
                                 Summary
                             </h3>
@@ -291,7 +254,6 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
                             )}
                         </div>
                     )}
-
 
                     {isLoading && !error && (
                         <div className="text-center">
