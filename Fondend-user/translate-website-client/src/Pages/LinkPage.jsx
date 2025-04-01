@@ -7,8 +7,9 @@ import RegisterPage from "../Pages/RegisterPage";
 import Navigation from "../Pages/Navigation";
 import Footer from "../Pages/Footer";
 import { motion } from "framer-motion";
-import api from "../api/api"; // Import instance api
+import axios from "axios";
 import ChatBox from "../Pages/ChatBox";
+import { API_BASE_URL } from "../api/api";
 import {
     SparklesIcon,
     CpuChipIcon,
@@ -90,11 +91,10 @@ const LinkPage = () => {
     const handleLoginClick = () => setShowLogin(true);
     const handleRegisterClick = () => setShowRegister(true);
 
-    const onLoginSuccess = (user, token) => {
+    const onLoginSuccess = (user) => {
         setLoggedInUser(user);
         setLoggedInUsername(user.email);
         localStorage.setItem("loggedInUser", JSON.stringify(user));
-        localStorage.setItem("token", token); // Đảm bảo token được lưu
         setShowLogin(false);
     };
 
@@ -102,7 +102,6 @@ const LinkPage = () => {
         setLoggedInUsername(null);
         setLoggedInUser(null);
         localStorage.removeItem("loggedInUser");
-        localStorage.removeItem("token");
         navigate("/");
         window.location.reload();
     };
@@ -136,7 +135,8 @@ const LinkPage = () => {
         setTranslatedContent("");
 
         try {
-            const response = await api.post("/summarize-link", {
+            // Gửi yêu cầu đến backend để trích xuất nội dung chính và tạo tóm tắt
+            const response = await axios.post(`${API_BASE_URL}/summarize-link`, {
                 url: linkInput,
             });
 
@@ -160,7 +160,7 @@ const LinkPage = () => {
         setError("");
 
         try {
-            const response = await api.post("/translate", {
+            const response = await axios.post(`${API_BASE_URL}/translate`, {
                 text: summaryResult,
                 targetLang,
             });
@@ -208,7 +208,6 @@ const LinkPage = () => {
                 </motion.div>
             )}
 
-            {/* Phần còn lại của JSX giữ nguyên */}
             <div className="container mx-auto px-6 pt-16">
                 <motion.header
                     initial={{ y: -50, opacity: 0 }}
@@ -392,7 +391,7 @@ const LinkPage = () => {
                                                     <path
                                                         strokeLinecap="round"
                                                         strokeLinejoin="round"
-                                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 0 002-2M9 5a2 2 0 012-2h2a2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M6 15h.01M6 11h.01M9 11h.01M9 15h.01"
+                                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M6 15h.01M6 11h.01M9 11h.01M9 15h.01"
                                                     />
                                                 </svg>
                                                 Summary

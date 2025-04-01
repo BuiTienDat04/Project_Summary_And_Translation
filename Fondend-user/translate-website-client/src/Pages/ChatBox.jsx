@@ -12,14 +12,12 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
     const [error, setError] = useState("");
     const chatContainerRef = useRef(null);
 
-    // Check conditions to hide chatbox
     const shouldHideChatbox =
         location.pathname === "/login" ||
         location.pathname === "/register" ||
         location.pathname === "/aboutus" ||
         (location.pathname === "/" && !loggedInUser);
 
-    // Initialize default message
     useEffect(() => {
         if (messages.length === 0) {
             setMessages([
@@ -31,20 +29,16 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
         }
     }, []);
 
-    // Scroll to the bottom when a new message is added
     useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
     }, [messages]);
 
-    // Completely hide the chatbox component if the condition is met
     if (shouldHideChatbox) {
         return null;
     }
 
-    // Send a message
-    // Send a message
     const handleSendMessage = async () => {
         if (!userInput.trim()) return;
         if (userInput.length > 500) {
@@ -57,7 +51,7 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
         setUserInput("");
         setError("");
         setIsLoading(true);
-    
+
         try {
             const response = await api.post("/chat", {
                 question: userInput,
@@ -71,6 +65,7 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
             setIsLoading(false);
         }
     };
+
     const handleKeyPress = (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();

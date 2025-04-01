@@ -1,11 +1,11 @@
-// api.js
 import axios from "axios";
 
+const API_BASE_URL = "https://api.pdfsmart.online"; // Export API_BASE_URL
+
 const api = axios.create({
-    baseURL: "https://api.pdfsmart.online", // API_BASE_URL của bạn
+    baseURL: API_BASE_URL,
 });
 
-// Interceptor để tự động thêm token vào header Authorization
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem("token");
@@ -17,7 +17,6 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Interceptor để xử lý lỗi 401 (token hết hạn hoặc không hợp lệ)
 api.interceptors.response.use(
     (response) => response,
     (error) => {
@@ -25,10 +24,11 @@ api.interceptors.response.use(
             localStorage.removeItem("token");
             localStorage.removeItem("userId");
             localStorage.removeItem("loggedInUser");
-            window.location.href = "/login"; // Chuyển hướng đến trang đăng nhập
+            window.location.href = "/login";
         }
         return Promise.reject(error);
     }
 );
 
+export { API_BASE_URL }; // Export API_BASE_URL
 export default api;
