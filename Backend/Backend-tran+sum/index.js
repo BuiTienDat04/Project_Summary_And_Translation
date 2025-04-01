@@ -59,7 +59,7 @@ const cors = require("cors");
 
 app.use(
     cors({
-        origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online", "https://admin.pdfsmart.online"],
+        origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online", "https://admin.pdfsmart.online", "https://api.pdfsmart.online"],
         credentials: true,  // 👈 Bắt buộc! Cho phép cookie
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"],
@@ -443,7 +443,8 @@ connectDB().then(() => {
                 "http://localhost:3000",
                 "http://localhost:3001",
                 "https://pdfsmart.online",
-                "https://admin.pdfsmart.online"
+                "https://admin.pdfsmart.online",
+                "https://api.pdfsmart.online"
             ],
             methods: ["GET", "POST"],
             credentials: true,
