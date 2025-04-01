@@ -7,9 +7,8 @@ import RegisterPage from "../Pages/RegisterPage";
 import Navigation from "../Pages/Navigation";
 import Footer from "../Pages/Footer";
 import { motion } from "framer-motion";
-import axios from "axios";
+import api from "../api/api"; // Import instance api
 import ChatBox from "../Pages/ChatBox";
-import { API_BASE_URL } from "../api/api";
 import {
     SparklesIcon,
     CpuChipIcon,
@@ -95,7 +94,7 @@ const LinkPage = () => {
         setLoggedInUser(user);
         setLoggedInUsername(user.email);
         localStorage.setItem("loggedInUser", JSON.stringify(user));
-        localStorage.setItem("token", token); // Lưu token vào localStorage
+        localStorage.setItem("token", token); // Đảm bảo token được lưu
         setShowLogin(false);
     };
 
@@ -103,6 +102,7 @@ const LinkPage = () => {
         setLoggedInUsername(null);
         setLoggedInUser(null);
         localStorage.removeItem("loggedInUser");
+        localStorage.removeItem("token");
         navigate("/");
         window.location.reload();
     };
@@ -123,30 +123,23 @@ const LinkPage = () => {
             setError("Please enter a valid URL.");
             return;
         }
-    
+
         const urlPattern = /^https?:\/\//;
         if (!urlPattern.test(linkInput)) {
             setError("URL must start with http:// or https://");
             return;
         }
-    
+
         setIsLoading(true);
         setError("");
         setSummaryResult("");
         setTranslatedContent("");
-    
+
         try {
-            const token = localStorage.getItem("token"); // Lấy token từ localStorage
-            const response = await axios.post(
-                `${API_BASE_URL}/summarize-link`,
-                { url: linkInput },
-                {
-                    headers: {
-                        Authorization: token ? `Bearer ${token}` : "", // Thêm header Authorization
-                    },
-                }
-            );
-    
+            const response = await api.post("/summarize-link", {
+                url: linkInput,
+            });
+
             const { summary } = response.data;
             setSummaryResult(summary || "No summary generated.");
         } catch (error) {
@@ -156,28 +149,22 @@ const LinkPage = () => {
             setIsLoading(false);
         }
     };
-    
+
     const translateSummary = async () => {
         if (!summaryResult || !targetLang) {
             setError("Please generate a summary first and select a target language.");
             return;
         }
-    
+
         setIsLoading(true);
         setError("");
-    
+
         try {
-            const token = localStorage.getItem("token"); // Lấy token từ localStorage
-            const response = await axios.post(
-                `${API_BASE_URL}/translate`,
-                { text: summaryResult, targetLang },
-                {
-                    headers: {
-                        Authorization: token ? `Bearer ${token}` : "", // Thêm header Authorization
-                    },
-                }
-            );
-    
+            const response = await api.post("/translate", {
+                text: summaryResult,
+                targetLang,
+            });
+
             const { translation } = response.data;
             setTranslatedContent(translation || "No translation generated.");
         } catch (error) {
@@ -187,6 +174,7 @@ const LinkPage = () => {
             setIsLoading(false);
         }
     };
+
     const linkPageContent = `URL: ${linkInput}\nSummary: ${summaryResult}\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}): ${translatedContent}`;
 
     return (
@@ -220,6 +208,7 @@ const LinkPage = () => {
                 </motion.div>
             )}
 
+            {/* Phần còn lại của JSX giữ nguyên */}
             <div className="container mx-auto px-6 pt-16">
                 <motion.header
                     initial={{ y: -50, opacity: 0 }}
@@ -403,7 +392,7 @@ const LinkPage = () => {
                                                     <path
                                                         strokeLinecap="round"
                                                         strokeLinejoin="round"
-                                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M6 15h.01M6 11h.01M9 11h.01M9 15h.01"
+                                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 0 002-2M9 5a2 2 0 012-2h2a2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M6 15h.01M6 11h.01M9 11h.01M9 15h.01"
                                                     />
                                                 </svg>
                                                 Summary
