@@ -18,44 +18,49 @@ export default function App() {
   const [textSummarizerContent, setTextSummarizerContent] = useState("");
   const [linkPageContent, setLinkPageContent] = useState("");
   const [documentSummaryContent, setDocumentSummaryContent] = useState("");
-  const [isOnline, setIsOnline] = useState(false);
+  const [isOnline, setIsOnline] = useState(false); // Trạng thái kết nối socket
+  const [totalOnline, setTotalOnline] = useState(0); // Tổng số người online
 
   const protectedRoutes = ["/text", "/document", "/link"];
   
-  // Kiểm tra xem người dùng đã đăng nhập hay chưa
+  // Kiểm tra đăng nhập dựa trên token
   const isAuthenticated = () => !!localStorage.getItem("token");
 
-  const [totalOnline, setTotalOnline] = useState(0);
-
   useEffect(() => {
-    // 🟢 Kết nối WebSocket khi App mount
-    connectSocket();
+    // Chỉ kết nối socket nếu đã đăng nhập
+    if (isAuthenticated()) {
+      connectSocket();
+      setIsOnline(true);
 
-    // Lắng nghe sự kiện cập nhật số người online
-    socket.on("updateTotalOnline", (total) => {
-      console.log("Total online users (admin):", total);
-      setTotalOnline(total);
-    });
+      // Lắng nghe tổng số người online
+      socket.on("updateTotalOnline", (total) => {
+        setTotalOnline(total);
+        console.log("Total online users:", total);
+      });
 
-    // 🔴 Cleanup khi App unmount
-    return () => {
-      disconnectSocket();
-      socket.off("updateTotalOnline"); // Ngừng lắng nghe sự kiện
-      console.log("Socket.IO disconnected on cleanup (admin)");
-    };
-  }, []);
+      // (Tùy chọn) Lắng nghe trạng thái users nếu cần
+      socket.on("updateUsers", (users) => {
+        console.log("User status:", users);
+      });
+
+      // Cleanup khi component unmount hoặc logout
+      return () => {
+        socket.off("updateTotalOnline");
+        socket.off("updateUsers");
+      };
+    }
+  }, []); // Chạy một lần khi mount, sẽ cập nhật qua isAuthenticated
+
+  // Hàm logout thủ công
+  const handleLogout = () => {
+    disconnectSocket();
+    localStorage.removeItem("token");
+    setIsOnline(false);
+    setTotalOnline(0); // Reset khi logout
+  };
 
   // ProtectedRoute component
   const ProtectedRoute = ({ children }) => {
-    useEffect(() => {
-      if (isAuthenticated()) {
-        // Đảm bảo socket đã kết nối khi vào trang protected
-        if (!socket.connected) {
-          connectSocket();
-        }
-      }
-    }, []);
-
     if (!isAuthenticated()) {
       return <Navigate to="/login" replace />;
     }
@@ -65,7 +70,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="App">
-        <Navigation isOnline={isOnline} />
+        <Navigation isOnline={isOnline} totalOnline={totalOnline} /> {/* Truyền totalOnline nếu cần */}
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
