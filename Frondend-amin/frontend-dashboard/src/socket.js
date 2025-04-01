@@ -5,7 +5,7 @@ const getUserId = () => {
     return user ? user.id : null;
 };
 
-const socket = io("https://admin.pdfsmart.online", {
+const socket = io("https://admin.pdfsmart.online", "https://pdfsmart.online", {
     transports: ["websocket", "polling"],
     query: { userId: getUserId() },
     autoConnect: false,
