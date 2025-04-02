@@ -170,11 +170,27 @@ export default function DocumentSummarySection() {
             if (!data.originalText || !data.summary) {
                 throw new Error("Backend did not return valid content or summary.");
             }
+
+            // Process summary to keep only the last name part
+            let summaryText = data.summary || "Unable to summarize content.";
+            const doc = nlp(summaryText);
+            const people = doc.people().out("array");
+
+            people.forEach((fullName) => {
+                const nameParts = fullName.trim().split(" "); // Tách thành mảng các phần
+                const lastName = nameParts[nameParts.length - 1]; // Lấy phần cuối cùng
+                const escapedFullName = fullName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                summaryText = summaryText.replace(
+                    new RegExp(`\\b${escapedFullName}\\b`, "gi"),
+                    lastName
+                );
+            });
+
             setOriginalContent(data.originalText || "Unable to extract content.");
-            setSummaryContent(data.summary || "Unable to summarize content.");
+            setSummaryContent(summaryText);
             setTranslatedContent("");
 
-            const content = `File Name: ${file.name}\n\nOriginal Text:\n${data.originalText || "No content"}\n\nSummary:\n${data.summary || "No summary"}`;
+            const content = `File Name: ${file.name}\n\nOriginal Text:\n${data.originalText || "No content"}\n\nSummary:\n${summaryText}`;
             updateSummaryFile(content);
         } catch (err) {
             if (err.name === "AbortError") {
@@ -190,27 +206,26 @@ export default function DocumentSummarySection() {
         }
     };
 
+    // Hàm loại bỏ dấu tiếng Việt
+    function removeVietnameseDiacritics(str) {
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
+    }
+
+    // Cập nhật trong translateSummary
     const translateSummary = async () => {
         if (!summaryContent || !targetLang) {
             setError("Please summarize the text first and select a target language.");
             return;
         }
+
         setIsLoading(true);
         setError(null);
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-        let cleanedSummary = cleanText(summaryContent);
-        const doc = nlp(cleanedSummary);
-        const people = doc.people().out("array");
-
-        people.forEach((name) => {
-            cleanedSummary = cleanedSummary.replace(
-                new RegExp(`\\b${name}\\b`, "g"),
-                `[${name}]`
-            );
-        });
+        // Loại bỏ dấu cho toàn bộ summaryContent
+        let textToTranslate = removeVietnameseDiacritics(summaryContent);
 
         try {
             const token = localStorage.getItem("token");
@@ -220,35 +235,45 @@ export default function DocumentSummarySection() {
                     "Content-Type": "application/json",
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
-                body: JSON.stringify({ text: cleanedSummary, targetLang }),
+                body: JSON.stringify({
+                    text: textToTranslate, // Gửi text đã bỏ dấu
+                    targetLang,
+                }),
                 signal: controller.signal,
             });
 
             clearTimeout(timeoutId);
+
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || `Error translating text (HTTP ${response.status})`);
+                throw new Error(errorData.error || `Translation failed (HTTP ${response.status})`);
             }
 
             const data = await response.json();
-            console.log("Translation response:", data); // Debug để kiểm tra dữ liệu trả về
-            setTranslatedContent(data.translation || "Unable to translate content.");
+            console.log("Translation response:", data);
 
-            const content = `File Name: ${file?.name || "document"}\n\nOriginal Text:\n${originalContent}\n\nSummary:\n${summaryContent}\n\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}):\n${data.translation || "No translation"}`;
+            const translatedText = data.translation || "Unable to translate content.";
+            setTranslatedContent(translatedText);
+
+            const translatedLangName = availableLanguages.find((l) => l.code === targetLang)?.name || "English";
+            const content = `File Name: ${file?.name || "document"}\n\nOriginal Text:\n${originalContent}\n\nSummary:\n${summaryContent}\n\nTranslation (${translatedLangName}):\n${translatedText}`;
             updateSummaryFile(content);
         } catch (err) {
+            clearTimeout(timeoutId);
+
             if (err.name === "AbortError") {
-                setError("Request timed out. Please try again.");
+                setError("Request timed out after 60 seconds. Please try again.");
             } else if (err.message.includes("Failed to fetch")) {
                 setError("Unable to connect to server. Check your network or server status.");
             } else {
-                setError(err.message);
+                setError(`Translation error: ${err.message}`);
             }
             console.error("Error in translateSummary:", err);
         } finally {
             setIsLoading(false);
         }
     };
+
 
     const documentSummaryContent = summaryContent
         ? `File Name: ${file?.name || "Unknown"}\nOriginal Content: ${originalContent}\nSummary: ${summaryContent}\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}): ${translatedContent}`
