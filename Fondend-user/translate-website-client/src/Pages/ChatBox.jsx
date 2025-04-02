@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
 import { Send, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import { API_BASE_URL } from "../api/api";
+import api from "../api/api"; // Import instance api
 
 const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryContent, loggedInUser }) => {
     const location = useLocation();
@@ -13,14 +12,12 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
     const [error, setError] = useState("");
     const chatContainerRef = useRef(null);
 
-    // Check conditions to hide chatbox
     const shouldHideChatbox =
         location.pathname === "/login" ||
         location.pathname === "/register" ||
         location.pathname === "/aboutus" ||
         (location.pathname === "/" && !loggedInUser);
 
-    // Initialize default message
     useEffect(() => {
         if (messages.length === 0) {
             setMessages([
@@ -32,37 +29,40 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
         }
     }, []);
 
-    // Scroll to the bottom when a new message is added
     useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
     }, [messages]);
 
-    // Completely hide the chatbox component if the condition is met
     if (shouldHideChatbox) {
         return null;
     }
 
-    // Send a message
     const handleSendMessage = async () => {
+        const token = localStorage.getItem("token");
+        if (!loggedInUser || !token) {
+            setError("Please log in to use the chat.");
+            return;
+        }
+    
         if (!userInput.trim()) return;
         if (userInput.length > 500) {
             setError("The question is too long, please keep it under 500 characters.");
             return;
         }
-
+    
         const newMessage = { role: "user", content: userInput };
         setMessages((prev) => [...prev, newMessage]);
         setUserInput("");
         setError("");
         setIsLoading(true);
-
+    
         try {
-            const response = await axios.post(`${API_BASE_URL}/chat`, {
+            const response = await api.post("/chat", {
                 question: userInput,
             });
-
+    
             const { answer, source } = response.data;
             setMessages((prev) => [...prev, { role: "bot", content: answer, source }]);
         } catch (error) {
@@ -71,7 +71,6 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
             setIsLoading(false);
         }
     };
-
     const handleKeyPress = (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
@@ -88,7 +87,6 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
         ]);
         setError("");
     };
-
     return (
         <div className="fixed bottom-4 right-4 z-50 font-sans">
             {/* Open Chat Button */}
