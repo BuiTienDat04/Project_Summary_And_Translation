@@ -196,17 +196,28 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
                     {error && <p className="text-red-500">{error}</p>}
                 </section>
 
-                {/* Output Column */}
                 <section className="space-y-6 p-6 bg-gray-50 rounded-2xl border-2 border-gray-100 shadow-inner">
                     <article className="bg-white rounded-xl border-2 border-gray-200 p-5 shadow-sm">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                                <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M6 15h.01M6 11h.01M9 11h.01M9 15h.01" />
+                                <svg
+                                    className="w-6 h-6 text-green-600"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M6 15h.01M6 11h.01M9 11h.01M9 15h.01"
+                                    />
                                 </svg>
                                 Summary
                             </h3>
-                            {summary && <span className="text-sm text-gray-500 font-medium">{summary.length} chars</span>}
+                            {summary && (
+                                <span className="text-sm text-gray-500 font-medium">{summary.length} chars</span>
+                            )}
                         </div>
                         <div className="bg-gray-50 rounded-lg p-4">
                             <textarea
@@ -225,8 +236,8 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
                                     <input
                                         type="text"
                                         className="w-full p-4 bg-transparent placeholder-gray-400 focus:outline-none text-lg"
-                                        placeholder="Search language..."
-                                        value={searchTerm}
+                                        placeholder="Search or select a language..."
+                                        value={searchTerm || languages.find((lang) => lang.code === targetLang)?.name || "Select a language"}
                                         onChange={(e) => {
                                             setSearchTerm(e.target.value);
                                             setIsDropdownOpen(true);
@@ -234,6 +245,32 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
                                         onFocus={() => setIsDropdownOpen(true)}
                                         onBlur={() => setTimeout(() => setIsDropdownOpen(false), 100)}
                                     />
+                                    {/* Nút xóa ngôn ngữ */}
+                                    {(searchTerm || targetLang) && (
+                                        <button
+                                            className="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                            onClick={() => {
+                                                setTargetLang(""); // Đặt lại targetLang về rỗng (hoặc "en" nếu bạn muốn mặc định là English)
+                                                setSearchTerm(""); // Xóa searchTerm
+                                                setIsDropdownOpen(true); // Mở lại dropdown
+                                            }}
+                                        >
+                                            <svg
+                                                className="w-5 h-5"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth="2"
+                                                    d="M6 18L18 6M6 6l12 12"
+                                                />
+                                            </svg>
+                                        </button>
+                                    )}
                                 </div>
                                 {isDropdownOpen && filteredLanguages.length > 0 && (
                                     <ul className="absolute z-10 mt-1 w-full bg-white border border-emerald-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
@@ -241,7 +278,11 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
                                             <li
                                                 key={lang.code}
                                                 className="px-4 py-2 hover:bg-emerald-100 cursor-pointer"
-                                                onClick={() => handleLanguageSelect(lang.code, lang.name)}
+                                                onMouseDown={() => {
+                                                    setTargetLang(lang.code);
+                                                    setSearchTerm(""); // Xóa searchTerm để hiển thị tên ngôn ngữ đã chọn
+                                                    setIsDropdownOpen(false);
+                                                }}
                                             >
                                                 {lang.name}
                                             </li>
@@ -262,12 +303,25 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
                                 <article className="bg-white rounded-xl border-2 border-gray-200 p-5 shadow-sm">
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                                            <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            <svg
+                                                className="w-6 h-6 text-purple-600"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
                                             </svg>
-                                            Translation ({languages.find(lang => lang.code === targetLang)?.name || "Unknown"})
+                                            Translation (
+                                            {languages.find((lang) => lang.code === targetLang)?.name || "Unknown"})
                                         </h3>
-                                        <span className="text-sm text-gray-500 font-medium">{translation.length} chars</span>
+                                        <span className="text-sm text-gray-500 font-medium">
+                                            {translation.length} chars
+                                        </span>
                                     </div>
                                     <div className="bg-gray-50 rounded-lg p-4">
                                         <textarea
@@ -282,10 +336,12 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
                         </div>
                     )}
 
-
                     {isLoading && !error && (
                         <div className="text-center">
-                            <svg className="animate-spin h-5 w-5 text-gray-600 inline-block mr-2" viewBox="0 0 24 24">
+                            <svg
+                                className="animate-spin h-5 w-5 text-gray-600 inline-block mr-2"
+                                viewBox="0 0 24 24"
+                            >
                                 <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                             </svg>
                             <p className="text-gray-600 inline">Processing...</p>

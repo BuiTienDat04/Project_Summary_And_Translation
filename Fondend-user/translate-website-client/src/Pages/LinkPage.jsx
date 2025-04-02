@@ -9,6 +9,7 @@ import Footer from "../Pages/Footer";
 import { motion } from "framer-motion";
 import axios from "axios";
 import ChatBox from "../Pages/ChatBox";
+import HistorySummary from "./HistorySummary";
 import { API_BASE_URL } from "../api/api";
 import {
     SparklesIcon,
@@ -115,6 +116,7 @@ const LinkPage = () => {
         setTargetLang(code);
         setSearchTerm(name);
         setIsDropdownOpen(false);
+
     };
 
     const handleGenerateSummary = async () => {
@@ -185,6 +187,7 @@ const LinkPage = () => {
                 onRegisterClick={handleRegisterClick}
                 onLogout={handleLogout}
             />
+            <HistorySummary />
 
             {showLogin && (
                 <motion.div
