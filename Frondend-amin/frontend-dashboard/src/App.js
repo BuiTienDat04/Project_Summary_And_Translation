@@ -10,13 +10,38 @@ import axios from "axios";
 import { API_BASE_URL } from "./api/api";
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Thêm loading state
+  // Khởi tạo isAuthenticated dựa trên token trong localStorage
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return !!localStorage.getItem("token");
+  });
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    setIsLoading(false); // Giả lập hoàn tất khởi tạo
-  }, []);
+    const checkAuthStatus = async () => {
+      const token = localStorage.getItem("token");
+      if (token && !isAuthenticated) { // Chỉ kiểm tra nếu chưa xác thực
+        try {
+          // (Tùy chọn) Xác thực token với server
+          const response = await axios.get(`${API_BASE_URL}/api/auth/verify`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          console.log("Token verified:", response.data);
+          setIsAuthenticated(true);
+        } catch (error) {
+          console.error("Token verification failed:", error);
+          localStorage.removeItem("token");
+          localStorage.removeItem("userId");
+          localStorage.removeItem("loggedInUser");
+          setIsAuthenticated(false);
+          navigate("/loginad", { replace: true });
+        }
+      }
+      setIsLoading(false);
+    };
+
+    checkAuthStatus();
+  }, [navigate]); // Loại isAuthenticated khỏi dependency để tránh vòng lặp
 
   const handleLogout = async () => {
     console.log("handleLogout triggered");
@@ -26,15 +51,11 @@ function App() {
     } catch (error) {
       console.error("Error calling logout API:", error);
     }
-    console.log("Token before removal:", localStorage.getItem("token"));
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
     localStorage.removeItem("loggedInUser");
-    console.log("Token after removal:", localStorage.getItem("token"));
     setIsAuthenticated(false);
-    console.log("Logged out, isAuthenticated set to false");
     navigate("/loginad", { replace: true });
-    console.log("Navigated to /loginad");
   };
 
   const ProtectedRoute = ({ children }) => {
@@ -44,7 +65,7 @@ function App() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>; // Hiển thị loading trong khi chờ
+    return <div>Loading...</div>;
   }
 
   return (
@@ -68,14 +89,11 @@ function App() {
             <Route
               path="/loginad"
               element={
-                <>
-                  {console.log("Route /loginad, isAuthenticated:", isAuthenticated)}
-                  {isAuthenticated ? (
-                    <Navigate to="/dashboard" replace />
-                  ) : (
-                    <LoginPage setIsAuthenticated={setIsAuthenticated} />
-                  )}
-                </>
+                isAuthenticated ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <LoginPage setIsAuthenticated={setIsAuthenticated} />
+                )
               }
             />
             <Route
