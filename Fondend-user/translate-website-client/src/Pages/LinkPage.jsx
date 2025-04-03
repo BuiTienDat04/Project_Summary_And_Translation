@@ -7,10 +7,8 @@ import RegisterPage from "../Pages/RegisterPage";
 import Navigation from "../Pages/Navigation";
 import Footer from "../Pages/Footer";
 import { motion } from "framer-motion";
-import axios from "axios";
 import ChatBox from "../Pages/ChatBox";
-import HistorySummary from "./HistorySummary";
-import { API_BASE_URL } from "../api/api";
+import api from "../api/api"; // Thêm import này
 import {
     SparklesIcon,
     CpuChipIcon,
@@ -79,6 +77,11 @@ const LinkPage = () => {
         setIsPopupVisible(true);
         setShowRegister(false);
     };
+    const handleLanguageSelect = (code, name) => {
+        setTargetLang(code);
+        setSearchTerm(name);
+        setIsDropdownOpen(false);
+    };
 
     useEffect(() => {
         const storedUser = localStorage.getItem("loggedInUser");
@@ -112,66 +115,82 @@ const LinkPage = () => {
         setError("");
     };
 
-    const handleLanguageSelect = (code, name) => {
-        setTargetLang(code);
-        setSearchTerm(name);
-        setIsDropdownOpen(false);
-
-    };
-
     const handleGenerateSummary = async () => {
+        const token = localStorage.getItem("token");
+        if (!loggedInUser || !token) {
+            setError("Please log in to generate a summary.");
+            setShowLogin(true);
+            return;
+        }
+    
         if (!linkInput) {
             setError("Please enter a valid URL.");
             return;
         }
-
+    
         const urlPattern = /^https?:\/\//;
         if (!urlPattern.test(linkInput)) {
             setError("URL must start with http:// or https://");
             return;
         }
-
+    
         setIsLoading(true);
         setError("");
         setSummaryResult("");
         setTranslatedContent("");
-
+    
         try {
-            // Gửi yêu cầu đến backend để trích xuất nội dung chính và tạo tóm tắt
-            const response = await axios.post(`${API_BASE_URL}/summarize-link`, {
-                url: linkInput,
-            });
-
+            const response = await api.post("/summarize-link", { url: linkInput });
             const { summary } = response.data;
             setSummaryResult(summary || "No summary generated.");
         } catch (error) {
             console.error("Error summarizing link:", error);
-            setError(error.response?.data?.error || "Error generating summary. Please try again.");
+            if (error.response?.status === 401) {
+                setError("Session expired. Please log in again.");
+                localStorage.removeItem("token");
+                localStorage.removeItem("loggedInUser");
+                setShowLogin(true);
+            } else {
+                setError(error.response?.data?.error || "Error generating summary. Please try again.");
+            }
         } finally {
             setIsLoading(false);
         }
     };
-
+    
     const translateSummary = async () => {
+        const token = localStorage.getItem("token");
+        if (!loggedInUser || !token) {
+            setError("Please log in to translate the summary.");
+            setShowLogin(true);
+            return;
+        }
+    
         if (!summaryResult || !targetLang) {
             setError("Please generate a summary first and select a target language.");
             return;
         }
-
+    
         setIsLoading(true);
         setError("");
-
+    
         try {
-            const response = await axios.post(`${API_BASE_URL}/translate`, {
+            const response = await api.post("/translate", {
                 text: summaryResult,
                 targetLang,
             });
-
             const { translation } = response.data;
             setTranslatedContent(translation || "No translation generated.");
         } catch (error) {
             console.error("Error translating summary:", error);
-            setError(error.response?.data?.error || "Error translating summary. Please try again.");
+            if (error.response?.status === 401) {
+                setError("Session expired. Please log in again.");
+                localStorage.removeItem("token");
+                localStorage.removeItem("loggedInUser");
+                setShowLogin(true);
+            } else {
+                setError(error.response?.data?.error || "Error translating summary. Please try again.");
+            }
         } finally {
             setIsLoading(false);
         }
@@ -187,7 +206,6 @@ const LinkPage = () => {
                 onRegisterClick={handleRegisterClick}
                 onLogout={handleLogout}
             />
-            <HistorySummary />
 
             {showLogin && (
                 <motion.div

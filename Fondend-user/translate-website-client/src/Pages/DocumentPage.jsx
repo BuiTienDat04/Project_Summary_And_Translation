@@ -7,7 +7,6 @@ import RegisterPage from "./RegisterPage"
 import Navigation from "./Navigation";
 import Footer from "./Footer";
 import DocumentSummarySection from "./DocumentSummarySection";
-import HistorySummary from "./HistorySummary";
 
 import axios from "axios";
 import { motion } from "framer-motion";
@@ -71,7 +70,6 @@ const DocumentPage = () => {
                 onRegisterClick={handleRegisterClick}
                 onLogout={handleLogout}
             />
-            <HistorySummary />
 
             {/* Hiển thị form đăng nhập */}
             {showLogin && (

@@ -233,7 +233,7 @@ const RegisterPage = ({ onClose, onRegistrationSuccess }) => {
                     <div className="grid grid-cols-1 gap-4">
                         {[
                             { icon: FaFilePdf, title: "Smart Summarization", desc: "AI-powered document condensation", color: "text-blue-400" },
-                            { icon: FaLanguage, title: "Multilingual Magic", desc: "20+ language translation", color: "text-emerald-400" },
+                            { icon: FaLanguage, title: "Multilingual Magic", desc: "50+ language translation", color: "text-emerald-400" },
                             { icon: FaRobot, title: "AI Analysis", desc: "Context-aware processing", color: "text-purple-400" },
                             { icon: FaMagic, title: "Smart Formatting", desc: "Auto-document optimization", color: "text-amber-400" }
                         ].map((feature, index) => (
