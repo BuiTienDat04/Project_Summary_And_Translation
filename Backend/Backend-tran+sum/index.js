@@ -350,10 +350,11 @@ app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
 
         const prompt = await createPrompt();
         const answer = await callGeminiAPI(prompt);
+        const source = `${latestContent.type} vừa tải lên lúc ${new Date(latestContent.timestamp).toLocaleString()}`;
 
         await ChatHistory.findOneAndUpdate(
             { userId },
-            { $push: { messages: { question, answer,  } }, $set: { lastUpdated: Date.now() } },
+            { $push: { messages: { question, answer, source } }, $set: { lastUpdated: Date.now() } },
             { upsert: true }
         );
 
@@ -363,6 +364,7 @@ app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
         res.json({
             question,
             answer,
+            source,
             history: updatedHistory.messages,
             timestamp: new Date().toISOString(),
             status: "success",
