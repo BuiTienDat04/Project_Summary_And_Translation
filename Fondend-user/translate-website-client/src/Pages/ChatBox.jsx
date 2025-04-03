@@ -41,42 +41,39 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
 
     const handleSendMessage = async () => {
         const token = localStorage.getItem("token");
-        console.log("🔍 Token trước khi gửi request:", token);
+        if (!loggedInUser || !token) {
+            setError("Please log in to use the chat.");
+            return;
+        }
+        
     
         if (!userInput.trim()) return;
         if (userInput.length > 500) {
-            setError("Message too long (max 500 characters)");
+            setError("The question is too long, please keep it under 500 characters.");
             return;
         }
     
         const newMessage = { role: "user", content: userInput };
-        setMessages(prev => [...prev, newMessage]);
+        setMessages((prev) => [...prev, newMessage]);
         setUserInput("");
         setError("");
         setIsLoading(true);
     
         try {
-            const config = token ? {
-                headers: { Authorization: `Bearer ${token}` }
-            } : {};
-            
-            const response = await api.post("/chat", { 
-                question: userInput 
-            }, config);
+            const response = await api.post("/chat", {
+                question: userInput,
+            });
     
-            setMessages(prev => [...prev, { 
-                role: "bot", 
-                content: response.data.answer,
-                source: response.data.source 
-            }]);
-            
+            const { answer, source } = response.data;
+            setMessages((prev) => [...prev, { role: "bot", content: answer, source }]);
         } catch (error) {
-            setError(error.response?.data?.error || "Failed to send message");
-            console.error("Chat error:", error);
+            setError(error.response?.data?.error || "Error sending message. Please try again.");
         } finally {
             setIsLoading(false);
         }
+        
     };
+
 
     const handleKeyPress = (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
