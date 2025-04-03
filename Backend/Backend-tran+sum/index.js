@@ -12,6 +12,7 @@ const NodeCache = require("node-cache");
 const cookieParser = require("cookie-parser");
 const axios = require("axios");
 const cheerio = require("cheerio");
+const { v4: uuidv4 } = require('uuid');
 
 const User = require("./models/User");
 const Visit = require("./models/Visit");
@@ -24,6 +25,7 @@ const summaryRoutes = require("./routes/summary");
 const uploadRoutes = require("./routes/upload");
 const userRoutes = require("./routes/userRoutes");
 const { verifyToken, verifyAdmin } = require("./middleware/authMiddleware");
+const generateGuestId = () => `guest_${uuidv4()}`;
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -319,75 +321,84 @@ const publicChatLimiter = rateLimit({
 });
 
 // Sửa đổi endpoint chat hiện có
+// Chat endpoint
 app.post("/chat", publicChatLimiter, async (req, res) => {
     try {
-        const { question, language = "English" } = req.body;
-        let userId = "guest"; // Mặc định cho user chưa đăng nhập
+        const { question, language = "en", guestId } = req.body;
+        let userId;
+        let isGuest = true;
 
-        // Nếu có token, lấy userId từ token
+        // Xác định user ID
         if (req.headers.authorization) {
-            const token = req.headers.authorization.split(' ')[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            userId = decoded.userId;
-        }
-
-        if (!question || question.trim().length < 3) {
-            return res.status(400).json({ error: "Question too short (min 3 characters)" });
-        }
-
-        // Tạo prompt cơ bản cho guest, chi tiết hơn cho user đã đăng nhập
-        let prompt;
-        if (userId === "guest") {
-            prompt = `Answer the following question in ${language}:\n\n${question}\n\n`;
-            if (latestContent.content) {
-                prompt += `Context:\n${latestContent.content.substring(0, 1000)}`;
+            try {
+                const token = req.headers.authorization.split(' ')[1];
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                userId = decoded.userId;
+                isGuest = false;
+            } catch (err) {
+                console.log("Invalid token, using guest mode");
+                userId = guestId || generateGuestId();
             }
         } else {
-            // Giữ logic cũ cho user đã đăng nhập
-            const chatHistory = await ChatHistory.findOne({ userId });
-            prompt = `You are an AI assistant. Answer in ${language}.\n\n`;
-            if (chatHistory) {
-                prompt += "Chat history:\n";
-                chatHistory.messages.slice(-3).forEach(msg => {
-                    prompt += `Q: ${msg.question}\nA: ${msg.answer}\n\n`;
-                });
-            }
-            if (latestContent.content) {
-                prompt += `Context:\n${latestContent.content}\n\n`;
-            }
-            prompt += `Question: ${question}`;
+            userId = guestId || generateGuestId();
         }
 
+        // Validate input
+        if (!question || question.trim().length < 3) {
+            return res.status(400).json({ 
+                error: "Question must be at least 3 characters",
+                guestId: isGuest ? userId : undefined
+            });
+        }
+
+        // Tạo prompt với context nếu có
+        let prompt = `Answer in ${language}:\n\n${question}\n\n`;
+        if (latestContent?.content) {
+            prompt += `Context:\n${latestContent.content.substring(0, 1000)}\n\n`;
+        }
+
+        // Gọi AI
         const answer = await callGeminiAPI(prompt);
-        const source = latestContent.content 
-            ? `From ${latestContent.type} content` 
+        const source = latestContent?.content 
+            ? `From ${latestContent.type}` 
             : "General knowledge";
 
-        // Chỉ lưu lịch sử cho user đã đăng nhập
-        if (userId !== "guest") {
-            await ChatHistory.findOneAndUpdate(
-                { userId },
-                { $push: { messages: { question, answer } } },
-                { upsert: true }
-            );
-        }
+        // Lưu lịch sử
+        await ChatHistory.findOneAndUpdate(
+            { userId },
+            {
+                $push: {
+                    messages: {
+                        question,
+                        answer,
+                        isGuest,
+                        createdAt: new Date()
+                    }
+                },
+                $setOnInsert: {
+                    userId,
+                    isGuest,
+                    createdAt: new Date()
+                }
+            },
+            { upsert: true }
+        );
 
         res.json({
             answer,
             source,
-            status: "success",
-            timestamp: new Date().toISOString()
+            guestId: isGuest ? userId : undefined,
+            status: "success"
         });
 
     } catch (error) {
         console.error("Chat error:", error);
         res.status(500).json({ 
-            error: "Error processing your request",
-            details: error.message 
+            error: "Error processing request",
+            details: error.message
         });
     }
 });
-
 // Health Check
 app.get("/", (req, res) => res.status(200).json({ message: "🚀 API is running!" }));
 
