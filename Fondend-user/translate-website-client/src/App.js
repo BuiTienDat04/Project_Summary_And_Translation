@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 // import { socket, connectSocket, disconnectSocket } from "./socket"; // Đã loại bỏ
-import { API_BASE_URL } from "./api/api"; // Giữ lại nếu API_BASE_URL được dùng ở đâu đó khác hoặc xóa nếu không
 import LoginPage from "./Pages/LoginPage";
 import RegisterPage from "./Pages/RegisterPage";
 import TextPage from "./Pages/TextPage";
