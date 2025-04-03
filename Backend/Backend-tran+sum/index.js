@@ -391,49 +391,67 @@ app.get("/last-content", verifyToken, (req, res) => {
 });
 
 // API to get content history
-app.get("/content-history/:_id", verifyToken, async (req, res) => {
+// Sửa lại server routes (trong file server chính)
+// Thêm prefix '/api' cho tất cả các routes API
+app.get("/api/content-history/:userId", verifyToken, async (req, res) => {
     try {
-        const { _id } = req.params;
-        if (!mongoose.Types.ObjectId.isValid(_id)) {
-            return res.status(400).json({ error: "User ID không hợp lệ" });
+        console.log(`Fetching content history for user: ${req.params.userId}`);
+        
+        // Kiểm tra quyền truy cập
+        if (req.user._id !== req.params.userId && req.user.role !== "admin") {
+            return res.status(403).json({ 
+                status: 'error',
+                message: 'Unauthorized access' 
+            });
         }
-        if (req.user._id !== _id && req.user.role !== "admin") {
-            return res.status(403).json({ error: "Bạn không có quyền truy cập lịch sử của user này." });
-        }
-        const history = await ContentHistory.findOne({ _id }).select("contents");
+
+        const history = await ContentHistory.findOne({ _id: req.params.userId });
+        
         res.json({
-            _id,
-            history: history ? history.contents : [],
-            timestamp: new Date().toISOString(),
-            status: "success",
+            status: 'success',
+            data: {
+                history: history ? history.contents : [],
+                lastUpdated: history ? history.lastUpdated : null
+            }
         });
     } catch (error) {
-        res.status(500).json({ error: `Lỗi lấy lịch sử nội dung: ${error.message}` });
+        console.error('Error fetching content history:', error);
+        res.status(500).json({ 
+            status: 'error',
+            message: error.message 
+        });
     }
 });
 
-// API to get chat history
-app.get("/chat-history/:_id", verifyToken, async (req, res) => {
+app.get("/api/chat-history/:userId", verifyToken, async (req, res) => {
     try {
-        const { _id } = req.params;
-        if (!mongoose.Types.ObjectId.isValid(_id)) {
-            return res.status(400).json({ error: "User ID không hợp lệ" });
+        console.log(`Fetching chat history for user: ${req.params.userId}`);
+        
+        // Kiểm tra quyền truy cập
+        if (req.user._id !== req.params.userId && req.user.role !== "admin") {
+            return res.status(403).json({ 
+                status: 'error',
+                message: 'Unauthorized access' 
+            });
         }
-        if (req.user._id !== _id && req.user.role !== "admin") {
-            return res.status(403).json({ error: "Bạn không có quyền truy cập lịch sử chat của user này." });
-        }
-        const history = await ChatHistory.findOne({ _id }).select("messages");
+
+        const history = await ChatHistory.findOne({ _id: req.params.userId });
+        
         res.json({
-            _id,
-            history: history ? history.messages : [],
-            timestamp: new Date().toISOString(),
-            status: "success",
+            status: 'success',
+            data: {
+                history: history ? history.messages : [],
+                lastUpdated: history ? history.lastUpdated : null
+            }
         });
     } catch (error) {
-        res.status(500).json({ error: `Lỗi lấy lịch sử chat: ${error.message}` });
+        console.error('Error fetching chat history:', error);
+        res.status(500).json({ 
+            status: 'error',
+            message: error.message 
+        });
     }
 });
-
 async function fetchContent(url) {
     try {
         if (!url || !url.match(/^https?:\/\//)) throw new Error("URL không hợp lệ");
