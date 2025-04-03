@@ -7,6 +7,7 @@ import Navigation from "./Navigation";
 import ServicesSection from "./ServicesSection";
 import TextSummarizerAndTranslator from "../Pages/TextSummarizerAndTranslator";
 import Footer from "./Footer";
+import HistorySummary from './HistorySummary'; // Thay đổi đường dẫn cho phù hợp
 
 import { FaFileAlt, FaSignInAlt, FaCheckCircle } from "react-icons/fa";
 import { motion } from "framer-motion";
@@ -88,8 +89,11 @@ function TextPage() {
           onLoginClick={handleLoginClick}
           onRegisterClick={handleRegisterClick}
           onLogout={handleLogout}
+          
+          
         />
       </div>
+      <HistorySummary/>
 
       {/* Header Section */}
       <motion.header
@@ -113,6 +117,8 @@ function TextPage() {
           Quickly grasp the main points from any text and translate it into your desired language.
         </p>
       </motion.header>
+      <HistorySummary />
+  
 
       {/* Features and Help Section */}
       <div className="max-w-7xl mx-auto p-8">

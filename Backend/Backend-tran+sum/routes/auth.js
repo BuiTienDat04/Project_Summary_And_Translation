@@ -3,13 +3,13 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Visit = require("../models/Visit");
-const { parsePhoneNumberFromString } = require("libphonenumber-js");  
+const { parsePhoneNumberFromString } = require("libphonenumber-js");
 const router = express.Router();
 
 // Regular Expressions for Validation
 const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/; // Only @gmail.com emails
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/; // Min 8 chars, 1 uppercase, 1 lowercase, 1 special char, 1 number
-
+const moment = require("moment");
 const DEFAULT_COUNTRY_CODE = "VN"; // Default country (Vietnam)
 
 module.exports = (visitCountObj) => {
@@ -29,11 +29,25 @@ module.exports = (visitCountObj) => {
       const existingUser = await User.findOne({ email });
       if (existingUser) return res.status(400).json({ message: "Email already exists" });
 
+      // Check if Phone Number Already Exists
+      const existingPhoneUser = await User.findOne({ phoneNumber });
+      if (existingPhoneUser) return res.status(400).json({ message: "Phone number already in use" });
+
       // Validate Password
       if (!passwordRegex.test(password)) {
         return res.status(400).json({
           message: "Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character."
         });
+      }
+
+      // Validate Date of Birth (User must be at least 13 years old)
+      if (!dateOfBirth || !moment(dateOfBirth, "YYYY-MM-DD", true).isValid()) {
+        return res.status(400).json({ message: "Invalid date of birth format. Use YYYY-MM-DD." });
+      }
+
+      const age = moment().diff(moment(dateOfBirth, "YYYY-MM-DD"), "years");
+      if (age < 13) {
+        return res.status(400).json({ message: "You must be at least 13 years old to register." });
       }
 
       // Validate & Format Phone Number
@@ -63,6 +77,7 @@ module.exports = (visitCountObj) => {
       res.status(500).json({ message: "Server error", error: error.message });
     }
   });
+
 
   // ================== 🟢 LOGIN API ==================
   router.post("/login", async (req, res) => {
@@ -123,6 +138,6 @@ module.exports = (visitCountObj) => {
       res.status(500).json({ message: "Server error", error: error.message });
     }
   });
-  
+
   return router;
 };
