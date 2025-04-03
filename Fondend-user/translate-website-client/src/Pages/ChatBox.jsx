@@ -1,76 +1,75 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Send, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import api from "../api/api";
+import api from "../api/api"; // Import instance api
 
-const ChatBox = ({ loggedInUser }) => {
+const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryContent, loggedInUser }) => {
     const location = useLocation();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([]);
     const [userInput, setUserInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
-    const [guestId, setGuestId] = useState("");
     const chatContainerRef = useRef(null);
 
-    // Khởi tạo guestId
+    const shouldHideChatbox =
+        location.pathname === "/login" ||
+        location.pathname === "/register" ||
+        location.pathname === "/aboutus" ||
+        (location.pathname === "/" && !loggedInUser);
+
     useEffect(() => {
-        const storedGuestId = localStorage.getItem('guestId') || `guest_${Math.random().toString(36).substr(2, 9)}`;
-        localStorage.setItem('guestId', storedGuestId);
-        setGuestId(storedGuestId);
-        
-        // Tin nhắn chào mừng
         if (messages.length === 0) {
-            setMessages([{
-                role: "bot",
-                content: "Hello! How can I help you today?"
-            }]);
+            setMessages([
+                {
+                    role: "bot",
+                    content: "Hello Summarize text, provide a URL, or upload a PDF so I can answer your question.",
+                },
+            ]);
         }
     }, []);
 
-    // Auto-scroll
     useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
     }, [messages]);
 
+    if (shouldHideChatbox) {
+        return null;
+    }
+
     const handleSendMessage = async () => {
+        const token = localStorage.getItem("token");
+        console.log("🔍 Token trước khi gửi request:", token);
+    
         if (!userInput.trim()) return;
         if (userInput.length > 500) {
             setError("Message too long (max 500 characters)");
             return;
         }
-
+    
         const newMessage = { role: "user", content: userInput };
         setMessages(prev => [...prev, newMessage]);
         setUserInput("");
         setError("");
         setIsLoading(true);
-
+    
         try {
-            const token = localStorage.getItem("token");
             const config = token ? {
                 headers: { Authorization: `Bearer ${token}` }
             } : {};
-
-            const response = await api.post("/chat", {
-                question: userInput,
-                guestId: !loggedInUser ? guestId : undefined
+            
+            const response = await api.post("/chat", { 
+                question: userInput 
             }, config);
-
-            setMessages(prev => [...prev, {
-                role: "bot",
+    
+            setMessages(prev => [...prev, { 
+                role: "bot", 
                 content: response.data.answer,
-                source: response.data.source
+                source: response.data.source 
             }]);
-
-            // Cập nhật guestId nếu server trả về mới
-            if (response.data.guestId && !loggedInUser) {
-                localStorage.setItem('guestId', response.data.guestId);
-                setGuestId(response.data.guestId);
-            }
-
+            
         } catch (error) {
             setError(error.response?.data?.error || "Failed to send message");
             console.error("Chat error:", error);
