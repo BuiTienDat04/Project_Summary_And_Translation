@@ -40,14 +40,8 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
     }
 
     const handleSendMessage = async () => {
-
         const token = localStorage.getItem("token");
-        console.log("🔍 Token trước khi gửi request:", token); // Debug token
-
-        if (!loggedInUser || !token) {
-            setError("Please log in to use the chat.");
-            return;
-        }
+        console.log("🔍 Token trước khi gửi request:", token);
     
         if (!userInput.trim()) return;
         if (userInput.length > 500) {
@@ -62,16 +56,10 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
         setIsLoading(true);
     
         try {
-            const token = localStorage.getItem("token");
             const config = token ? {
                 headers: { Authorization: `Bearer ${token}` }
             } : {};
-            const response = await api.post(
-                "/chat",
-                { question: userInput },
-                { headers: { Authorization: `Bearer ${token}` } } // Đảm bảo token được gửi
-            );
-    
+            
             const response = await api.post("/chat", { 
                 question: userInput 
             }, config);
@@ -89,7 +77,6 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
             setIsLoading(false);
         }
     };
-
 
     const handleKeyPress = (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
