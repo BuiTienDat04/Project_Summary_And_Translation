@@ -1,15 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ListBulletIcon } from '@heroicons/react/24/outline';
 import { XMarkIcon } from '@heroicons/react/24/solid';
-import axios from 'axios';
-import { API_BASE_URL } from "../api/api";
+import useHistory from '../hooks/useHistory';
 
 const HistorySummary = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const [history, setHistory] = useState([]); // Lưu trữ cả ContentHistory và ChatHistory
-    const [loading, setLoading] = useState(true);
-    const [selectedItem, setSelectedItem] = useState(null); // Chi tiết mục được chọn
-    const [error, setError] = useState(null);
+    const [selectedItem, setSelectedItem] = useState(null);
+    const { history, loading, error, refetch } = useHistory();
 
     const toggleOpen = () => {
         setIsOpen(!isOpen);
