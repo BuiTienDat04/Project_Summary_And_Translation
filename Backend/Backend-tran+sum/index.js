@@ -176,7 +176,7 @@ app.use("/api/auth", authRoutes({ visitCount }));
 // API to summarize text
 app.post("/summarize", verifyToken, async (req, res) => {
     const { text, language = "English" } = req.body;
-    const userId = req.user.userId;
+    const _id = req.user._id;
 
     if (!text || text.trim().length < 10) {
         return res.status(400).json({ error: "Text quá ngắn hoặc không hợp lệ." });
@@ -188,7 +188,7 @@ app.post("/summarize", verifyToken, async (req, res) => {
         cache.set("lastTextSummarizerContent", summary, 600);
 
         await ContentHistory.findOneAndUpdate(
-            { userId },
+            { _id: _id },
             { $push: { contents: { type: "text", content: text, summary } }, $set: { lastUpdated: Date.now() } },
             { upsert: true }
         );
@@ -220,8 +220,7 @@ app.post("/translate", verifyToken, async (req, res) => {
 // API to summarize a URL
 app.post("/summarize-link", verifyToken, async (req, res) => {
     const { url, language = "English" } = req.body;
-    const userId = req.user.userId;
-
+    const _id = req.user._id;
     if (!url || !url.match(/^https?:\/\//)) {
         return res.status(400).json({ error: "Invalid URL. Please provide a valid URL starting with http:// or https://." });
     }
@@ -249,7 +248,7 @@ app.post("/summarize-link", verifyToken, async (req, res) => {
         cache.set("lastLinkPageContent", summary, 600);
 
         await ContentHistory.findOneAndUpdate(
-            { userId },
+            { _id: _id },
             { $push: { contents: { type: "link", content, summary, url } }, $set: { lastUpdated: Date.now() } },
             { upsert: true }
         );
@@ -278,8 +277,8 @@ app.post("/summarize-link", verifyToken, async (req, res) => {
 app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
     let filePath;
     try {
-        const userId = req.user.userId;
-        if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
+        const _id = req.user._id;
+                if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
 
         filePath = req.file.path;
         const dataBuffer = await fs.readFile(filePath);
@@ -292,7 +291,7 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
         cache.set("lastDocumentContent", filteredText, 600);
 
         await ContentHistory.findOneAndUpdate(
-            { userId },
+            { _id: _id },
             { $push: { contents: { type: "pdf", content: filteredText, summary } }, $set: { lastUpdated: Date.now() } },
             { upsert: true }
         );
@@ -310,8 +309,7 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
 app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
     try {
         const { question, language = "English", detailLevel = "normal" } = req.body;
-        const userId = req.user.userId;
-
+        const _id = req.user._id;
         if (!question || question.trim().length < 3) {
             return res.status(400).json({
                 error: "Câu hỏi quá ngắn hoặc không hợp lệ",
@@ -329,7 +327,7 @@ app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
         const lowerQuestion = question.toLowerCase();
         const createPrompt = async () => {
             let prompt = `Bạn là trợ lý AI thông minh. Trả lời chi tiết bằng ${language}, độ chi tiết: ${detailLevel === "high" ? "rất cao" : "bình thường"}.\n\n`;
-            const chatHistory = await ChatHistory.findOne({ userId });
+            const chatHistory = await ChatHistory.findOne({ _id });
             if (chatHistory && chatHistory.messages.length > 0) {
                 prompt += "Lịch sử chat:\n";
                 chatHistory.messages.slice(-5).forEach(msg => {
@@ -353,13 +351,13 @@ app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
         const source = `${latestContent.type} vừa tải lên lúc ${new Date(latestContent.timestamp).toLocaleString()}`;
 
         await ChatHistory.findOneAndUpdate(
-            { userId },
+            { _id: _id },
             { $push: { messages: { question, answer, source } }, $set: { lastUpdated: Date.now() } },
             { upsert: true }
         );
 
-        const updatedHistory = await ChatHistory.findOne({ userId }).select("messages");
-        cache.set(`chat:${userId}:${Date.now()}`, { question, answer }, 3600);
+        const updatedHistory = await ChatHistory.findOne({ _id }).select("messages");
+        cache.set(`chat:${_id}:${Date.now()}`, { question, answer }, 3600);
 
         res.json({
             question,
@@ -393,18 +391,18 @@ app.get("/last-content", verifyToken, (req, res) => {
 });
 
 // API to get content history
-app.get("/content-history/:userId", verifyToken, async (req, res) => {
+app.get("/content-history/:_id", verifyToken, async (req, res) => {
     try {
-        const { userId } = req.params;
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
+        const { _id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(_id)) {
             return res.status(400).json({ error: "User ID không hợp lệ" });
         }
-        if (req.user.userId !== userId && req.user.role !== "admin") {
+        if (req.user._id !== _id && req.user.role !== "admin") {
             return res.status(403).json({ error: "Bạn không có quyền truy cập lịch sử của user này." });
         }
-        const history = await ContentHistory.findOne({ userId }).select("contents");
+        const history = await ContentHistory.findOne({ _id }).select("contents");
         res.json({
-            userId,
+            _id,
             history: history ? history.contents : [],
             timestamp: new Date().toISOString(),
             status: "success",
@@ -415,18 +413,18 @@ app.get("/content-history/:userId", verifyToken, async (req, res) => {
 });
 
 // API to get chat history
-app.get("/chat-history/:userId", verifyToken, async (req, res) => {
+app.get("/chat-history/:_id", verifyToken, async (req, res) => {
     try {
-        const { userId } = req.params;
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
+        const { _id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(_id)) {
             return res.status(400).json({ error: "User ID không hợp lệ" });
         }
-        if (req.user.userId !== userId && req.user.role !== "admin") {
+        if (req.user._id !== _id && req.user.role !== "admin") {
             return res.status(403).json({ error: "Bạn không có quyền truy cập lịch sử chat của user này." });
         }
-        const history = await ChatHistory.findOne({ userId }).select("messages");
+        const history = await ChatHistory.findOne({ _id }).select("messages");
         res.json({
-            userId,
+            _id,
             history: history ? history.messages : [],
             timestamp: new Date().toISOString(),
             status: "success",

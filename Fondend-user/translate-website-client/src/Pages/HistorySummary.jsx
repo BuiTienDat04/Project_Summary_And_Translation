@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ListBulletIcon } from '@heroicons/react/24/outline';
 import { XMarkIcon } from '@heroicons/react/24/solid';
-import useHistory from '../hooks/useHistory';
+import axios from 'axios';
+import { API_BASE_URL } from "../api/api";
 
 const HistorySummary = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedItem, setSelectedItem] = useState(null);
-    const { history, loading, error, refetch } = useHistory();
+    const [history, setHistory] = useState([]); // Lưu trữ cả ContentHistory và ChatHistory
+    const [loading, setLoading] = useState(true);
+    const [selectedItem, setSelectedItem] = useState(null); // Chi tiết mục được chọn
+    const [error, setError] = useState(null);
 
     const toggleOpen = () => {
         setIsOpen(!isOpen);
@@ -20,15 +23,15 @@ const HistorySummary = () => {
                 setLoading(true);
                 setError(null);
                 const token = localStorage.getItem('token');
-                const userId = localStorage.getItem('userId');
-                if (!userId) throw new Error('User ID not found in localStorage');
+                const _id = localStorage.getItem('_id');
+                if (!_id) throw new Error('User ID not found in localStorage');
                 if (!token) throw new Error('Token not found in localStorage');
     
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                console.log('Fetching history for userId:', userId);
+                console.log('Fetching history for _id:', _id);
     
-                const contentResponse = await axios.get(`${API_BASE_URL}/content-history/${userId}`, config);
-                const chatResponse = await axios.get(`${API_BASE_URL}/chat-history/${userId}`, config);
+                const contentResponse = await axios.get(`${API_BASE_URL}/content-history/${_id}`, config);
+                const chatResponse = await axios.get(`${API_BASE_URL}/chat-history/${_id}`, config);
     
                 console.log('Content Response:', contentResponse.data);
                 console.log('Chat Response:', chatResponse.data);
@@ -69,10 +72,10 @@ const HistorySummary = () => {
 
         try {
             const token = localStorage.getItem('token');
-            const userId = localStorage.getItem('userId');
+            const _id = localStorage.getItem('_id');
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
-            await axios.delete(`${API_BASE_URL}/content-history/${userId}/${itemId}`, config);
+            await axios.delete(`${API_BASE_URL}/content-history/${_id}/${itemId}`, config);
             setHistory(history.filter(item => item._id !== itemId));
             setSelectedItem(null);
         } catch (error) {

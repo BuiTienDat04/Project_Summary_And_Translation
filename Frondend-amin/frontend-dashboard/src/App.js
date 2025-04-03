@@ -31,7 +31,7 @@ function App() {
         } catch (error) {
           console.error("Token verification failed:", error);
           localStorage.removeItem("token");
-          localStorage.removeItem("userId");
+          localStorage.removeItem("_id");
           localStorage.removeItem("loggedInUser");
           setIsAuthenticated(false);
           navigate("/loginad", { replace: true });
@@ -52,7 +52,7 @@ function App() {
       console.error("Error calling logout API:", error);
     }
     localStorage.removeItem("token");
-    localStorage.removeItem("userId");
+    localStorage.removeItem("_id");
     localStorage.removeItem("loggedInUser");
     setIsAuthenticated(false);
     navigate("/loginad", { replace: true });

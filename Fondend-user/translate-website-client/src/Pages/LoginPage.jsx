@@ -79,9 +79,9 @@ const LoginPage = ({ onClose, onOpenRegister }) => { // Giữ lại props nếu 
         return;
       }
 
-      // Lưu token và userId vào localStorage
+      // Lưu token và _id vào localStorage
       localStorage.setItem("token", token);
-      localStorage.setItem("userId", user._id); // Thêm dòng này để lưu _id
+      localStorage.setItem("_id", user._id); // Thêm dòng này để lưu _id
       localStorage.setItem("loggedInUser", JSON.stringify(user)); // Giữ nguyên nếu cần toàn bộ thông tin user
 
       console.log("Logged in user ID:", user._id); // Log để kiểm tra
@@ -108,7 +108,7 @@ const LoginPage = ({ onClose, onOpenRegister }) => { // Giữ lại props nếu 
         console.log("Cleared previous session");
         // Xóa thông tin người dùng khỏi localStorage khi vào trang login
         localStorage.removeItem("token");
-        localStorage.removeItem("userId");
+        localStorage.removeItem("_id");
         localStorage.removeItem("loggedInUser");
       } catch (error) {
         // Không cần hiển thị lỗi này cho người dùng, chỉ log ra console
