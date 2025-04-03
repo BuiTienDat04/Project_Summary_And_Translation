@@ -63,7 +63,7 @@ function App() {
       />
       <div className="min-h-screen bg-gray-100">
         {isAuthenticated && <Navbar onLogout={handleLogout} />}
-        <main className={isAuthenticated ? "pt-16" : ""}>
+        <main className={isAuthenticated ? "pt-0" : ""}>
           <Routes>
             <Route
               path="/loginad"
