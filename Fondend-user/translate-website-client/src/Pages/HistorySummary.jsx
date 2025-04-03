@@ -6,51 +6,78 @@ import { API_BASE_URL } from "../api/api";
 
 const HistorySummary = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const [history, setHistory] = useState([]); // Store history from API
-    const [loading, setLoading] = useState(true); // Loading state
-    const [selectedItem, setSelectedItem] = useState(null); // Track selected history item for details
-    const [error, setError] = useState(null); // Error state for API calls
+    const [history, setHistory] = useState([]); // Lưu trữ cả ContentHistory và ChatHistory
+    const [loading, setLoading] = useState(true);
+    const [selectedItem, setSelectedItem] = useState(null); // Chi tiết mục được chọn
+    const [error, setError] = useState(null);
 
     const toggleOpen = () => {
         setIsOpen(!isOpen);
-        if (selectedItem) setSelectedItem(null); // Close details when closing the panel
+        if (selectedItem) setSelectedItem(null);
     };
 
-    // Fetch history from API when component mounts
+    // Lấy dữ liệu từ API
     useEffect(() => {
         const fetchHistory = async () => {
             try {
                 setLoading(true);
                 setError(null);
-                const token = localStorage.getItem('token'); // Get token from localStorage
-                const response = await axios.get(`${API_BASE_URL}/api/user/history`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-                setHistory(response.data.contents || []); // Store the contents array
+                const token = localStorage.getItem('token');
+                const userId = localStorage.getItem('userId');
+                if (!userId) throw new Error('User ID not found in localStorage');
+                if (!token) throw new Error('Token not found in localStorage');
+    
+                const config = { headers: { Authorization: `Bearer ${token}` } };
+                console.log('Fetching history for userId:', userId);
+    
+                const contentResponse = await axios.get(`${API_BASE_URL}/content-history/${userId}`, config);
+                const chatResponse = await axios.get(`${API_BASE_URL}/chat-history/${userId}`, config);
+    
+                console.log('Content Response:', contentResponse.data);
+                console.log('Chat Response:', chatResponse.data);
+    
+                const contentHistory = (contentResponse.data.history || []).map(item => ({
+                    ...item,
+                    source: 'content',
+                }));
+                const chatHistory = (chatResponse.data.history || []).map(item => ({
+                    type: 'chat',
+                    content: item.question,
+                    summary: item.answer,
+                    source: item.source || 'chat',
+                    timestamp: item.timestamp || Date.now(),
+                    _id: item._id,
+                }));
+    
+                const combinedHistory = [...contentHistory, ...chatHistory].sort(
+                    (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+                );
+                console.log('Combined History:', combinedHistory);
+    
+                setHistory(combinedHistory);
                 setLoading(false);
             } catch (error) {
-                console.error('Error fetching history:', error);
+                console.error('Error fetching history:', error.response ? error.response.data : error.message);
                 setError('Failed to load history. Please try again later.');
                 setLoading(false);
             }
         };
-
+    
         fetchHistory();
     }, []);
 
-    // Handle deletion of a history item
-    const handleDelete = async (contentId) => {
+    // Xóa một mục từ ContentHistory
+    const handleDelete = async (itemId, source) => {
+        if (source !== 'content') return; // Chỉ xóa được từ ContentHistory
+
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`${API_BASE_URL}/api/user/history/${contentId}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            setHistory(history.filter((item) => item._id !== contentId)); // Remove deleted item from state
-            setSelectedItem(null); // Close the details view
+            const userId = localStorage.getItem('userId');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+
+            await axios.delete(`${API_BASE_URL}/content-history/${userId}/${itemId}`, config);
+            setHistory(history.filter(item => item._id !== itemId));
+            setSelectedItem(null);
         } catch (error) {
             console.error('Error deleting history item:', error);
             setError('Failed to delete history item. Please try again.');
@@ -59,21 +86,13 @@ const HistorySummary = () => {
 
     return (
         <>
-            {/* Overlay */}
-            {isOpen && (
-                <div
-                    className="fixed inset-0 bg-gray-900/40 z-40"
-                    onClick={toggleOpen}
-                />
-            )}
-
+            {isOpen && <div className="fixed inset-0 bg-gray-900/40 z-40" onClick={toggleOpen} />}
             <div
                 className={`fixed top-20 left-6 shadow-2xl rounded-2xl overflow-hidden transition-all duration-500 ease-in-out ${
                     isOpen ? 'w-96 h-[calc(100vh-8rem)]' : 'w-16 h-16'
                 } bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-800`}
                 style={{ zIndex: 50 }}
             >
-                {/* Toggle Button */}
                 <button
                     className="absolute top-0 left-0 w-full h-full flex items-center justify-center p-2 bg-transparent hover:bg-white/50 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/60"
                     onClick={toggleOpen}
@@ -81,34 +100,24 @@ const HistorySummary = () => {
                     {!isOpen ? (
                         <ListBulletIcon className="w-8 h-8 text-white" />
                     ) : (
-                        <div className="w-8 h-8 flex items-center justify-center">
-                            <XMarkIcon className="w-6 h-6 text-white" />
-                        </div>
+                        <XMarkIcon className="w-6 h-6 text-white" />
                     )}
                 </button>
-
-                {/* Content when open */}
                 {isOpen && (
                     <div className="bg-white/95 backdrop-blur-xl p-8 h-full overflow-y-auto transition-opacity duration-300 relative">
-                        {/* Close Button */}
                         <button
                             className="absolute top-6 right-6 p-2 rounded-full bg-indigo-700 hover:bg-indigo-800 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             onClick={toggleOpen}
                         >
                             <XMarkIcon className="w-5 h-5 text-white" />
                         </button>
-
                         <h2 className="text-3xl font-bold mb-6 text-indigo-900 tracking-tight">
-                            Your Translation & Summarization Log
+                            Your Activity History
                         </h2>
                         <p className="text-base text-gray-700 mb-8 leading-relaxed font-medium">
-                            Easily access and manage your history of translated texts and summarized documents.
+                            View and manage your content summaries and chat interactions.
                         </p>
-
-                        {error && (
-                            <p className="text-red-600 mb-4">{error}</p>
-                        )}
-
+                        {error && <p className="text-red-600 mb-4">{error}</p>}
                         {loading ? (
                             <p className="text-gray-600">Loading...</p>
                         ) : history.length === 0 ? (
@@ -122,18 +131,20 @@ const HistorySummary = () => {
                                     >
                                         ← Back
                                     </button>
-                                    <button
-                                        className="text-red-600 font-medium"
-                                        onClick={() => handleDelete(selectedItem._id)}
-                                    >
-                                        Delete
-                                    </button>
+                                    {selectedItem.source === 'content' && (
+                                        <button
+                                            className="text-red-600 font-medium"
+                                            onClick={() => handleDelete(selectedItem._id, selectedItem.source)}
+                                        >
+                                            Delete
+                                        </button>
+                                    )}
                                 </div>
                                 <h3 className="text-xl font-semibold text-indigo-900">Details</h3>
                                 <p><strong>Type:</strong> {selectedItem.type}</p>
                                 <p><strong>Content:</strong> {selectedItem.content}</p>
                                 {selectedItem.summary && (
-                                    <p><strong>Summary:</strong> {selectedItem.summary}</p>
+                                    <p><strong>{selectedItem.type === 'chat' ? 'Answer' : 'Summary'}:</strong> {selectedItem.summary}</p>
                                 )}
                                 {selectedItem.url && (
                                     <p>
@@ -143,10 +154,10 @@ const HistorySummary = () => {
                                         </a>
                                     </p>
                                 )}
-                                <p>
-                                    <strong>Time:</strong>{' '}
-                                    {new Date(selectedItem.timestamp).toLocaleString()}
-                                </p>
+                                {selectedItem.source === 'chat' && selectedItem.source && (
+                                    <p><strong>Source:</strong> {selectedItem.source}</p>
+                                )}
+                                <p><strong>Time:</strong> {new Date(selectedItem.timestamp).toLocaleString()}</p>
                             </div>
                         ) : (
                             <div className="space-y-8">
@@ -168,12 +179,10 @@ const HistorySummary = () => {
                                                     onClick={() => setSelectedItem(item)}
                                                 >
                                                     <span>
-                                                        {item.type === 'text' &&
-                                                            'Text: ' + (item.content.slice(0, 20) + '...')}
-                                                        {item.type === 'pdf' &&
-                                                            'PDF: ' + (item.content.slice(0, 20) + '...')}
-                                                        {item.type === 'link' &&
-                                                            'Link: ' + (item.url || item.content.slice(0, 20) + '...')}
+                                                        {item.type === 'text' && 'Text: ' + (item.content.slice(0, 20) + '...')}
+                                                        {item.type === 'pdf' && 'PDF: ' + (item.content.slice(0, 20) + '...')}
+                                                        {item.type === 'link' && 'Link: ' + (item.url || item.content.slice(0, 20) + '...')}
+                                                        {item.type === 'chat' && 'Chat: ' + (item.content.slice(0, 20) + '...')}
                                                     </span>
                                                     <span className="text-indigo-700 text-sm font-medium">
                                                         {new Date(item.timestamp).toLocaleTimeString()}
@@ -188,12 +197,8 @@ const HistorySummary = () => {
                     </div>
                 )}
             </div>
-
-            {/* Main content shift */}
-            <div
-                className={`transition-all duration-500 ${isOpen ? 'ml-[26rem]' : 'ml-20'}`}
-            >
-                {/* Placeholder for main content */}
+            <div className={`transition-all duration-500 ${isOpen ? 'ml-[26rem]' : 'ml-20'}`}>
+                {/* Placeholder cho nội dung chính */}
             </div>
         </>
     );

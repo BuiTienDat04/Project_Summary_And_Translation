@@ -3,6 +3,7 @@ import { Upload, Download, Trash2 } from "lucide-react";
 import ChatBox from "../Pages/ChatBox";
 import { API_BASE_URL } from "../api/api";
 import nlp from "compromise";
+import HistorySummary from "./HistorySummary"; // Import HistorySummary
 
 export default function DocumentSummarySection() {
     const [file, setFile] = useState(null);
@@ -231,7 +232,6 @@ export default function DocumentSummarySection() {
             }
 
             const data = await response.json();
-            console.log("Translation response:", data); // Debug để kiểm tra dữ liệu trả về
             setTranslatedContent(data.translation || "Unable to translate content.");
 
             const content = `File Name: ${file?.name || "document"}\n\nOriginal Text:\n${originalContent}\n\nSummary:\n${summaryContent}\n\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}):\n${data.translation || "No translation"}`;
@@ -256,6 +256,9 @@ export default function DocumentSummarySection() {
 
     return (
         <div className="relative min-h-screen">
+            {/* Thêm HistorySummary vào đây */}
+            <HistorySummary />
+
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     <section className="space-y-4 sm:space-y-6 p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
@@ -401,7 +404,7 @@ export default function DocumentSummarySection() {
                                                 <li
                                                     key={lang.code}
                                                     className="px-3 py-2 sm:px-4 sm:py-2 hover:bg-emerald-100 cursor-pointer text-sm sm:text-base"
-                                                    onMouseDown={() => handleLanguageSelect(lang.code, lang.name)} // Dùng onMouseDown thay onClick để tránh onBlur chạy trước
+                                                    onMouseDown={() => handleLanguageSelect(lang.code, lang.name)}
                                                 >
                                                     {lang.name}
                                                 </li>
