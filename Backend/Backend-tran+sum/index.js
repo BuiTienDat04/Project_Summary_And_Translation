@@ -55,14 +55,12 @@ let latestContent = { type: null, content: null, timestamp: null };
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const cors = require("cors");
-app.use(
-    cors({
-        origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online", "https://admin.pdfsmart.online", "https://api.pdfsmart.online"],
-        credentials: true,  // 👈 Bắt buộc! Cho phép cookie
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"],
-    })
-);
+app.use(cors({
+    origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"],
+}));
 app.options("*", cors());
 
 app.use(helmet());
@@ -311,79 +309,74 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
 });
 
 // API to handle chat
-// Thêm rate limiter mới cho public chat
-const publicChatLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 phút
-    max: 30, // Giới hạn 30 requests mỗi IP
-    message: { error: "Too many chat requests, please try again later." }
-});
-
-// Sửa đổi endpoint chat hiện có
-app.post("/chat", publicChatLimiter, async (req, res) => {
+app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
     try {
-        const { question, language = "English" } = req.body;
-        let userId = "guest"; // Mặc định cho user chưa đăng nhập
-
-        // Nếu có token, lấy userId từ token
-        if (req.headers.authorization) {
-            const token = req.headers.authorization.split(' ')[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            userId = decoded.userId;
-        }
+        const { question, language = "English", detailLevel = "normal" } = req.body;
+        const userId = req.user.userId;
 
         if (!question || question.trim().length < 3) {
-            return res.status(400).json({ error: "Question too short (min 3 characters)" });
+            return res.status(400).json({
+                error: "Câu hỏi quá ngắn hoặc không hợp lệ",
+                timestamp: new Date().toISOString(),
+            });
         }
 
-        // Tạo prompt cơ bản cho guest, chi tiết hơn cho user đã đăng nhập
-        let prompt;
-        if (userId === "guest") {
-            prompt = `Answer the following question in ${language}:\n\n${question}\n\n`;
-            if (latestContent.content) {
-                prompt += `Context:\n${latestContent.content.substring(0, 1000)}`;
-            }
-        } else {
-            // Giữ logic cũ cho user đã đăng nhập
+        if (!latestContent.content || !latestContent.timestamp) {
+            return res.status(400).json({
+                error: "Vui lòng tải lên nội dung (text, PDF, hoặc link) trước khi đặt câu hỏi.",
+                timestamp: new Date().toISOString(),
+            });
+        }
+
+        const lowerQuestion = question.toLowerCase();
+        const createPrompt = async () => {
+            let prompt = `Bạn là trợ lý AI thông minh. Trả lời chi tiết bằng ${language}, độ chi tiết: ${detailLevel === "high" ? "rất cao" : "bình thường"}.\n\n`;
             const chatHistory = await ChatHistory.findOne({ userId });
-            prompt = `You are an AI assistant. Answer in ${language}.\n\n`;
-            if (chatHistory) {
-                prompt += "Chat history:\n";
-                chatHistory.messages.slice(-3).forEach(msg => {
-                    prompt += `Q: ${msg.question}\nA: ${msg.answer}\n\n`;
+            if (chatHistory && chatHistory.messages.length > 0) {
+                prompt += "Lịch sử chat:\n";
+                chatHistory.messages.slice(-5).forEach(msg => {
+                    prompt += `Hỏi: ${msg.question}\nTrả lời: ${msg.answer}\n\n`;
                 });
             }
-            if (latestContent.content) {
-                prompt += `Context:\n${latestContent.content}\n\n`;
+            prompt += `Nội dung: ${latestContent.content}\n\n`;
+            if (lowerQuestion.includes("tóm tắt") || lowerQuestion.includes("summary")) {
+                prompt += "Tóm tắt nội dung trên một cách chi tiết, bao gồm các ý chính và chi tiết quan trọng.";
+            } else if (lowerQuestion.includes("dịch") || lowerQuestion.includes("translate")) {
+                const targetLang = lowerQuestion.match(/dịch sang (.+)$/i)?.[1] || language;
+                prompt += `Dịch nội dung sang ${targetLang}.`;
+            } else {
+                prompt += `Câu hỏi: ${question}\nHãy trả lời dựa trên nội dung trên, giải thích rõ ràng.`;
             }
-            prompt += `Question: ${question}`;
-        }
+            return prompt;
+        };
 
+        const prompt = await createPrompt();
         const answer = await callGeminiAPI(prompt);
-        const source = latestContent.content 
-            ? `From ${latestContent.type} content` 
-            : "General knowledge";
+        const source = `${latestContent.type} vừa tải lên lúc ${new Date(latestContent.timestamp).toLocaleString()}`;
 
-        // Chỉ lưu lịch sử cho user đã đăng nhập
-        if (userId !== "guest") {
-            await ChatHistory.findOneAndUpdate(
-                { userId },
-                { $push: { messages: { question, answer } } },
-                { upsert: true }
-            );
-        }
+        await ChatHistory.findOneAndUpdate(
+            { userId },
+            { $push: { messages: { question, answer, source } }, $set: { lastUpdated: Date.now() } },
+            { upsert: true }
+        );
+
+        const updatedHistory = await ChatHistory.findOne({ userId }).select("messages");
+        cache.set(`chat:${userId}:${Date.now()}`, { question, answer }, 3600);
 
         res.json({
+            question,
             answer,
             source,
+            history: updatedHistory.messages,
+            timestamp: new Date().toISOString(),
             status: "success",
-            timestamp: new Date().toISOString()
         });
-
     } catch (error) {
-        console.error("Chat error:", error);
-        res.status(500).json({ 
-            error: "Error processing your request",
-            details: error.message 
+        console.error("❌ Lỗi khi xử lý câu hỏi:", error.message);
+        res.status(500).json({
+            error: error.message || "Lỗi trong quá trình chat",
+            question: req.body.question,
+            timestamp: new Date().toISOString(),
         });
     }
 });

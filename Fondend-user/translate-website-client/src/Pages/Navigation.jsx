@@ -1,14 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { API_BASE_URL } from "../api/api";
-import HistorySummary from "./HistorySummary";
 import axios from "axios";
 
 const Navigation = ({ loggedInUsername, onLoginClick, onRegisterClick, onLogout, onContactClick, onFeaturesClick }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
     // Hide navigation on login/register pages
     if (location.pathname === "/login" || location.pathname === "/register") {
