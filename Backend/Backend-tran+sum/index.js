@@ -20,8 +20,6 @@ const ContentHistory = require("./models/ContentHistory");
 const authRoutes = require("./routes/auth");
 const adminRoutes = require("./routes/admin");
 const dashboardRoutes = require("./routes/dashboard");
-const summaryRoutes = require("./routes/summary");
-const uploadRoutes = require("./routes/upload");
 const userRoutes = require("./routes/userRoutes");
 const { verifyToken, verifyAdmin } = require("./middleware/authMiddleware");
 
@@ -56,7 +54,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const cors = require("cors");
 app.use(cors({
-    origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online"],
+    origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online","https://admin.pdfsmart.online" ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"],
