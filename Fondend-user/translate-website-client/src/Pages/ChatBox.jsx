@@ -111,7 +111,7 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
                 </button>
             )}
 
-            {/* Chat Box */}
+            {/* Chat     Box */}
             {isOpen && (
                 <div className="bg-white rounded-xl shadow-2xl w-80 sm:w-96 h-[500px] flex flex-col overflow-hidden border border-gray-200">
                     {/* Header */}
