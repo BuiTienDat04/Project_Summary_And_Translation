@@ -40,6 +40,7 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
     }
 
     const handleSendMessage = async () => {
+
         const token = localStorage.getItem("token");
         console.log("🔍 Token trước khi gửi request:", token); // Debug token
 
@@ -50,31 +51,46 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
     
         if (!userInput.trim()) return;
         if (userInput.length > 500) {
-            setError("The question is too long, please keep it under 500 characters.");
+            setError("Message too long (max 500 characters)");
             return;
         }
     
         const newMessage = { role: "user", content: userInput };
-        setMessages((prev) => [...prev, newMessage]);
+        setMessages(prev => [...prev, newMessage]);
         setUserInput("");
         setError("");
         setIsLoading(true);
     
         try {
+            const token = localStorage.getItem("token");
+            const config = token ? {
+                headers: { Authorization: `Bearer ${token}` }
+            } : {};
             const response = await api.post(
                 "/chat",
                 { question: userInput },
                 { headers: { Authorization: `Bearer ${token}` } } // Đảm bảo token được gửi
             );
     
-            const { answer, source } = response.data;
-            setMessages((prev) => [...prev, { role: "bot", content: answer, source }]);
+            const response = await api.post("/chat", { 
+                question: userInput 
+            }, config);
+    
+            setMessages(prev => [...prev, { 
+                role: "bot", 
+                content: response.data.answer,
+                source: response.data.source 
+            }]);
+            
         } catch (error) {
-            setError(error.response?.data?.error || "Error sending message. Please try again.");
+            setError(error.response?.data?.error || "Failed to send message");
+            console.error("Chat error:", error);
         } finally {
             setIsLoading(false);
         }
     };
+
+
     const handleKeyPress = (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
