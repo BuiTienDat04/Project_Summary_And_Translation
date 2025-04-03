@@ -18,51 +18,44 @@ const HistorySummary = () => {
 
     // Lấy dữ liệu từ API
     useEffect(() => {
+        // Sửa lại frontend API call
         const fetchHistory = async () => {
             try {
-                setLoading(true);
-                setError(null);
-                const token = localStorage.getItem('token');
-                const _id = localStorage.getItem('_id');
-                if (!_id) throw new Error('User ID not found in localStorage');
-                if (!token) throw new Error('Token not found in localStorage');
-    
-                const config = { headers: { Authorization: `Bearer ${token}` } };
-                console.log('Fetching history for _id:', _id);
-    
-                const contentResponse = await axios.get(`${API_BASE_URL}/content-history/${_id}`, config);
-                const chatResponse = await axios.get(`${API_BASE_URL}/chat-history/${_id}`, config);
-    
-                console.log('Content Response:', contentResponse.data);
-                console.log('Chat Response:', chatResponse.data);
-    
-                const contentHistory = (contentResponse.data.history || []).map(item => ({
-                    ...item,
-                    source: 'content',
-                }));
-                const chatHistory = (chatResponse.data.history || []).map(item => ({
-                    type: 'chat',
-                    content: item.question,
-                    summary: item.answer,
-                    source: item.source || 'chat',
-                    timestamp: item.timestamp || Date.now(),
-                    _id: item._id,
-                }));
-    
-                const combinedHistory = [...contentHistory, ...chatHistory].sort(
-                    (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-                );
-                console.log('Combined History:', combinedHistory);
-    
-                setHistory(combinedHistory);
-                setLoading(false);
+              setLoading(true);
+              const token = localStorage.getItem('token');
+              const userId = localStorage.getItem('_id');
+              
+              // Đảm bảo có đủ thông tin xác thực
+              if (!userId || !token) {
+                throw new Error('Authentication required');
+              }
+          
+              const config = { 
+                headers: { 
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                } 
+              };
+          
+              // Sử dụng đúng endpoint với prefix /api
+              const response = await axios.get(
+                `${API_BASE_URL}/api/content-history/${userId}`, 
+                config
+              );
+          
+              // Xử lý response data
+              if (response.data.status === 'success') {
+                setHistory(response.data.data.history || []);
+              } else {
+                setError(response.data.message || 'Failed to load history');
+              }
             } catch (error) {
-                console.error('Error fetching history:', error.response ? error.response.data : error.message);
-                setError('Failed to load history. Please try again later.');
-                setLoading(false);
+              console.error('Fetch history error:', error);
+              setError(error.response?.data?.message || error.message);
+            } finally {
+              setLoading(false);
             }
-        };
-    
+          };
         fetchHistory();
     }, []);
 
