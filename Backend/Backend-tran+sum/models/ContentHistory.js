@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const contentHistorySchema = new mongoose.Schema({
-    userId: {
+    _id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true,

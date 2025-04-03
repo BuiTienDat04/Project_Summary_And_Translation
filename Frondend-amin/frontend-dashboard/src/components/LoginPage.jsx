@@ -54,7 +54,7 @@ const LoginPage = ({ setIsAuthenticated }) => {
       }
 
       localStorage.setItem("token", token);
-      localStorage.setItem("userId", user._id);
+      localStorage.setItem("_id", user._id);
       localStorage.setItem("loggedInUser", JSON.stringify(user));
 
       console.log("Logged in user ID:", user._id);
