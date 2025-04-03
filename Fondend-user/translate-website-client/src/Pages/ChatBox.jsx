@@ -40,6 +40,15 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
     }
 
     const handleSendMessage = async () => {
+
+        const token = localStorage.getItem("token");
+        console.log("🔍 Token trước khi gửi request:", token); // Debug token
+
+        if (!loggedInUser || !token) {
+            setError("Please log in to use the chat.");
+            return;
+        }
+    
         if (!userInput.trim()) return;
         if (userInput.length > 500) {
             setError("Message too long (max 500 characters)");
@@ -57,6 +66,11 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
             const config = token ? {
                 headers: { Authorization: `Bearer ${token}` }
             } : {};
+            const response = await api.post(
+                "/chat",
+                { question: userInput },
+                { headers: { Authorization: `Bearer ${token}` } } // Đảm bảo token được gửi
+            );
     
             const response = await api.post("/chat", { 
                 question: userInput 

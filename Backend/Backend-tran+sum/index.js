@@ -56,12 +56,14 @@ let latestContent = { type: null, content: null, timestamp: null };
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const cors = require("cors");
-app.use(cors({
-    origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online"],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"],
-}));
+app.use(
+    cors({
+        origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online", "https://admin.pdfsmart.online", "https://api.pdfsmart.online"],
+        credentials: true,  // 👈 Bắt buộc! Cho phép cookie
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"],
+    })
+);
 app.options("*", cors());
 
 app.use(helmet());
@@ -311,6 +313,10 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
 
 // API to handle chat
 // Thêm rate limiter mới cho public chat
+app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
+    try {
+        const { question, language = "Vietnamese", detailLevel = "normal" } = req.body;
+        const userId = req.user.userId;
 
 
 // Sửa đổi endpoint chat hiện có
