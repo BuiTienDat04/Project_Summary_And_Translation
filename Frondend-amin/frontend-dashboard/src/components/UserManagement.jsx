@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { API_BASE_URL } from "../api/api";
 import { Eye, EyeOff } from "lucide-react";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
+import moment from "moment";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -10,6 +12,9 @@ const UserManagement = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  const DEFAULT_COUNTRY_CODE = "VN"; // Thay đổi theo quốc gia mặc định của bạn
 
   useEffect(() => {
     fetchUsers();
@@ -59,33 +64,72 @@ const UserManagement = () => {
   };
 
   const handleAddUser = async (e) => {
-    e.preventDefault(); // Ngăn form submit mặc định nếu đây là form
+    e.preventDefault();
     try {
       setLoading(true);
       setError("");
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Authentication required.");
 
+      let { name, email, password, phoneNumber, dateOfBirth, role } = newUser;
+
+      // Validate Email
+      if (!emailRegex.test(email)) {
+        throw new Error("Invalid email format. Only Gmail accounts are allowed.");
+      }
+
+      // Validate Password
+      if (!passwordRegex.test(password)) {
+        throw new Error("Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.");
+      }
+
+      // Validate Date of Birth
+      if (!dateOfBirth || !moment(dateOfBirth, "YYYY-MM-DD", true).isValid()) {
+        throw new Error("Invalid date of birth format. Use YYYY-MM-DD.");
+      }
+      const age = moment().diff(moment(dateOfBirth, "YYYY-MM-DD"), "years");
+      if (age < 13) {
+        throw new Error("You must be at least 13 years old to register.");
+      }
+
+      // Normalize and Validate Phone Number
+      let parsedPhone = parsePhoneNumberFromString(phoneNumber, DEFAULT_COUNTRY_CODE);
+      if (!parsedPhone || !parsedPhone.isValid()) {
+        throw new Error("Invalid phone number format.");
+      }
+      phoneNumber = parsedPhone.formatInternational(); // Convert to standard format
+
+      // Check if Email or Phone Number Exists
+      const usersResponse = await fetch(`${API_BASE_URL}/api/users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!usersResponse.ok) throw new Error("Failed to fetch users.");
+      const users = await usersResponse.json();
+
+      if (users.some((user) => user.email === email)) {
+        throw new Error("Email already exists.");
+      }
+      if (users.some((user) => user.phoneNumber === phoneNumber)) {
+        throw new Error("Phone number already in use.");
+      }
+
+      // Send API Request to Create User
       const response = await fetch(`${API_BASE_URL}/api/users/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(newUser),
+        body: JSON.stringify({ name, email, password, phoneNumber, dateOfBirth, role: role || "user" }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: "Failed to add user" }));
         throw new Error(errorData.message || `Failed to add user (status: ${response.status})`);
       }
-      const addedUser = await response.json();
 
-      // Kiểm tra xem addedUser.user có tồn tại không
+      const addedUser = await response.json();
       if (addedUser && addedUser.user) {
         setUsers((prevUsers) => [...prevUsers, addedUser.user]);
-        // Reset form sau khi thêm thành công
         setNewUser({ name: "", email: "", phoneNumber: "", dateOfBirth: "", password: "", role: "user" });
       } else {
-        // Nếu response không như mong đợi, fetch lại danh sách
-        console.warn("Add user response format unexpected, fetching updated list.");
         fetchUsers();
       }
 
@@ -107,38 +151,38 @@ const UserManagement = () => {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Authentication required.");
 
-      // Gọi API để lấy danh sách tất cả người dùng
+      let { name, email, phoneNumber, dateOfBirth, role } = editingUser;
+
+      // Normalize Phone Number
+      let parsedPhone = parsePhoneNumberFromString(phoneNumber, DEFAULT_COUNTRY_CODE);
+      if (!parsedPhone || !parsedPhone.isValid()) {
+        throw new Error("Invalid phone number format.");
+      }
+      phoneNumber = parsedPhone.formatInternational();
+
+      // Fetch User List
       const usersResponse = await fetch(`${API_BASE_URL}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!usersResponse.ok) throw new Error("Failed to fetch users");
+      if (!usersResponse.ok) throw new Error("Failed to fetch users.");
 
       const users = await usersResponse.json();
 
-      // Kiểm tra email hoặc số điện thoại đã tồn tại hay chưa (trừ chính user đang chỉnh sửa)
-      const emailExists = users.some(
-        (user) => user.email === editingUser.email && user._id !== editingUser._id
-      );
-
-      const phoneExists = users.some(
-        (user) => user.phoneNumber === editingUser.phoneNumber && user._id !== editingUser._id
-      );
-
-      if (emailExists) {
+      // Check Email and Phone Duplication (excluding the current user)
+      if (users.some((user) => user.email === email && user._id !== editingUser._id)) {
         throw new Error("Email is already in use by another account.");
       }
-
-      if (phoneExists) {
+      if (users.some((user) => user.phoneNumber === phoneNumber && user._id !== editingUser._id)) {
         throw new Error("Phone number is already in use by another account.");
       }
 
-      // Chỉ gửi các trường cần cập nhật
-      const updatedData = { ...editingUser };
-      if (!updatedData.password) {
-        delete updatedData.password; // Không gửi password nếu không thay đổi
+      // Prepare Data for Update
+      const updatedData = { name, email, phoneNumber, dateOfBirth, role };
+      if (!editingUser.password) {
+        delete updatedData.password; // Don't send password if not changed
       }
 
+      // Send API Request to Update User
       const response = await fetch(`${API_BASE_URL}/api/users/${editingUser._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -151,15 +195,10 @@ const UserManagement = () => {
       }
 
       const updatedUser = await response.json();
-
-      // Cập nhật danh sách người dùng
       if (updatedUser && updatedUser.user) {
-        setUsers((prevUsers) =>
-          prevUsers.map((user) => (user._id === updatedUser.user._id ? updatedUser.user : user))
-        );
-        setEditingUser(null); // Đóng modal chỉnh sửa
+        setUsers((prevUsers) => prevUsers.map((user) => (user._id === updatedUser.user._id ? updatedUser.user : user)));
+        setEditingUser(null);
       } else {
-        console.warn("Update user response format unexpected, fetching updated list.");
         fetchUsers();
         setEditingUser(null);
       }
@@ -171,7 +210,6 @@ const UserManagement = () => {
       setLoading(false);
     }
   };
-
 
   const handleDeleteUser = async (user) => {
     // Xác nhận trước khi xóa
