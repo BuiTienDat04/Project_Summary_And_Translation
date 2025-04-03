@@ -313,7 +313,7 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
 // API to handle chat
 app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
     try {
-        const { question, language = "English", detailLevel = "normal" } = req.body;
+        const { question, language = "Vietnamese", detailLevel = "normal" } = req.body;
         const userId = req.user.userId;
 
         if (!question || question.trim().length < 3) {

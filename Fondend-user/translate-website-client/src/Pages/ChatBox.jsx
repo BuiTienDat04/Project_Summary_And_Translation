@@ -41,6 +41,8 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
 
     const handleSendMessage = async () => {
         const token = localStorage.getItem("token");
+        console.log("🔍 Token trước khi gửi request:", token); // Debug token
+
         if (!loggedInUser || !token) {
             setError("Please log in to use the chat.");
             return;
@@ -59,9 +61,11 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
         setIsLoading(true);
     
         try {
-            const response = await api.post("/chat", {
-                question: userInput,
-            });
+            const response = await api.post(
+                "/chat",
+                { question: userInput },
+                { headers: { Authorization: `Bearer ${token}` } } // Đảm bảo token được gửi
+            );
     
             const { answer, source } = response.data;
             setMessages((prev) => [...prev, { role: "bot", content: answer, source }]);
