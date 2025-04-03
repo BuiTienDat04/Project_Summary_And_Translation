@@ -12,6 +12,7 @@ const NodeCache = require("node-cache");
 const cookieParser = require("cookie-parser");
 const axios = require("axios");
 const cheerio = require("cheerio");
+const jwt = require('jsonwebtoken'); // Thêm dòng này ở phần imports
 
 const User = require("./models/User");
 const Visit = require("./models/Visit");
@@ -310,11 +311,7 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
 
 // API to handle chat
 // Thêm rate limiter mới cho public chat
-const publicChatLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 phút
-    max: 30, // Giới hạn 30 requests mỗi IP
-    message: { error: "Too many chat requests, please try again later." }
-});
+
 
 // Sửa đổi endpoint chat hiện có
 app.post("/chat", publicChatLimiter, async (req, res) => {
