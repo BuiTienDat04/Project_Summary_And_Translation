@@ -23,7 +23,7 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
             setMessages([
                 {
                     role: "bot",
-                    content: "Hello! Summarize text, provide a URL, or upload a PDF so I can answer your question.",
+                    content: "Hello Summarize text, provide a URL, or upload a PDF so I can answer your question.",
                 },
             ]);
         }
