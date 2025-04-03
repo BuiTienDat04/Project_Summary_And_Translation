@@ -3,8 +3,10 @@ const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
 const User = require("../models/User");
 const { verifyToken, verifyAdmin } = require("../middleware/authMiddleware");
-
+const ContentHistory = require('../models/ContentHistory');
 const router = express.Router();
+const authMiddleware = require('../middleware/authMiddleware');
+
 
 /** 
  * ✅ API: Lấy danh sách user
@@ -124,6 +126,23 @@ router.delete("/:id", verifyToken, verifyAdmin, async (req, res) => {
   } catch (error) {
     console.error("❌ Error deleting user:", error);
     res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+});
+
+// Lấy lịch sử nội dung của người dùng
+router.get('/history', verifyToken, async (req, res) => {
+  try {
+      const userId = req.user.id; 
+      const history = await ContentHistory.findOne({ userId }).populate('userId', 'username email');
+      
+      if (!history) {
+          return res.status(404).json({ message: 'No history found' });
+      }
+
+      res.status(200).json(history);
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server Error!' });
   }
 });
 

@@ -1,12 +1,60 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ListBulletIcon } from '@heroicons/react/24/outline';
 import { XMarkIcon } from '@heroicons/react/24/solid';
+import axios from 'axios';
+import { API_BASE_URL } from "../api/api";
 
 const HistorySummary = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const [history, setHistory] = useState([]); // Store history from API
+    const [loading, setLoading] = useState(true); // Loading state
+    const [selectedItem, setSelectedItem] = useState(null); // Track selected history item for details
+    const [error, setError] = useState(null); // Error state for API calls
 
     const toggleOpen = () => {
         setIsOpen(!isOpen);
+        if (selectedItem) setSelectedItem(null); // Close details when closing the panel
+    };
+
+    // Fetch history from API when component mounts
+    useEffect(() => {
+        const fetchHistory = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const token = localStorage.getItem('token'); // Get token from localStorage
+                const response = await axios.get(`${API_BASE_URL}/api/user/history`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                setHistory(response.data.contents || []); // Store the contents array
+                setLoading(false);
+            } catch (error) {
+                console.error('Error fetching history:', error);
+                setError('Failed to load history. Please try again later.');
+                setLoading(false);
+            }
+        };
+
+        fetchHistory();
+    }, []);
+
+    // Handle deletion of a history item
+    const handleDelete = async (contentId) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`${API_BASE_URL}/api/user/history/${contentId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            setHistory(history.filter((item) => item._id !== contentId)); // Remove deleted item from state
+            setSelectedItem(null); // Close the details view
+        } catch (error) {
+            console.error('Error deleting history item:', error);
+            setError('Failed to delete history item. Please try again.');
+        }
     };
 
     return (
@@ -20,8 +68,9 @@ const HistorySummary = () => {
             )}
 
             <div
-                className={`fixed top-20 left-6 shadow-2xl rounded-2xl overflow-hidden transition-all duration-500 ease-in-out ${isOpen ? 'w-96 h-[calc(100vh-8rem)]' : 'w-16 h-16'
-                    } bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-800`}
+                className={`fixed top-20 left-6 shadow-2xl rounded-2xl overflow-hidden transition-all duration-500 ease-in-out ${
+                    isOpen ? 'w-96 h-[calc(100vh-8rem)]' : 'w-16 h-16'
+                } bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-800`}
                 style={{ zIndex: 50 }}
             >
                 {/* Toggle Button */}
@@ -56,80 +105,93 @@ const HistorySummary = () => {
                             Easily access and manage your history of translated texts and summarized documents.
                         </p>
 
-                        <div className="space-y-8">
-                            {/* Activity Group 1 */}
-                            <ul className="space-y-3">
-                                <li className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-gray-800 flex justify-between items-center">
-                                    <span>Action 1</span>
-                                    <span className="text-indigo-700 text-sm font-medium">10:30 AM</span>
-                                </li>
-                                <li className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-gray-800 flex justify-between items-center">
-                                    <span>Action 2</span>
-                                    <span className="text-indigo-700 text-sm font-medium">12:15 PM</span>
-                                </li>
-                                <li className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-gray-800 flex justify-between items-center">
-                                    <span>Action 3</span>
-                                    <span className="text-indigo-700 text-sm font-medium">3:45 PM</span>
-                                </li>
-                            </ul>
+                        {error && (
+                            <p className="text-red-600 mb-4">{error}</p>
+                        )}
 
-                            {/* Activity Group 2 */}
-                            <ul className="space-y-3">
-                                <li className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-gray-800 flex justify-between items-center">
-                                    <span>Action 4</span>
-                                    <span className="text-indigo-700 text-sm font-medium">10:30 AM</span>
-                                </li>
-                                <li className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-gray-800 flex justify-between items-center">
-                                    <span>Action 5</span>
-                                    <span className="text-indigo-700 text-sm font-medium">12:15 PM</span>
-                                </li>
-                                <li className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-gray-800 flex justify-between items-center">
-                                    <span>Action 6</span>
-                                    <span className="text-indigo-700 text-sm font-medium">3:45 PM</span>
-                                </li>
-                            </ul>
-
-                            {/* Activity Group 3 */}
-                            <ul className="space-y-3">
-                                <li className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-gray-800 flex justify-between items-center">
-                                    <span>Action 7</span>
-                                    <span className="text-indigo-700 text-sm font-medium">10:30 AM</span>
-                                </li>
-                                <li className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-gray-800 flex justify-between items-center">
-                                    <span>Action 8</span>
-                                    <span className="text-indigo-700 text-sm font-medium">12:15 PM</span>
-                                </li>
-                                <li className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-gray-800 flex justify-between items-center">
-                                    <span>Action 9</span>
-                                    <span className="text-indigo-700 text-sm font-medium">3:45 PM</span>
-                                </li>
-                            </ul>
-
-                            {/* Activity Group 4 */}
-                            <ul className="space-y-3">
-                                <li className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-gray-800 flex justify-between items-center">
-                                    <span>Action 10</span>
-                                    <span className="text-indigo-700 text-sm font-medium">10:30 AM</span>
-                                </li>
-                                <li className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-gray-800 flex justify-between items-center">
-                                    <span>Action 11</span>
-                                    <span className="text-indigo-700 text-sm font-medium">12:15 PM</span>
-                                </li>
-                                <li className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-gray-800 flex justify-between items-center">
-                                    <span>Action 12</span>
-                                    <span className="text-indigo-700 text-sm font-medium">3:45 PM</span>
-                                </li>
-                            </ul>
-                        </div>
-
+                        {loading ? (
+                            <p className="text-gray-600">Loading...</p>
+                        ) : history.length === 0 ? (
+                            <p className="text-gray-600">No history to display.</p>
+                        ) : selectedItem ? (
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center">
+                                    <button
+                                        className="text-indigo-700 font-medium"
+                                        onClick={() => setSelectedItem(null)}
+                                    >
+                                        ← Back
+                                    </button>
+                                    <button
+                                        className="text-red-600 font-medium"
+                                        onClick={() => handleDelete(selectedItem._id)}
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                                <h3 className="text-xl font-semibold text-indigo-900">Details</h3>
+                                <p><strong>Type:</strong> {selectedItem.type}</p>
+                                <p><strong>Content:</strong> {selectedItem.content}</p>
+                                {selectedItem.summary && (
+                                    <p><strong>Summary:</strong> {selectedItem.summary}</p>
+                                )}
+                                {selectedItem.url && (
+                                    <p>
+                                        <strong>URL:</strong>{' '}
+                                        <a href={selectedItem.url} target="_blank" rel="noopener noreferrer">
+                                            {selectedItem.url}
+                                        </a>
+                                    </p>
+                                )}
+                                <p>
+                                    <strong>Time:</strong>{' '}
+                                    {new Date(selectedItem.timestamp).toLocaleString()}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-8">
+                                {Object.entries(
+                                    history.reduce((acc, item) => {
+                                        const date = new Date(item.timestamp).toLocaleDateString();
+                                        if (!acc[date]) acc[date] = [];
+                                        acc[date].push(item);
+                                        return acc;
+                                    }, {})
+                                ).map(([date, items]) => (
+                                    <div key={date}>
+                                        <h3 className="text-lg font-semibold text-indigo-900 mb-3">{date}</h3>
+                                        <ul className="space-y-3">
+                                            {items.map((item, index) => (
+                                                <li
+                                                    key={index}
+                                                    className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-gray-800 flex justify-between items-center cursor-pointer"
+                                                    onClick={() => setSelectedItem(item)}
+                                                >
+                                                    <span>
+                                                        {item.type === 'text' &&
+                                                            'Text: ' + (item.content.slice(0, 20) + '...')}
+                                                        {item.type === 'pdf' &&
+                                                            'PDF: ' + (item.content.slice(0, 20) + '...')}
+                                                        {item.type === 'link' &&
+                                                            'Link: ' + (item.url || item.content.slice(0, 20) + '...')}
+                                                    </span>
+                                                    <span className="text-indigo-700 text-sm font-medium">
+                                                        {new Date(item.timestamp).toLocaleTimeString()}
+                                                    </span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
 
             {/* Main content shift */}
             <div
-                className={`transition-all duration-500 ${isOpen ? 'ml-[26rem]' : 'ml-20'
-                    }`}
+                className={`transition-all duration-500 ${isOpen ? 'ml-[26rem]' : 'ml-20'}`}
             >
                 {/* Placeholder for main content */}
             </div>
