@@ -20,8 +20,6 @@ const ContentHistory = require("./models/ContentHistory");
 const authRoutes = require("./routes/auth");
 const adminRoutes = require("./routes/admin");
 const dashboardRoutes = require("./routes/dashboard");
-const summaryRoutes = require("./routes/summary");
-const uploadRoutes = require("./routes/upload");
 const userRoutes = require("./routes/userRoutes");
 const { verifyToken, verifyAdmin } = require("./middleware/authMiddleware");
 
