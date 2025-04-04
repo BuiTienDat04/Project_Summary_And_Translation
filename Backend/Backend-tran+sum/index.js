@@ -54,7 +54,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const cors = require("cors");
 app.use(cors({
-    origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online","https://admin.pdfsmart.online" ],
+    origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online", "https://admin.pdfsmart.online"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"],
@@ -278,7 +278,7 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
     let filePath;
     try {
         const _id = req.user._id;
-                if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
+        if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
 
         filePath = req.file.path;
         const dataBuffer = await fs.readFile(filePath);
@@ -396,29 +396,40 @@ app.get("/last-content", verifyToken, (req, res) => {
 app.get("/api/content-history/:userId", verifyToken, async (req, res) => {
     try {
         console.log(`Fetching content history for user: ${req.params.userId}`);
-        
-        // Kiểm tra quyền truy cập
-        if (req.user._id !== req.params.userId && req.user.role !== "admin") {
-            return res.status(403).json({ 
+
+        // Kiểm tra quyền truy cập: Chỉ cho phép người dùng xem lịch sử của chính họ
+        if (req.user._id !== req.params.userId) {
+            return res.status(403).json({
                 status: 'error',
-                message: 'Unauthorized access' 
+                message: 'Unauthorized access'
             });
         }
 
         const history = await ContentHistory.findOne({ _id: req.params.userId });
-        
+
+        if (!history) {
+            return res.status(200).json({
+                status: 'success',
+                message: 'No content history found',
+                data: {
+                    contents: [],
+                    lastUpdated: null
+                }
+            });
+        }
+
         res.json({
             status: 'success',
             data: {
-                history: history ? history.contents : [],
-                lastUpdated: history ? history.lastUpdated : null
+                contents: history.contents, // Trả về trực tiếp contents
+                lastUpdated: history.lastUpdated
             }
         });
     } catch (error) {
         console.error('Error fetching content history:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             status: 'error',
-            message: error.message 
+            message: error.message
         });
     }
 });
@@ -427,8 +438,8 @@ app.get("/api/chat-history/:userId", verifyToken, async (req, res) => {
     try {
         console.log(`Fetching chat history for user: ${req.params.userId}`);
         
-        // Kiểm tra quyền truy cập
-        if (req.user._id !== req.params.userId && req.user.role !== "admin") {
+        // Kiểm tra quyền truy cập: Chỉ cho phép người dùng xem lịch sử của chính họ
+        if (req.user._id !== req.params.userId) {
             return res.status(403).json({ 
                 status: 'error',
                 message: 'Unauthorized access' 
@@ -437,11 +448,22 @@ app.get("/api/chat-history/:userId", verifyToken, async (req, res) => {
 
         const history = await ChatHistory.findOne({ _id: req.params.userId });
         
+        if (!history) {
+            return res.status(200).json({
+                status: 'success',
+                message: 'No chat history found',
+                data: {
+                    messages: [],
+                    lastUpdated: null
+                }
+            });
+        }
+
         res.json({
             status: 'success',
             data: {
-                history: history ? history.messages : [],
-                lastUpdated: history ? history.lastUpdated : null
+                messages: history.messages, // Trả về trực tiếp messages
+                lastUpdated: history.lastUpdated
             }
         });
     } catch (error) {
@@ -452,6 +474,8 @@ app.get("/api/chat-history/:userId", verifyToken, async (req, res) => {
         });
     }
 });
+
+
 async function fetchContent(url) {
     try {
         if (!url || !url.match(/^https?:\/\//)) throw new Error("URL không hợp lệ");
