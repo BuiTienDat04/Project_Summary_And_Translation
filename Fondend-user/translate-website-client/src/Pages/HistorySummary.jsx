@@ -6,7 +6,7 @@ import { API_BASE_URL } from "../api/api";
 
 const HistorySummary = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const [history, setHistory] = useState([]); // Lưu trữ cả ContentHistory và ChatHistory
+    const [history, setHistory] = useState([]); // Lưu trữ cả ChatHistory và ContentHistory
     const [loading, setLoading] = useState(true);
     const [selectedItem, setSelectedItem] = useState(null); // Chi tiết mục được chọn
     const [error, setError] = useState(null);
@@ -16,59 +16,72 @@ const HistorySummary = () => {
         if (selectedItem) setSelectedItem(null);
     };
 
-    // Lấy dữ liệu từ API
+    // Lấy dữ liệu từ cả ChatHistory và ContentHistory
     useEffect(() => {
-        // Sửa lại frontend API call
         const fetchHistory = async () => {
             try {
-              setLoading(true);
-              const token = localStorage.getItem('token');
-              const userId = localStorage.getItem('_id');
-              
-              // Đảm bảo có đủ thông tin xác thực
-              if (!userId || !token) {
-                throw new Error('Authentication required');
-              }
-          
-              const config = { 
-                headers: { 
-                  Authorization: `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                } 
-              };
-          
-              // Sử dụng đúng endpoint với prefix /api
-              const response = await axios.get(
-                `${API_BASE_URL}/api/content-history/${userId}`, 
-                config
-              );
-          
-              // Xử lý response data
-              if (response.data.status === 'success') {
-                setHistory(response.data.data.history || []);
-              } else {
-                setError(response.data.message || 'Failed to load history');
-              }
+                setLoading(true);
+                const token = localStorage.getItem('token');
+                const userId = localStorage.getItem('_id');
+
+                if (!userId || !token) {
+                    throw new Error('Authentication required');
+                }
+
+                const config = {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                };
+
+                // Gọi API để lấy ChatHistory
+                const chatResponse = await axios.get(`${API_BASE_URL}/api/chat-history/${userId}`, config);
+                const chatData = chatResponse.data.status === 'success' ? chatResponse.data.data.messages : [];
+
+                // Gọi API để lấy ContentHistory
+                const contentResponse = await axios.get(`${API_BASE_URL}/api/content-history/${userId}`, config);
+                const contentData = contentResponse.data.status === 'success' ? contentResponse.data.data.contents : [];
+
+                // Kết hợp dữ liệu từ cả hai nguồn
+                const combinedHistory = [
+                    ...chatData.map(msg => ({
+                        type: 'chat',
+                        content: msg.question,
+                        summary: msg.answer,
+                        source: msg.source,
+                        timestamp: msg.timestamp,
+                        _id: msg._id,
+                    })),
+                    ...contentData.map(item => ({
+                        type: item.type,
+                        content: item.content,
+                        summary: item.summary,
+                        url: item.url || null,
+                        timestamp: item.timestamp,
+                        _id: item._id,
+                    })),
+                ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Sắp xếp theo thời gian giảm dần
+
+                setHistory(combinedHistory);
             } catch (error) {
-              console.error('Fetch history error:', error);
-              setError(error.response?.data?.message || error.message);
+                console.error('Fetch history error:', error);
+                setError(error.response?.data?.message || error.message);
             } finally {
-              setLoading(false);
+                setLoading(false);
             }
-          };
+        };
         fetchHistory();
     }, []);
 
     // Xóa một mục từ ContentHistory
-    const handleDelete = async (itemId, source) => {
-        if (source !== 'content') return; // Chỉ xóa được từ ContentHistory
-
+    const handleDelete = async (itemId) => {
         try {
             const token = localStorage.getItem('token');
-            const _id = localStorage.getItem('_id');
+            const userId = localStorage.getItem('_id');
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
-            await axios.delete(`${API_BASE_URL}/content-history/${_id}/${itemId}`, config);
+            await axios.delete(`${API_BASE_URL}/api/content-history/${userId}/${itemId}`, config);
             setHistory(history.filter(item => item._id !== itemId));
             setSelectedItem(null);
         } catch (error) {
@@ -124,10 +137,10 @@ const HistorySummary = () => {
                                     >
                                         ← Back
                                     </button>
-                                    {selectedItem.source === 'content' && (
+                                    {selectedItem.type !== 'chat' && (
                                         <button
                                             className="text-red-600 font-medium"
-                                            onClick={() => handleDelete(selectedItem._id, selectedItem.source)}
+                                            onClick={() => handleDelete(selectedItem._id)}
                                         >
                                             Delete
                                         </button>
@@ -142,12 +155,12 @@ const HistorySummary = () => {
                                 {selectedItem.url && (
                                     <p>
                                         <strong>URL:</strong>{' '}
-                                        <a href={selectedItem.url} target="_blank" rel="noopener noreferrer">
+                                        <a href={selectedItem.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                                             {selectedItem.url}
                                         </a>
                                     </p>
                                 )}
-                                {selectedItem.source === 'chat' && selectedItem.source && (
+                                {selectedItem.type === 'chat' && selectedItem.source && (
                                     <p><strong>Source:</strong> {selectedItem.source}</p>
                                 )}
                                 <p><strong>Time:</strong> {new Date(selectedItem.timestamp).toLocaleString()}</p>
@@ -172,10 +185,10 @@ const HistorySummary = () => {
                                                     onClick={() => setSelectedItem(item)}
                                                 >
                                                     <span>
-                                                        {item.type === 'text' && 'Text: ' + (item.content.slice(0, 20) + '...')}
-                                                        {item.type === 'pdf' && 'PDF: ' + (item.content.slice(0, 20) + '...')}
-                                                        {item.type === 'link' && 'Link: ' + (item.url || item.content.slice(0, 20) + '...')}
-                                                        {item.type === 'chat' && 'Chat: ' + (item.content.slice(0, 20) + '...')}
+                                                        {item.type === 'chat' && `Chat: ${item.content.slice(0, 20)}...`}
+                                                        {item.type === 'text' && `Text: ${item.content.slice(0, 20)}...`}
+                                                        {item.type === 'pdf' && `PDF: ${item.content.slice(0, 20)}...`}
+                                                        {item.type === 'link' && `Link: ${(item.url || item.content).slice(0, 20)}...`}
                                                     </span>
                                                     <span className="text-indigo-700 text-sm font-medium">
                                                         {new Date(item.timestamp).toLocaleTimeString()}
