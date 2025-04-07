@@ -12,6 +12,7 @@ const NodeCache = require("node-cache");
 const cookieParser = require("cookie-parser");
 const axios = require("axios");
 const cheerio = require("cheerio");
+const cors = require("cors");
 
 const User = require("./models/User");
 const Visit = require("./models/Visit");
@@ -52,9 +53,8 @@ let latestContent = { type: null, content: null, timestamp: null };
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-const cors = require("cors");
 app.use(cors({
-    origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online","https://admin.pdfsmart.online" ],
+    origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online", "https://admin.pdfsmart.online"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"],
@@ -67,7 +67,7 @@ app.use(cookieParser());
 app.use("/api/dashboard", verifyToken, dashboardRoutes);
 app.use("/api/users", verifyToken, userRoutes);
 
-// Rate limiting to prevent DDoS
+// Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
@@ -176,7 +176,13 @@ app.use("/api/auth", authRoutes({ visitCount }));
 // API to summarize text
 app.post("/summarize", verifyToken, async (req, res) => {
     const { text, language = "English" } = req.body;
-    const _id = req.user.id;
+    const userId = req.user._id;
+
+    console.log("User ID from token:", userId); // Debug log
+
+    if (!userId) {
+        return res.status(401).json({ error: "User ID không hợp lệ từ token." });
+    }
 
     if (!text || text.trim().length < 10) {
         return res.status(400).json({ error: "Text quá ngắn hoặc không hợp lệ." });
@@ -188,7 +194,7 @@ app.post("/summarize", verifyToken, async (req, res) => {
         cache.set("lastTextSummarizerContent", summary, 600);
 
         await ContentHistory.findOneAndUpdate(
-            { _id: _id },
+            { userId }, // Sử dụng userId thay vì _id
             { $push: { contents: { type: "text", content: text, summary } }, $set: { lastUpdated: Date.now() } },
             { upsert: true }
         );
@@ -220,7 +226,14 @@ app.post("/translate", verifyToken, async (req, res) => {
 // API to summarize a URL
 app.post("/summarize-link", verifyToken, async (req, res) => {
     const { url, language = "English" } = req.body;
-    const _id = req.user.id;
+    const userId = req.user._id;
+
+    console.log("User ID from token:", userId); // Debug log
+
+    if (!userId) {
+        return res.status(401).json({ error: "User ID không hợp lệ từ token." });
+    }
+
     if (!url || !url.match(/^https?:\/\//)) {
         return res.status(400).json({ error: "Invalid URL. Please provide a valid URL starting with http:// or https://." });
     }
@@ -248,7 +261,7 @@ app.post("/summarize-link", verifyToken, async (req, res) => {
         cache.set("lastLinkPageContent", summary, 600);
 
         await ContentHistory.findOneAndUpdate(
-            { _id: _id },
+            { userId }, // Sử dụng userId thay vì _id
             { $push: { contents: { type: "link", content, summary, url } }, $set: { lastUpdated: Date.now() } },
             { upsert: true }
         );
@@ -277,8 +290,15 @@ app.post("/summarize-link", verifyToken, async (req, res) => {
 app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
     let filePath;
     try {
-        const _id = req.user.id;
-                if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
+        const userId = req.user._id;
+
+        console.log("User ID from token:", userId); // Debug log
+
+        if (!userId) {
+            return res.status(401).json({ error: "User ID không hợp lệ từ token." });
+        }
+
+        if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
 
         filePath = req.file.path;
         const dataBuffer = await fs.readFile(filePath);
@@ -291,7 +311,7 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
         cache.set("lastDocumentContent", filteredText, 600);
 
         await ContentHistory.findOneAndUpdate(
-            { _id: _id },
+            { userId }, // Sử dụng userId thay vì _id
             { $push: { contents: { type: "pdf", content: filteredText, summary } }, $set: { lastUpdated: Date.now() } },
             { upsert: true }
         );
@@ -309,7 +329,14 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
 app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
     try {
         const { question, language = "English", detailLevel = "normal" } = req.body;
-        const _id = req.user.id;
+        const userId = req.user._id;
+
+        console.log("User ID from token:", userId); // Debug log
+
+        if (!userId) {
+            return res.status(401).json({ error: "User ID không hợp lệ từ token." });
+        }
+
         if (!question || question.trim().length < 3) {
             return res.status(400).json({
                 error: "Câu hỏi quá ngắn hoặc không hợp lệ",
@@ -327,7 +354,7 @@ app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
         const lowerQuestion = question.toLowerCase();
         const createPrompt = async () => {
             let prompt = `Bạn là trợ lý AI thông minh. Trả lời chi tiết bằng ${language}, độ chi tiết: ${detailLevel === "high" ? "rất cao" : "bình thường"}.\n\n`;
-            const chatHistory = await ChatHistory.findOne({ _id });
+            const chatHistory = await ChatHistory.findOne({ _id: userId });
             if (chatHistory && chatHistory.messages.length > 0) {
                 prompt += "Lịch sử chat:\n";
                 chatHistory.messages.slice(-5).forEach(msg => {
@@ -351,13 +378,13 @@ app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
         const source = `${latestContent.type} vừa tải lên lúc ${new Date(latestContent.timestamp).toLocaleString()}`;
 
         await ChatHistory.findOneAndUpdate(
-            { _id: _id },
+            { _id: userId },
             { $push: { messages: { question, answer, source } }, $set: { lastUpdated: Date.now() } },
             { upsert: true }
         );
 
-        const updatedHistory = await ChatHistory.findOne({ _id }).select("messages");
-        cache.set(`chat:${_id}:${Date.now()}`, { question, answer }, 3600);
+        const updatedHistory = await ChatHistory.findOne({ _id: userId }).select("messages");
+        cache.set(`chat:${userId}:${Date.now()}`, { question, answer }, 3600);
 
         res.json({
             question,
@@ -389,96 +416,67 @@ app.get("/last-content", verifyToken, (req, res) => {
         status: "success",
     });
 });
-app.delete("/api/content-history/:userId", verifyToken, async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const { timestamp } = req.body;
 
-        if (req.user.id.toString() !== userId && req.user.role !== "admin") {
-            return res.status(403).json({ status: "error", message: "Unauthorized access" });
-        }
-
-        if (!timestamp) {
-            return res.status(400).json({ status: "error", message: "Timestamp is required" });
-        }
-
-        const result = await ContentHistory.updateOne(
-            { userId },
-            { $pull: { contents: { timestamp: new Date(timestamp) } } }
-        );
-
-        if (result.modifiedCount === 0) {
-            return res.status(404).json({ status: "error", message: "Item not found" });
-        }
-
-        res.json({ status: "success", message: "Item deleted successfully" });
-    } catch (error) {
-        console.error("Error deleting content history item:", error);
-        res.status(500).json({ status: "error", message: error.message });
-    }
-});
 // API to get content history
-// Sửa lại server routes (trong file server chính)
-// Thêm prefix '/api' cho tất cả các routes API
 app.get("/api/content-history/:userId", verifyToken, async (req, res) => {
     try {
-        console.log(`Fetching content history for user: ${req.params.userId}`);
-        
-        // Kiểm tra quyền truy cập
-        if (req.user.id !== req.params.userId && req.user.role !== "admin") {
-            return res.status(403).json({ 
-                status: 'error',
-                message: 'Unauthorized access' 
+        const { userId } = req.params;
+        console.log(`Fetching content history for user: ${userId}, authenticated user: ${req.user._id}`);
+
+        if (req.user._id.toString() !== userId && req.user.role !== "admin") {
+            return res.status(403).json({
+                status: "error",
+                message: "Unauthorized access",
             });
         }
 
-        const history = await ContentHistory.findOne({ _id: req.params.userId });
-        
+        const history = await ContentHistory.findOne({ userId });
         res.json({
-            status: 'success',
+            status: "success",
             data: {
                 history: history ? history.contents : [],
-                lastUpdated: history ? history.lastUpdated : null
-            }
+                lastUpdated: history ? history.lastUpdated : null,
+            },
         });
     } catch (error) {
-        console.error('Error fetching content history:', error);
-        res.status(500).json({ 
-            status: 'error',
-            message: error.message 
+        console.error("Error fetching content history:", error);
+        res.status(500).json({
+            status: "error",
+            message: error.message,
         });
     }
 });
 
+// API to get chat history
 app.get("/api/chat-history/:userId", verifyToken, async (req, res) => {
     try {
-        console.log(`Fetching chat history for user: ${req.params.userId}`);
-        
-        // Kiểm tra quyền truy cập
-        if (req.user.id !== req.params.userId && req.user.role !== "admin") {
-            return res.status(403).json({ 
-                status: 'error',
-                message: 'Unauthorized access' 
+        const { userId } = req.params;
+        console.log(`Fetching chat history for user: ${userId}, authenticated user: ${req.user._id}`);
+
+        if (req.user._id.toString() !== userId && req.user.role !== "admin") {
+            return res.status(403).json({
+                status: "error",
+                message: "Unauthorized access",
             });
         }
 
-        const history = await ChatHistory.findOne({ _id: req.params.userId });
-        
+        const history = await ChatHistory.findOne({ _id: userId });
         res.json({
-            status: 'success',
+            status: "success",
             data: {
                 history: history ? history.messages : [],
-                lastUpdated: history ? history.lastUpdated : null
-            }
+                lastUpdated: history ? history.lastUpdated : null,
+            },
         });
     } catch (error) {
-        console.error('Error fetching chat history:', error);
-        res.status(500).json({ 
-            status: 'error',
-            message: error.message 
+        console.error("Error fetching chat history:", error);
+        res.status(500).json({
+            status: "error",
+            message: error.message,
         });
     }
 });
+
 async function fetchContent(url) {
     try {
         if (!url || !url.match(/^https?:\/\//)) throw new Error("URL không hợp lệ");
@@ -538,8 +536,6 @@ const connectDB = async () => {
     }
 };
 
-
-
 // Start server
 let server;
 connectDB().then(() => {
@@ -558,4 +554,3 @@ app.use((err, req, res, next) => {
         details: err.message,
     });
 });
-
