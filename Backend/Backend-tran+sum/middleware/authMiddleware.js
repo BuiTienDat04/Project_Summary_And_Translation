@@ -1,23 +1,31 @@
 const jwt = require("jsonwebtoken");
 
-// ✅ Middleware to verify user token
 const verifyToken = (req, res, next) => {
-  const authHeader = req.header("Authorization");
-  console.log("Auth Header:", authHeader); // Debug: Kiểm tra token nhận được
+    let token = req.header("Authorization");
+    if (!token && req.cookies.token) {
+        token = `Bearer ${req.cookies.token}`; // Hỗ trợ token từ cookies
+    }
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Unauthorized. Please log in." });
-  }
+    console.log("Auth Header or Cookie:", token); // Debug: Kiểm tra token nhận được
 
-  const token = authHeader.split(" ")[1]; // Lấy token sau chữ "Bearer"
+    if (!token || !token.startsWith("Bearer ")) {
+        return res.status(401).json({ message: "Unauthorized. Please log in." });
+    }
 
-  try {
-    const verified = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = verified; // Lưu thông tin user vào request
-    next();
-  } catch (error) {
-    return res.status(400).json({ message: "Invalid token. Please log in again." });
-  }
+    token = token.split(" ")[1]; // Lấy token sau chữ "Bearer"
+
+    try {
+        const verified = jwt.verify(token, process.env.JWT_SECRET);
+        console.log("Verified user:", verified); // Debug: Kiểm tra nội dung token
+        if (!verified._id) {
+            return res.status(400).json({ message: "Invalid token: user ID missing." });
+        }
+        req.user = verified;
+        next();
+    } catch (error) {
+        console.error("Token verification error:", error.message);
+        return res.status(400).json({ message: "Invalid token. Please log in again." });
+    }
 };
 
 // ✅ Middleware to verify admin
