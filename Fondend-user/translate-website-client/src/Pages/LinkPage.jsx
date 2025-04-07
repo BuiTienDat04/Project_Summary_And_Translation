@@ -8,7 +8,8 @@ import Navigation from "../Pages/Navigation";
 import Footer from "../Pages/Footer";
 import { motion } from "framer-motion";
 import ChatBox from "../Pages/ChatBox";
-import api from "../api/api"; // Thêm import này
+import api from "../api/api";
+import HistorySummary from "../Pages/HistorySummary";
 import {
     SparklesIcon,
     CpuChipIcon,
@@ -77,6 +78,7 @@ const LinkPage = () => {
         setIsPopupVisible(true);
         setShowRegister(false);
     };
+
     const handleLanguageSelect = (code, name) => {
         setTargetLang(code);
         setSearchTerm(name);
@@ -106,6 +108,7 @@ const LinkPage = () => {
         setLoggedInUsername(null);
         setLoggedInUser(null);
         localStorage.removeItem("loggedInUser");
+        localStorage.removeItem("token"); // Xóa token khi logout
         navigate("/");
         window.location.reload();
     };
@@ -122,27 +125,34 @@ const LinkPage = () => {
             setShowLogin(true);
             return;
         }
-    
+
         if (!linkInput) {
             setError("Please enter a valid URL.");
             return;
         }
-    
+
         const urlPattern = /^https?:\/\//;
         if (!urlPattern.test(linkInput)) {
             setError("URL must start with http:// or https://");
             return;
         }
-    
+
         setIsLoading(true);
         setError("");
         setSummaryResult("");
         setTranslatedContent("");
-    
+
         try {
             const response = await api.post("/summarize-link", { url: linkInput });
             const { summary } = response.data;
             setSummaryResult(summary || "No summary generated.");
+            // Gửi dữ liệu lên History sau khi tạo tóm tắt thành công
+            await api.post("/api/content-history", {
+                type: "link",
+                content: linkInput,
+                summary: summary,
+                url: linkInput,
+            });
         } catch (error) {
             console.error("Error summarizing link:", error);
             if (error.response?.status === 401) {
@@ -157,7 +167,7 @@ const LinkPage = () => {
             setIsLoading(false);
         }
     };
-    
+
     const translateSummary = async () => {
         const token = localStorage.getItem("token");
         if (!loggedInUser || !token) {
@@ -165,15 +175,15 @@ const LinkPage = () => {
             setShowLogin(true);
             return;
         }
-    
+
         if (!summaryResult || !targetLang) {
             setError("Please generate a summary first and select a target language.");
             return;
         }
-    
+
         setIsLoading(true);
         setError("");
-    
+
         try {
             const response = await api.post("/translate", {
                 text: summaryResult,
@@ -200,6 +210,7 @@ const LinkPage = () => {
 
     return (
         <div className="relative min-h-screen bg-indigo-200 font-sans">
+            <HistorySummary /> {/* Thêm thanh bên lịch sử */}
             <Navigation
                 loggedInUsername={loggedInUsername}
                 onLoginClick={handleLoginClick}
@@ -229,7 +240,7 @@ const LinkPage = () => {
                 </motion.div>
             )}
 
-            <div className="container mx-auto px-6 pt-16">
+            <div className="container mx-auto px-6 pt-16 transition-all duration-500">
                 <motion.header
                     initial={{ y: -50, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
@@ -258,7 +269,7 @@ const LinkPage = () => {
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="relative bg-gradient-to-r from-blue-500 to-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 overflow-hidden group"
+                                className="relative bg-gradient-to-r from-blue-500 to-blue-6s00 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 overflow-hidden group"
                                 onClick={() => navigate("/text")}
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -563,7 +574,6 @@ const LinkPage = () => {
                         while delivering highly accurate translations across multiple languages.
                         Save time, stay informed, and experience seamless content transformation with WebSummarizer today!
                     </p>
-
                 </motion.div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-14">
