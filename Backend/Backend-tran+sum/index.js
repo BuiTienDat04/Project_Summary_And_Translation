@@ -176,7 +176,7 @@ app.use("/api/auth", authRoutes({ visitCount }));
 // API to summarize text
 app.post("/summarize", verifyToken, async (req, res) => {
     const { text, language = "English" } = req.body;
-    const _id = req.user._id;
+    const _id = req.user.id;
 
     if (!text || text.trim().length < 10) {
         return res.status(400).json({ error: "Text quá ngắn hoặc không hợp lệ." });
@@ -220,7 +220,7 @@ app.post("/translate", verifyToken, async (req, res) => {
 // API to summarize a URL
 app.post("/summarize-link", verifyToken, async (req, res) => {
     const { url, language = "English" } = req.body;
-    const _id = req.user._id;
+    const _id = req.user.id;
     if (!url || !url.match(/^https?:\/\//)) {
         return res.status(400).json({ error: "Invalid URL. Please provide a valid URL starting with http:// or https://." });
     }
@@ -277,7 +277,7 @@ app.post("/summarize-link", verifyToken, async (req, res) => {
 app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
     let filePath;
     try {
-        const _id = req.user._id;
+        const _id = req.user.id;
                 if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
 
         filePath = req.file.path;
@@ -309,7 +309,7 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
 app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
     try {
         const { question, language = "English", detailLevel = "normal" } = req.body;
-        const _id = req.user._id;
+        const _id = req.user.id;
         if (!question || question.trim().length < 3) {
             return res.status(400).json({
                 error: "Câu hỏi quá ngắn hoặc không hợp lệ",
@@ -394,7 +394,7 @@ app.delete("/api/content-history/:userId", verifyToken, async (req, res) => {
         const { userId } = req.params;
         const { timestamp } = req.body;
 
-        if (req.user._id.toString() !== userId && req.user.role !== "admin") {
+        if (req.user.id.toString() !== userId && req.user.role !== "admin") {
             return res.status(403).json({ status: "error", message: "Unauthorized access" });
         }
 
@@ -425,7 +425,7 @@ app.get("/api/content-history/:userId", verifyToken, async (req, res) => {
         console.log(`Fetching content history for user: ${req.params.userId}`);
         
         // Kiểm tra quyền truy cập
-        if (req.user._id !== req.params.userId && req.user.role !== "admin") {
+        if (req.user.id !== req.params.userId && req.user.role !== "admin") {
             return res.status(403).json({ 
                 status: 'error',
                 message: 'Unauthorized access' 
@@ -455,7 +455,7 @@ app.get("/api/chat-history/:userId", verifyToken, async (req, res) => {
         console.log(`Fetching chat history for user: ${req.params.userId}`);
         
         // Kiểm tra quyền truy cập
-        if (req.user._id !== req.params.userId && req.user.role !== "admin") {
+        if (req.user.id !== req.params.userId && req.user.role !== "admin") {
             return res.status(403).json({ 
                 status: 'error',
                 message: 'Unauthorized access' 
