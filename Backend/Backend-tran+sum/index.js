@@ -389,7 +389,34 @@ app.get("/last-content", verifyToken, (req, res) => {
         status: "success",
     });
 });
+app.delete("/api/content-history/:userId", verifyToken, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { timestamp } = req.body;
 
+        if (req.user._id.toString() !== userId && req.user.role !== "admin") {
+            return res.status(403).json({ status: "error", message: "Unauthorized access" });
+        }
+
+        if (!timestamp) {
+            return res.status(400).json({ status: "error", message: "Timestamp is required" });
+        }
+
+        const result = await ContentHistory.updateOne(
+            { userId },
+            { $pull: { contents: { timestamp: new Date(timestamp) } } }
+        );
+
+        if (result.modifiedCount === 0) {
+            return res.status(404).json({ status: "error", message: "Item not found" });
+        }
+
+        res.json({ status: "success", message: "Item deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting content history item:", error);
+        res.status(500).json({ status: "error", message: error.message });
+    }
+});
 // API to get content history
 // Sửa lại server routes (trong file server chính)
 // Thêm prefix '/api' cho tất cả các routes API
