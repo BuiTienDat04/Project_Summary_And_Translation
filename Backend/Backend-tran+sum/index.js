@@ -183,6 +183,7 @@ app.post("/summarize", verifyToken, async (req, res) => {
         return res.status(400).json({ error: "User ID is missing or invalid in token." });
     }
 
+    const userId = req.user.id; // Lấy userId từ token
     if (!text || text.trim().length < 10) {
         return res.status(400).json({ error: "Text quá ngắn hoặc không hợp lệ." });
     }
@@ -193,7 +194,7 @@ app.post("/summarize", verifyToken, async (req, res) => {
         cache.set("lastTextSummarizerContent", summary, 600);
 
         await ContentHistory.findOneAndUpdate(
-            { _id: _id },
+            { userId},
             { $push: { contents: { type: "text", content: text, summary } }, $set: { lastUpdated: Date.now() } },
             { upsert: true }
         );
@@ -232,6 +233,7 @@ app.post("/summarize-link", verifyToken, async (req, res) => {
         return res.status(400).json({ error: "User ID is missing or invalid in token." });
     }
 
+    const userId = req.user.id;
     if (!url || !url.match(/^https?:\/\//)) {
         return res.status(400).json({ error: "Invalid URL. Please provide a valid URL starting with http:// or https://." });
     }
@@ -259,7 +261,7 @@ app.post("/summarize-link", verifyToken, async (req, res) => {
         cache.set("lastLinkPageContent", summary, 600);
 
         await ContentHistory.findOneAndUpdate(
-            { _id: _id },
+            { userId },
             { $push: { contents: { type: "link", content, summary, url } }, $set: { lastUpdated: Date.now() } },
             { upsert: true }
         );
@@ -296,6 +298,9 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
         }
 
         if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
+        const userId = req.user.id; // Lấy userId từ token
+
+                if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
 
         filePath = req.file.path;
         const dataBuffer = await fs.readFile(filePath);
@@ -308,7 +313,7 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
         cache.set("lastDocumentContent", filteredText, 600);
 
         await ContentHistory.findOneAndUpdate(
-            { _id: _id },
+            { userId },
             { $push: { contents: { type: "pdf", content: filteredText, summary } }, $set: { lastUpdated: Date.now() } },
             { upsert: true }
         );
