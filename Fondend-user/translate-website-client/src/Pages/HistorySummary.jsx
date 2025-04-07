@@ -6,9 +6,9 @@ import { API_BASE_URL } from "../api/api";
 
 const HistorySummary = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const [history, setHistory] = useState([]);
+    const [history, setHistory] = useState([]); // Lưu trữ cả ContentHistory và ChatHistory
     const [loading, setLoading] = useState(true);
-    const [selectedItem, setSelectedItem] = useState(null);
+    const [selectedItem, setSelectedItem] = useState(null); // Chi tiết mục được chọn
     const [error, setError] = useState(null);
 
     const toggleOpen = () => {
@@ -16,72 +16,60 @@ const HistorySummary = () => {
         if (selectedItem) setSelectedItem(null);
     };
 
+    // Lấy dữ liệu từ API
     useEffect(() => {
+        // Sửa lại frontend API call
         const fetchHistory = async () => {
             try {
-                setLoading(true);
-                const token = localStorage.getItem('token');
-                const userId = localStorage.getItem('_id');
-
-                if (!userId || !token) {
-                    throw new Error('Authentication required');
-                }
-
-                const config = {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                };
-
-                const contentResponse = await axios.get(
-                    `${API_BASE_URL}/api/content-history/${userId}`,
-                    config
-                );
-                const chatResponse = await axios.get(
-                    `${API_BASE_URL}/api/chat-history/${userId}`,
-                    config
-                );
-
-                const contentHistory = (contentResponse.data.status === 'success'
-                    ? contentResponse.data.data.history.map(item => ({ ...item, source: 'content' }))
-                    : []).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-                const chatHistory = (chatResponse.data.status === 'success'
-                    ? chatResponse.data.data.history.map(item => ({
-                        type: 'chat',
-                        content: item.question,
-                        summary: item.answer,
-                        source: item.source,
-                        timestamp: item.timestamp || Date.now(),
-                        sourceType: 'chat'
-                    }))
-                    : []).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-                setHistory([...contentHistory, ...chatHistory]);
+              setLoading(true);
+              const token = localStorage.getItem('token');
+              const userId = localStorage.getItem('_id');
+              
+              // Đảm bảo có đủ thông tin xác thực
+              if (!userId || !token) {
+                throw new Error('Authentication required');
+              }
+          
+              const config = { 
+                headers: { 
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                } 
+              };
+          
+              // Sử dụng đúng endpoint với prefix /api
+              const response = await axios.get(
+                `${API_BASE_URL}/api/content-history/${userId}`, 
+                config
+              );
+          
+              // Xử lý response data
+              if (response.data.status === 'success') {
+                setHistory(response.data.data.history || []);
+              } else {
+                setError(response.data.message || 'Failed to load history');
+              }
             } catch (error) {
-                console.error('Fetch history error:', error);
-                setError(error.response?.data?.message || error.message);
+              console.error('Fetch history error:', error);
+              setError(error.response?.data?.message || error.message);
             } finally {
-                setLoading(false);
+              setLoading(false);
             }
-        };
+          };
         fetchHistory();
     }, []);
 
-    const handleDelete = async (itemTimestamp, source) => {
-        if (source !== 'content') return;
+    // Xóa một mục từ ContentHistory
+    const handleDelete = async (itemId, source) => {
+        if (source !== 'content') return; // Chỉ xóa được từ ContentHistory
 
         try {
             const token = localStorage.getItem('token');
-            const userId = localStorage.getItem('_id');
+            const _id = localStorage.getItem('_id');
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
-            await axios.delete(`${API_BASE_URL}/api/content-history/${userId}`, {
-                ...config,
-                data: { timestamp: itemTimestamp }
-            });
-            setHistory(history.filter(item => item.timestamp !== itemTimestamp));
+            await axios.delete(`${API_BASE_URL}/content-history/${_id}/${itemId}`, config);
+            setHistory(history.filter(item => item._id !== itemId));
             setSelectedItem(null);
         } catch (error) {
             console.error('Error deleting history item:', error);
@@ -139,7 +127,7 @@ const HistorySummary = () => {
                                     {selectedItem.source === 'content' && (
                                         <button
                                             className="text-red-600 font-medium"
-                                            onClick={() => handleDelete(selectedItem.timestamp, selectedItem.source)}
+                                            onClick={() => handleDelete(selectedItem._id, selectedItem.source)}
                                         >
                                             Delete
                                         </button>
@@ -181,7 +169,7 @@ const HistorySummary = () => {
                                                 <li
                                                     key={index}
                                                     className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 text-gray-800 flex justify-between items-center cursor-pointer"
-                                                    onClick={() => setSelectedItem({ ...item, source: item.source || 'content' })}
+                                                    onClick={() => setSelectedItem(item)}
                                                 >
                                                     <span>
                                                         {item.type === 'text' && 'Text: ' + (item.content.slice(0, 20) + '...')}
