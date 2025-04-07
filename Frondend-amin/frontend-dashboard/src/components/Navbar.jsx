@@ -8,6 +8,11 @@ const Navbar = ({ onLogout }) => {
     navigate("/user-management");
   };
 
+  const handleHistoryManagementClick = () => {
+    navigate("/content-history");
+  };
+
+
   const handleLogoutClick = () => {
     const confirmLogout = window.confirm("Are you sure you want to log out?");
     if (confirmLogout) {
@@ -32,6 +37,14 @@ const Navbar = ({ onLogout }) => {
               className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition duration-200 text-sm font-medium"
             >
               User Management
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={handleHistoryManagementClick}
+              className="bg-green-600 text-white px-3 py-1.5 rounded-md hover:bg-green-700 transition duration-200 text-sm font-medium"
+            >
+              History Management
             </button>
           </li>
           <li>
