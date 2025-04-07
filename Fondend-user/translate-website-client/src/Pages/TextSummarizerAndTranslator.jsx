@@ -3,7 +3,7 @@ import { FaSignInAlt } from "react-icons/fa";
 import { Trash2 } from "lucide-react";
 import ChatBox from "../Pages/ChatBox";
 import api from "../api/api"; // Import instance api
-
+import HistorySummary from "./HistorySummary";
 const TextSummarizerAndTranslator = ({ loggedInUser }) => {
     const [text, setText] = useState("");
     const [summary, setSummary] = useState("");
@@ -67,10 +67,12 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
         const token = localStorage.getItem("token");
         if (!loggedInUser || !token) {
             setLoginPromptVisible(true);
+            setError("Please log in to generate a summary.");
             return;
         }
+    
         if (!text) {
-            setError("Vui lòng nhập văn bản trước khi tạo tóm tắt.");
+            setError("Please enter text before generating a summary.");
             return;
         }
     
@@ -78,24 +80,35 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
         setError(null);
     
         try {
-            const response = await api.post("/summarize", {
-                text,
-            });
-    
-            const data = response.data;
-            setSummary(data.summary || "Không thể tóm tắt nội dung.");
+            const response = await api.post("/summarize", { text });
+            const { summary } = response.data;
+            setSummary(summary || "No summary generated.");
             setError(null);
+
+            // Gửi dữ liệu lên History sau khi tóm tắt thành công
+            await api.post("/api/content-history", {
+                type: "text",
+                content: text,
+                summary: summary,
+            });
         } catch (err) {
-            setError(err.response?.data?.error || "Lỗi khi tóm tắt văn bản.");
-            console.error("Lỗi handleSummarize:", err);
+            setError(err.response?.data?.error || "Error summarizing text.");
+            console.error("Error in handleSummarize:", err);
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleTranslate = async () => {
+        const token = localStorage.getItem("token");
+        if (!loggedInUser || !token) {
+            setLoginPromptVisible(true);
+            setError("Please log in to translate the summary.");
+            return;
+        }
+
         if (!summary || !targetLang) {
-            setError("Vui lòng tóm tắt văn bản trước và chọn ngôn ngữ mục tiêu.");
+            setError("Please generate a summary first and select a target language.");
             return;
         }
 
@@ -110,12 +123,12 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
                 targetLang,
             });
 
-            const data = response.data;
-            setTranslation(data.translation || "Không thể dịch nội dung.");
+            const { translation } = response.data;
+            setTranslation(translation || "No translation generated.");
             setError(null);
         } catch (err) {
-            setError(err.response?.data?.error || "Lỗi khi dịch văn bản.");
-            console.error("Lỗi handleTranslate:", err);
+            setError(err.response?.data?.error || "Error translating text.");
+            console.error("Error in handleTranslate:", err);
         } finally {
             setIsLoading(false);
         }
@@ -126,12 +139,14 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
         setSearchTerm(name);
         setIsDropdownOpen(false);
     };
+
     // Nội dung gửi đến ChatBox
     const textSummarizerContent = `Original Text: ${text}\nSummary: ${summary}\nTranslation (${languages.find(lang => lang.code === targetLang)?.name || 'Unknown'}): ${translation}`;
 
     return (
-        <div className="max-w-7xl mx-auto p-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="relative max-w-7xl mx-auto p-8">
+            <HistorySummary /> {/* Thêm thanh bên lịch sử */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 transition-all duration-500">
                 {/* Input Column */}
                 <section className="space-y-6 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
                     <div className="flex items-center justify-between mb-4">
@@ -170,7 +185,7 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
                 </section>
 
                 {/* Output Column */}
-                <section className="space-y-6 p-6 bg-gray-50 rounded-2xl border-2 border-gray-100 shadow-inner">
+                <section className="space-y-6 p-6 bg-gray-50 rounded-2xl border-2 border-gray-200 shadow-inner">
                     <article className="bg-white rounded-xl border-2 border-gray-200 p-5 shadow-sm">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
@@ -212,12 +227,12 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
                                     <ul className="absolute z-10 mt-1 w-full bg-white border border-emerald-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
                                         {filteredLanguages.map((lang) => (
                                             <li
-                                            key={lang.code}
-                                            className="px-4 py-2 hover:bg-emerald-100 cursor-pointer"
-                                            onClick={() => handleLanguageSelect(lang.code, lang.name)} // 'handleLanguageSelect' chưa được định nghĩa
-                                        >
-                                            {lang.name}
-                                        </li>
+                                                key={lang.code}
+                                                className="px-4 py-2 hover:bg-emerald-100 cursor-pointer"
+                                                onClick={() => handleLanguageSelect(lang.code, lang.name)}
+                                            >
+                                                {lang.name}
+                                            </li>
                                         ))}
                                     </ul>
                                 )}
