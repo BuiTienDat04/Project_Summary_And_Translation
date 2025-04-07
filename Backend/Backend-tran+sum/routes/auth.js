@@ -86,7 +86,7 @@ module.exports = (visitCountObj) => {
         return res.status(500).json({ message: "Server configuration error" });
       }
 
-      const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
+      const token = jwt.sign({ _id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
       await Visit.findOneAndUpdate({}, { $inc: { totalVisits: 1 } }, { upsert: true, new: true });
 
