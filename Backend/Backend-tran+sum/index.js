@@ -393,6 +393,8 @@ app.get("/last-content", verifyToken, (req, res) => {
 // API to get content history
 // Sửa lại server routes (trong file server chính)
 // Thêm prefix '/api' cho tất cả các routes API
+const { ContentHistory } = require('./contentHistory'); // import model
+
 app.get("/api/content-history/:userId", verifyToken, async (req, res) => {
     try {
         console.log(`Fetching content history for user: ${req.params.userId}`);
@@ -405,14 +407,11 @@ app.get("/api/content-history/:userId", verifyToken, async (req, res) => {
             });
         }
 
-        const history = await ContentHistory.findOne({ _id: req.params.userId });
-        
+        const history = await ContentHistory.find({ userId: req.params.userId }).sort({ createdAt: -1 });
+
         res.json({
             status: 'success',
-            data: {
-                history: history ? history.contents : [],
-                lastUpdated: history ? history.lastUpdated : null
-            }
+            data: history
         });
     } catch (error) {
         console.error('Error fetching content history:', error);
@@ -422,6 +421,7 @@ app.get("/api/content-history/:userId", verifyToken, async (req, res) => {
         });
     }
 });
+
 
 app.get("/api/chat-history/:userId", verifyToken, async (req, res) => {
     try {
