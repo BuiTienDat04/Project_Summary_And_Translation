@@ -54,7 +54,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const cors = require("cors");
 app.use(cors({
-    origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online","https://admin.pdfsmart.online" ],
+    origin: ["http://localhost:3000", "http://localhost:3001", "https://pdfsmart.online", "https://admin.pdfsmart.online"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"],
@@ -314,7 +314,7 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
     let filePath;
     try {
         const _id = req.user._id;
-                if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
+        if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
 
         filePath = req.file.path;
         const dataBuffer = await fs.readFile(filePath);
@@ -436,6 +436,28 @@ app.get("/last-content", verifyToken, (req, res) => {
         status: "success",
     });
 });
+app.delete("/api/content-history/:userId", verifyToken, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { timestamp } = req.body;
+
+        if (req.user._id.toString() !== userId && req.user.role !== "admin") {
+            return res.status(403).json({ status: "error", message: "Unauthorized access" });
+        }
+
+        if (!timestamp) {
+            return res.status(400).json({ status: "error", message: "Timestamp is required" });
+        }
+
+        const result = await ContentHistory.updateOne(
+            { userId },
+            { $pull: { contents: { timestamp: new Date(timestamp) } } }
+        );
+
+        if (result.modifiedCount === 0) {
+            return res.status(404).json({ status: "error", message: "Item not found" });
+        }
+
 
 app.get("/api/history", verifyToken, async (req, res) => {
     try {
@@ -466,6 +488,54 @@ app.get("/api/history", verifyToken, async (req, res) => {
         res.status(500).json({ 
             success: false,
             error: error.message 
+
+        res.json({ status: "success", message: "Item deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting content history item:", error);
+        res.status(500).json({ status: "error", message: error.message });
+    }
+});
+// API to get content history
+// Sửa lại server routes (trong file server chính)
+// Thêm prefix '/api' cho tất cả các routes API
+app.get("/api/content-history/:userId", verifyToken, async (req, res) => {
+    try {
+        console.log(`Fetching content history for user: ${req.params.userId}`);
+
+        // Kiểm tra quyền truy cập: Chỉ cho phép người dùng xem lịch sử của chính họ
+        if (req.user._id !== req.params.userId) {
+            return res.status(403).json({
+                status: 'error',
+                message: 'Unauthorized access'
+            });
+        }
+
+        const history = await ContentHistory.findOne({ _id: req.params.userId });
+
+        if (!history) {
+            return res.status(200).json({
+                status: 'success',
+                message: 'No content history found',
+                data: {
+                    contents: [],
+                    lastUpdated: null
+                }
+            });
+        }
+
+        res.json({
+            status: 'success',
+            data: {
+                contents: history.contents, // Trả về trực tiếp contents
+                lastUpdated: history.lastUpdated
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching content history:', error);
+        res.status(500).json({
+            status: 'error',
+            message: error.message
+
         });
     }
 });
@@ -478,16 +548,43 @@ app.get("/api/history/:id", verifyToken, async (req, res) => {
             userId: req.user._id
         });
         
+
         if (!record) {
             return res.status(404).json({
                 success: false,
                 error: "Không tìm thấy bản ghi lịch sử"
+
+        // Kiểm tra quyền truy cập: Chỉ cho phép người dùng xem lịch sử của chính họ
+        if (req.user._id !== req.params.userId) {
+            return res.status(403).json({ 
+                status: 'error',
+                message: 'Unauthorized access' 
+
             });
         }
         
+        if (!history) {
+            return res.status(200).json({
+                status: 'success',
+                message: 'No chat history found',
+                data: {
+                    messages: [],
+                    lastUpdated: null
+                }
+            });
+        }
+
         res.json({
+
             success: true,
             data: record
+
+            status: 'success',
+            data: {
+                messages: history.messages, // Trả về trực tiếp messages
+                lastUpdated: history.lastUpdated
+            }
+
         });
     } catch (error) {
         res.status(500).json({ 
