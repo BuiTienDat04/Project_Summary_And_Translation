@@ -176,7 +176,6 @@ app.use("/api/auth", authRoutes({ visitCount }));
 // API to summarize text
 app.post("/summarize", verifyToken, async (req, res) => {
     const { text, language = "English" } = req.body;
-    const _id = req.user._id;
 
     if (!text || text.trim().length < 10) {
         return res.status(400).json({ error: "Text quá ngắn hoặc không hợp lệ." });
@@ -187,11 +186,15 @@ app.post("/summarize", verifyToken, async (req, res) => {
         latestContent = { type: "text", content: text, timestamp: Date.now() };
         cache.set("lastTextSummarizerContent", summary, 600);
 
-        await ContentHistory.findOneAndUpdate(
-            { _id: _id },
-            { $push: { contents: { type: "text", content: text, summary } }, $set: { lastUpdated: Date.now() } },
-            { upsert: true }
-        );
+        const historyRecord = new ContentHistory({
+            userId: _id,
+            actionType: 'summarize',
+            contentType: 'text',
+            originalContent: text.substring(0, 200) + (text.length > 200 ? "..." : ""),
+            resultContent: summary,
+            language: language
+        });
+        await historyRecord.save();
 
         await Visit.findOneAndUpdate({}, { $inc: { translatedPosts: 1 } }, { upsert: true, new: true });
         res.json({ summary });
@@ -204,15 +207,43 @@ app.post("/summarize", verifyToken, async (req, res) => {
 // API to translate text
 app.post("/translate", verifyToken, async (req, res) => {
     const { text, targetLang } = req.body;
+    const userId = req.user._id;
+
+    // Kiểm tra dữ liệu đầu vào
     if (!text || !targetLang || text.trim().length < 10) {
         return res.status(400).json({ error: "Missing or invalid text/targetLang." });
     }
 
     try {
+        // Dịch văn bản trước
         const translation = await translateText(text, targetLang);
-        await Visit.findOneAndUpdate({}, { $inc: { translatedPosts: 1 } }, { upsert: true, new: true });
+
+        // Tạo bản ghi lịch sử sau khi dịch thành công
+        const historyRecord = new ContentHistory({
+            userId: userId,
+            actionType: "translate",
+            contentType: "text",
+            originalContent: text.substring(0, 200) + (text.length > 200 ? "..." : ""),
+            resultContent: translation.substring(0, 200) + (translation.length > 200 ? "..." : ""), // Cắt ngắn nếu quá dài
+            language: targetLang,
+            createdAt: new Date(),
+        });
+
+        // Lưu lịch sử vào MongoDB
+        await historyRecord.save();
+
+        // Cập nhật số lượng bài dịch (nếu có model Visit)
+        // Nếu không dùng Visit, bạn có thể bỏ đoạn này
+        await Visit.findOneAndUpdate(
+            {},
+            { $inc: { translatedPosts: 1 } },
+            { upsert: true, new: true }
+        );
+
+        // Trả kết quả về client
         res.json({ translation });
     } catch (error) {
+        console.error("❌ Error in translate endpoint:", error.message);
         res.status(500).json({ error: `Error translating: ${error.message}` });
     }
 });
@@ -247,11 +278,16 @@ app.post("/summarize-link", verifyToken, async (req, res) => {
         latestContent = { type: "link", content, timestamp: Date.now() };
         cache.set("lastLinkPageContent", summary, 600);
 
-        await ContentHistory.findOneAndUpdate(
-            { _id: _id },
-            { $push: { contents: { type: "link", content, summary, url } }, $set: { lastUpdated: Date.now() } },
-            { upsert: true }
-        );
+        const historyRecord = new ContentHistory({
+            userId: _id,
+            actionType: 'summarize',
+            contentType: 'url',
+            originalContent: content.substring(0, 200) + "...",
+            resultContent: summary,
+            url: url,
+            language: language
+        });
+        await historyRecord.save();
 
         await Visit.findOneAndUpdate({}, { $inc: { translatedPosts: 1 } }, { upsert: true, new: true });
 
@@ -290,11 +326,18 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
         latestContent = { type: "pdf", content: filteredText, timestamp: Date.now() };
         cache.set("lastDocumentContent", filteredText, 600);
 
-        await ContentHistory.findOneAndUpdate(
-            { _id: _id },
-            { $push: { contents: { type: "pdf", content: filteredText, summary } }, $set: { lastUpdated: Date.now() } },
-            { upsert: true }
-        );
+        const historyRecord = new ContentHistory({
+            userId: _id,
+            actionType: 'summarize',
+            contentType: 'pdf',
+            originalContent: filteredText.substring(0, 200) + "...",
+            resultContent: summary,
+            fileInfo: {
+                name: req.file.originalname,
+                size: req.file.size
+            }
+        });
+        await historyRecord.save();
 
         res.json({ originalText: filteredText, summary });
     } catch (error) {
@@ -309,7 +352,9 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
 app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
     try {
         const { question, language = "English", detailLevel = "normal" } = req.body;
-        const _id = req.user._id;
+        const userId = req.user._id;
+
+        // Kiểm tra câu hỏi
         if (!question || question.trim().length < 3) {
             return res.status(400).json({
                 error: "Câu hỏi quá ngắn hoặc không hợp lệ",
@@ -317,23 +362,18 @@ app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
             });
         }
 
-        if (!latestContent.content || !latestContent.timestamp) {
+        // Kiểm tra nội dung gần nhất
+        if (!latestContent || !latestContent.content || !latestContent.timestamp || !latestContent.type) {
             return res.status(400).json({
                 error: "Vui lòng tải lên nội dung (text, PDF, hoặc link) trước khi đặt câu hỏi.",
                 timestamp: new Date().toISOString(),
             });
         }
 
+        // Tạo prompt dựa trên nội dung
         const lowerQuestion = question.toLowerCase();
-        const createPrompt = async () => {
+        const createPrompt = () => {
             let prompt = `Bạn là trợ lý AI thông minh. Trả lời chi tiết bằng ${language}, độ chi tiết: ${detailLevel === "high" ? "rất cao" : "bình thường"}.\n\n`;
-            const chatHistory = await ChatHistory.findOne({ _id });
-            if (chatHistory && chatHistory.messages.length > 0) {
-                prompt += "Lịch sử chat:\n";
-                chatHistory.messages.slice(-5).forEach(msg => {
-                    prompt += `Hỏi: ${msg.question}\nTrả lời: ${msg.answer}\n\n`;
-                });
-            }
             prompt += `Nội dung: ${latestContent.content}\n\n`;
             if (lowerQuestion.includes("tóm tắt") || lowerQuestion.includes("summary")) {
                 prompt += "Tóm tắt nội dung trên một cách chi tiết, bao gồm các ý chính và chi tiết quan trọng.";
@@ -341,29 +381,36 @@ app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
                 const targetLang = lowerQuestion.match(/dịch sang (.+)$/i)?.[1] || language;
                 prompt += `Dịch nội dung sang ${targetLang}.`;
             } else {
-                prompt += `Câu hỏi: ${question}\nHãy trả lời dựa trên nội dung trên, giải thích rõ ràng.`;
+                promptcloth += `Câu hỏi: ${question}\nHãy trả lời dựa trên nội dung trên, giải thích rõ ràng.`;
             }
             return prompt;
         };
 
-        const prompt = await createPrompt();
+        const prompt = createPrompt();
         const answer = await callGeminiAPI(prompt);
         const source = `${latestContent.type} vừa tải lên lúc ${new Date(latestContent.timestamp).toLocaleString()}`;
 
-        await ChatHistory.findOneAndUpdate(
-            { _id: _id },
-            { $push: { messages: { question, answer, source } }, $set: { lastUpdated: Date.now() } },
-            { upsert: true }
-        );
+        // Lưu vào ContentHistory
+        const historyRecord = new ContentHistory({
+            userId,
+            actionType: "chat",
+            contentType: latestContent.type,
+            originalContent: question.substring(0, 200) + (question.length > 200 ? "..." : ""),
+            resultContent: answer.substring(0, 200) + (answer.length > 200 ? "..." : ""),
+            source,
+            language,
+            createdAt: new Date(),
+        });
+        await historyRecord.save();
 
-        const updatedHistory = await ChatHistory.findOne({ _id }).select("messages");
-        cache.set(`chat:${_id}:${Date.now()}`, { question, answer }, 3600);
+        // Lưu vào cache
+        cache.set(`chat:${userId}:${Date.now()}`, { question, answer }, 3600);
 
+        // Trả về response (không bao gồm lịch sử chat từ ChatHistory)
         res.json({
             question,
             answer,
             source,
-            history: updatedHistory.messages,
             timestamp: new Date().toISOString(),
             status: "success",
         });
@@ -411,6 +458,37 @@ app.delete("/api/content-history/:userId", verifyToken, async (req, res) => {
             return res.status(404).json({ status: "error", message: "Item not found" });
         }
 
+
+app.get("/api/history", verifyToken, async (req, res) => {
+    try {
+        const { page = 1, limit = 10, type } = req.query;
+        const skip = (page - 1) * limit;
+        
+        const query = { userId: req.user._id };
+        if (type) query.actionType = type;
+        
+        const history = await ContentHistory.find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit));
+            
+        const total = await ContentHistory.countDocuments(query);
+        
+        res.json({
+            success: true,
+            data: history,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total,
+                pages: Math.ceil(total / limit)
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            success: false,
+            error: error.message 
+
         res.json({ status: "success", message: "Item deleted successfully" });
     } catch (error) {
         console.error("Error deleting content history item:", error);
@@ -457,23 +535,33 @@ app.get("/api/content-history/:userId", verifyToken, async (req, res) => {
         res.status(500).json({
             status: 'error',
             message: error.message
+
         });
     }
 });
 
-app.get("/api/chat-history/:userId", verifyToken, async (req, res) => {
+// API LẤY CHI TIẾT LỊCH SỬ
+app.get("/api/history/:id", verifyToken, async (req, res) => {
     try {
-        console.log(`Fetching chat history for user: ${req.params.userId}`);
+        const record = await ContentHistory.findOne({
+            _id: req.params.id,
+            userId: req.user._id
+        });
         
+
+        if (!record) {
+            return res.status(404).json({
+                success: false,
+                error: "Không tìm thấy bản ghi lịch sử"
+
         // Kiểm tra quyền truy cập: Chỉ cho phép người dùng xem lịch sử của chính họ
         if (req.user._id !== req.params.userId) {
             return res.status(403).json({ 
                 status: 'error',
                 message: 'Unauthorized access' 
+
             });
         }
-
-        const history = await ChatHistory.findOne({ _id: req.params.userId });
         
         if (!history) {
             return res.status(200).json({
@@ -487,20 +575,25 @@ app.get("/api/chat-history/:userId", verifyToken, async (req, res) => {
         }
 
         res.json({
+
+            success: true,
+            data: record
+
             status: 'success',
             data: {
                 messages: history.messages, // Trả về trực tiếp messages
                 lastUpdated: history.lastUpdated
             }
+
         });
     } catch (error) {
-        console.error('Error fetching chat history:', error);
         res.status(500).json({ 
-            status: 'error',
-            message: error.message 
+            success: false,
+            error: error.message 
         });
     }
 });
+
 
 
 async function fetchContent(url) {
