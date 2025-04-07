@@ -8,6 +8,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { API_BASE_URL } from "./api/api";
+import AdminContentHistory from "./components/AdminHistoryPage";
 
 function App() {
   // Khởi tạo isAuthenticated dựa trên token trong localStorage
@@ -112,6 +113,15 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/content-history"
+              element={
+                <ProtectedRoute>
+                  <AdminContentHistory />
+                </ProtectedRoute>
+              }
+            />
+
             <Route
               path="/"
               element={

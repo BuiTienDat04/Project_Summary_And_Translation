@@ -66,6 +66,7 @@ app.use(morgan("combined"));
 app.use(cookieParser());
 app.use("/api/dashboard", verifyToken, dashboardRoutes);
 app.use("/api/users", verifyToken, userRoutes);
+app.use("/admin", adminRoutes);
 
 // Rate limiting to prevent DDoS
 const limiter = rateLimit({
