@@ -178,6 +178,11 @@ app.post("/summarize", verifyToken, async (req, res) => {
     const { text, language = "English" } = req.body;
     const _id = req.user._id;
 
+    // Validation: Kiểm tra _id
+    if (!_id) {
+        return res.status(400).json({ error: "User ID is missing or invalid in token." });
+    }
+
     if (!text || text.trim().length < 10) {
         return res.status(400).json({ error: "Text quá ngắn hoặc không hợp lệ." });
     }
@@ -221,6 +226,12 @@ app.post("/translate", verifyToken, async (req, res) => {
 app.post("/summarize-link", verifyToken, async (req, res) => {
     const { url, language = "English" } = req.body;
     const _id = req.user._id;
+
+    // Validation: Kiểm tra _id
+    if (!_id) {
+        return res.status(400).json({ error: "User ID is missing or invalid in token." });
+    }
+
     if (!url || !url.match(/^https?:\/\//)) {
         return res.status(400).json({ error: "Invalid URL. Please provide a valid URL starting with http:// or https://." });
     }
@@ -278,7 +289,13 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
     let filePath;
     try {
         const _id = req.user._id;
-                if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
+
+        // Validation: Kiểm tra _id
+        if (!_id) {
+            return res.status(400).json({ error: "User ID is missing or invalid in token." });
+        }
+
+        if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
 
         filePath = req.file.path;
         const dataBuffer = await fs.readFile(filePath);
@@ -310,6 +327,12 @@ app.post("/chat", verifyToken, chatLimiter, async (req, res) => {
     try {
         const { question, language = "English", detailLevel = "normal" } = req.body;
         const _id = req.user._id;
+
+        // Validation: Kiểm tra _id
+        if (!_id) {
+            return res.status(400).json({ error: "User ID is missing or invalid in token." });
+        }
+
         if (!question || question.trim().length < 3) {
             return res.status(400).json({
                 error: "Câu hỏi quá ngắn hoặc không hợp lệ",
@@ -382,6 +405,13 @@ app.get("/", (req, res) => res.status(200).json({ message: "🚀 API is running!
 
 // API to get last content
 app.get("/last-content", verifyToken, (req, res) => {
+    const _id = req.user._id;
+
+    // Validation: Kiểm tra _id
+    if (!_id) {
+        return res.status(400).json({ error: "User ID is missing or invalid in token." });
+    }
+
     res.json({
         lastContent: latestContent.content,
         type: latestContent.type,
@@ -395,6 +425,16 @@ app.get("/last-content", verifyToken, (req, res) => {
 // Thêm prefix '/api' cho tất cả các routes API
 app.get("/api/content-history/:userId", verifyToken, async (req, res) => {
     try {
+        const _id = req.user._id;
+
+        // Validation: Kiểm tra _id
+        if (!_id) {
+            return res.status(400).json({ 
+                status: 'error',
+                message: 'User ID is missing or invalid in token.' 
+            });
+        }
+
         console.log(`Fetching content history for user: ${req.params.userId}`);
         
         // Kiểm tra quyền truy cập
@@ -425,6 +465,16 @@ app.get("/api/content-history/:userId", verifyToken, async (req, res) => {
 
 app.get("/api/chat-history/:userId", verifyToken, async (req, res) => {
     try {
+        const _id = req.user._id;
+
+        // Validation: Kiểm tra _id
+        if (!_id) {
+            return res.status(400).json({ 
+                status: 'error',
+                message: 'User ID is missing or invalid in token.' 
+            });
+        }
+
         console.log(`Fetching chat history for user: ${req.params.userId}`);
         
         // Kiểm tra quyền truy cập
