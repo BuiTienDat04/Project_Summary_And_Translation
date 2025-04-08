@@ -13,7 +13,7 @@ const AdminHistoryPage = () => {
   useEffect(() => {
     const fetchHistories = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/content-history`);
+        const res = await fetch(`${API_BASE_URL}/admin/content-history`);
 
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
