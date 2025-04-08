@@ -1,7 +1,7 @@
 const express = require("express");
 const { verifyToken, verifyAdmin } = require("../middleware/authMiddleware");
-const ContentHistory = require("../models/ContentHistory"); // Đảm bảo import đúng
-const User = require("../models/User"); // Import để dùng populate
+const ContentHistory = require("../models/ContentHistory");
+const User = require("../models/User"); 
 const router = express.Router();
 
 // API dành riêng cho Admin
@@ -10,18 +10,17 @@ router.get("/dashboard", verifyAdmin, (req, res) => {
 });
 
 // GET: Lấy toàn bộ lịch sử tóm tắt của người dùng (cho giao diện Admin)
-router.get("/content-history", verifyAdmin, async (req, res) => {
+router.get("/content-history", verifyToken, verifyAdmin, async (req, res) => {
   try {
     const histories = await ContentHistory.find()
       .populate({
         path: "_id",
         model: "User",
-        select: "email name", // Có thể chọn thêm "name" nếu cần
+        select: "email name", 
       });
 
-    // Chuyển đổi dữ liệu trả về cho dễ dùng ở FE
     const formatted = histories.map((h) => ({
-      userId: h._id._id,           // ID thực của User
+      userId: h._id._id,        
       email: h._id.email,
       contents: h.contents,
       lastUpdated: h.lastUpdated,
