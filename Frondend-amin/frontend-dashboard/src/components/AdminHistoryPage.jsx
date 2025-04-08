@@ -55,16 +55,22 @@ const AdminHistoryPage = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-
+  
+      const data = await res.json();
+      console.log("Response status:", res.status);
+      console.log("Response data:", data); // 👈 Xem chi tiết lỗi
+  
       if (!res.ok) {
-        throw new Error("Failed to delete content");
+        throw new Error(data.message || "Failed to delete content");
       }
-
-      return await res.json();
+  
+      return data;
     } catch (error) {
+      console.error("Delete error:", error);
       throw error;
     }
   };
+  
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (error) return <div className="p-6 text-red-500">Error: {error}</div>;
