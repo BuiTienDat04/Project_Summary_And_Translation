@@ -9,7 +9,7 @@ const router = express.Router();
 // Regular Expressions for Validation
 const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/; // Only @gmail.com emails
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/; // Min 8 chars, 1 uppercase, 1 lowercase, 1 special char, 1 number
-
+const MINIMUM_AGE = 13;
 const DEFAULT_COUNTRY_CODE = "VN"; // Default country (Vietnam)
 
 module.exports = (visitCountObj) => {
