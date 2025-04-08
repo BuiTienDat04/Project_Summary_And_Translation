@@ -7,23 +7,28 @@ const chatHistorySchema = new mongoose.Schema({
         required: true,
     },
     messages: [{
+        _id: {
+          type: mongoose.Schema.Types.ObjectId,
+          default: () => new mongoose.Types.ObjectId(),
+        },
         question: {
-            type: String,
-            required: true,
+          type: String,
+          required: true,
         },
         answer: {
-            type: String,
-            required: true,
+          type: String,
+          required: true,
         },
         source: {
-            type: String,
-            required: true,
+          type: String,
+          required: true,
         },
         timestamp: {
-            type: Date,
-            default: Date.now,
+          type: Date,
+          default: Date.now,
         },
-    }],
+      }],
+      
     lastUpdated: {
         type: Date,
         default: Date.now,
