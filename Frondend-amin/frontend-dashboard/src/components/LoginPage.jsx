@@ -33,7 +33,7 @@ const LoginPage = ({ setIsAuthenticated }) => {
       setLoginErrorMessage("Email and password are required!");
       return;
     }
-
+  
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/auth/login`,
@@ -43,34 +43,53 @@ const LoginPage = ({ setIsAuthenticated }) => {
         },
         { withCredentials: true }
       );
-
+  
       console.log("Login response:", response.data);
-
+  
       const { token, user } = response.data;
-
+  
       if (!token || !user || !user._id) {
         setLoginErrorMessage("Invalid response from server! Missing token or user ID.");
         return;
       }
-
+  
+      // ✅ Check role
+      if (user.role !== "admin") {
+        setLoginErrorMessage("❌ You are not authorized to access this system (admin only).");
+  
+        // Clear stored credentials
+        localStorage.removeItem("token");
+        localStorage.removeItem("_id");
+        localStorage.removeItem("loggedInUser");
+        localStorage.removeItem("isAdmin");
+  
+        setLoginSuccess(false);
+        setIsAuthenticated(false);
+        return;
+      }
+  
+      // ✅ Save info if admin
       localStorage.setItem("token", token);
       localStorage.setItem("_id", user._id);
       localStorage.setItem("loggedInUser", JSON.stringify(user));
-
-      console.log("Logged in user ID:", user._id);
-
+      localStorage.setItem("isAdmin", true);
+  
+      console.log("✅ Logged in as Admin:", user._id);
+  
       setLoginSuccess(true);
       setLoginErrorMessage("");
       setIsAuthenticated(true);
+  
       setTimeout(() => {
-        navigate("/dashboard", { replace: true });
-      });
+        navigate("/admin/dashboard", { replace: true });
+      }, 300);
     } catch (error) {
       console.error("Login error:", error.response?.data || error.message);
       setLoginErrorMessage(error.response?.data?.message || "Login failed!");
       setLoginSuccess(false);
     }
-  };
+  };  
+  
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 overflow-hidden">
