@@ -6,8 +6,9 @@ import { API_BASE_URL } from "../api/api";
 
 const HistorySummary = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const [history, setHistory] = useState([]);
-    const [loading, setLoading] = useState(false); // Bắt đầu không loading
+    const [contentHistory, setContentHistory] = useState([]); // Lịch sử từ ContentHistory
+    const [chatHistory, setChatHistory] = useState([]);       // Lịch sử từ ChatHistory
+    const [loading, setLoading] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [error, setError] = useState(null);
 
@@ -16,7 +17,7 @@ const HistorySummary = () => {
         if (selectedItem) setSelectedItem(null);
     };
 
-    // Hàm lấy dữ liệu lịch sử
+    // Hàm lấy dữ liệu từ cả ContentHistory và ChatHistory
     const fetchHistory = async () => {
         try {
             setLoading(true);
@@ -35,12 +36,20 @@ const HistorySummary = () => {
                 } 
             };
 
-            const response = await axios.get(`${API_BASE_URL}/api/content-history/${userId}`, config);
-
-            if (response.data.status === 'success') {
-                setHistory(response.data.data.history || []);
+            // Lấy ContentHistory
+            const contentResponse = await axios.get(`${API_BASE_URL}/api/content-history/${userId}`, config);
+            if (contentResponse.data.status === 'success') {
+                setContentHistory(contentResponse.data.data.history || []);
             } else {
-                setError(response.data.message || 'Failed to load history');
+                setError(contentResponse.data.message || 'Failed to load content history');
+            }
+
+            // Lấy ChatHistory
+            const chatResponse = await axios.get(`${API_BASE_URL}/api/chat-history/${userId}`, config);
+            if (chatResponse.data.status === 'success') {
+                setChatHistory(chatResponse.data.data.history || []);
+            } else {
+                setError(chatResponse.data.message || 'Failed to load chat history');
             }
         } catch (error) {
             console.error('Fetch history error:', error);
@@ -65,13 +74,30 @@ const HistorySummary = () => {
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
             await axios.delete(`${API_BASE_URL}/content-history/${_id}/${itemId}`, config);
-            setHistory(history.filter(item => item._id !== itemId));
+            setContentHistory(contentHistory.filter(item => item._id !== itemId));
             setSelectedItem(null);
         } catch (error) {
             console.error('Error deleting history item:', error);
             setError('Failed to delete history item. Please try again.');
         }
     };
+
+    // Kết hợp dữ liệu từ ContentHistory và ChatHistory
+    const combinedHistory = [
+        ...contentHistory.map(item => ({
+            ...item,
+            timestamp: item.timestamp || new Date().toISOString(),
+            source: 'content'
+        })),
+        ...chatHistory.map(item => ({
+            ...item,
+            type: 'chat',
+            content: item.question,
+            summary: item.answer,
+            timestamp: item.timestamp || new Date().toISOString(),
+            source: 'chat'
+        }))
+    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Sắp xếp theo thời gian giảm dần
 
     return (
         <>
@@ -138,12 +164,12 @@ const HistorySummary = () => {
                             </div>
                         )}
 
-                        {!loading && history.length === 0 && (
+                        {!loading && combinedHistory.length === 0 && (
                             <p className="text-gray-500 text-center italic">No history available yet.</p>
                         )}
 
                         {/* Chi tiết mục được chọn */}
-                        {!loading && history.length > 0 && selectedItem && (
+                        {!loading && combinedHistory.length > 0 && selectedItem && (
                             <div className="space-y-4 bg-gray-50 p-4 rounded-xl shadow-inner">
                                 <div className="flex justify-between items-center">
                                     <button
@@ -185,10 +211,10 @@ const HistorySummary = () => {
                         )}
 
                         {/* Danh sách lịch sử */}
-                        {!loading && history.length > 0 && !selectedItem && (
+                        {!loading && combinedHistory.length > 0 && !selectedItem && (
                             <div className="space-y-6">
                                 {Object.entries(
-                                    history.reduce((acc, item) => {
+                                    combinedHistory.reduce((acc, item) => {
                                         const date = new Date(item.timestamp).toLocaleDateString();
                                         if (!acc[date]) acc[date] = [];
                                         acc[date].push(item);
