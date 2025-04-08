@@ -64,15 +64,30 @@ const AdminHistoryPage = () => {
   };
 
   const deleteChatMessage = async (chatId, messageId, token) => {
-    const res = await fetch(`${API_BASE_URL}/admin/delete-chat/${chatId}/${messageId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Failed to delete chat message");
-    return data;
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/delete-chat/${chatId}/${messageId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      const data = await res.json();
+  
+      if (!res.ok) {
+        console.error("Delete chat error:", data);
+        throw new Error(data.message || "Failed to delete chat message");
+      }
+  
+      console.log("Deleted chat message:", data);
+      return data;
+    } catch (err) {
+      console.error("Delete chat request failed:", err);
+      throw err;
+    }
   };
+  
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (error) return <div className="p-6 text-red-500">Error: {error}</div>;
