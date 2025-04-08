@@ -7,45 +7,10 @@ Modal.setAppElement("#root");
 
 const AdminHistoryPage = () => {
   const [histories, setHistories] = useState([]);
+  const [chatHistories, setChatHistories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedContent, setSelectedContent] = useState(null);
-
-  useEffect(() => {
-    const fetchHistories = async () => {
-      try {
-        const token = localStorage.getItem("token"); // Lấy token từ localStorage
-
-        const res = await fetch(`${API_BASE_URL}/admin/content-history`, {
-          headers: {
-            Authorization: `Bearer ${token}`, // Thêm token vào header
-          },
-        });
-
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-
-        const data = await res.json();
-
-        if (!Array.isArray(data)) {
-          throw new Error("Invalid data format: expected array");
-        }
-
-        setHistories(data);
-      } catch (err) {
-        console.error("Error loading data:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchHistories(); // Gọi ban đầu
-    const interval = setInterval(fetchHistories, 3000); // Cập nhật mỗi 3 giây
-
-    return () => clearInterval(interval); // Cleanup khi unmount
-  }, []);
 
   const deleteUserContent = async (userId, contentId, token) => {
     try {
@@ -55,99 +20,224 @@ const AdminHistoryPage = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-  
+
       const data = await res.json();
-      console.log("Response status:", res.status);
-      console.log("Response data:", data); // 👈 Xem chi tiết lỗi
-  
       if (!res.ok) {
         throw new Error(data.message || "Failed to delete content");
       }
-  
+
       return data;
     } catch (error) {
       console.error("Delete error:", error);
       throw error;
     }
   };
-  
+
+  const deleteChatMessage = async (userId, messageId, token) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/delete-chat/${userId}/${messageId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to delete chat message");
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Delete chat error:", error);
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const [contentRes, chatRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/admin/content-history`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(`${API_BASE_URL}/admin/chat-history`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        if (!contentRes.ok || !chatRes.ok) {
+          throw new Error("Failed to fetch content or chat history");
+        }
+
+        const contentData = await contentRes.json();
+        const chatData = await chatRes.json();
+
+        if (!Array.isArray(contentData) || !Array.isArray(chatData)) {
+          throw new Error("Invalid data format");
+        }
+
+        setHistories(contentData);
+        setChatHistories(chatData);
+      } catch (err) {
+        console.error("Fetch error:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAll();
+    const interval = setInterval(fetchAll, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (error) return <div className="p-6 text-red-500">Error: {error}</div>;
-  if (histories.length === 0) return <div className="p-6">No history data available</div>;
+  if (histories.length === 0 && chatHistories.length === 0) return <div className="p-6">No history data available</div>;
 
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">User Content Summary History</h2>
-      <table className="table-auto w-full border-collapse border border-gray-300">
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="border p-2">User Email</th>
-            <th className="border p-2">Type</th>
-            <th className="border p-2">Original Content</th>
-            <th className="border p-2">Summary</th>
-            <th className="border p-2">Timestamp</th>
-            <th className="border p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {histories.flatMap((history) =>
-            history.contents.map((item, index) => (
-              <tr key={`${history.userId}-${index}`} className="border hover:bg-gray-100">
-                <td className="border p-2">{history.email || "Unknown"}</td>
-                <td className="border p-2">{item.type}</td>
-                <td
-                  className="border p-2 truncate max-w-xs cursor-pointer"
-                  onClick={() => setSelectedContent({ ...item, email: history.email })}
-                >
-                  {item.content?.slice(0, 50)}...
-                </td>
-                <td
-                  className="border p-2 truncate max-w-xs cursor-pointer"
-                  onClick={() => setSelectedContent({ ...item, email: history.email })}
-                >
-                  {item.summary?.slice(0, 50) || "Not available"}
-                </td>
 
-                <td className="border p-2">
-                  {new Date(item.timestamp).toLocaleString()}
-                </td>
-                <td className="border p-2 text-center">
-                  <button
-                    onClick={async () => {
-                      const confirmDelete = window.confirm("Are you sure you want to delete this content?");
-                      if (!confirmDelete) return;
+      <div className="overflow-y-auto max-h-[500px] border rounded-lg mb-12">
+        <table className="table-auto w-full border-collapse border border-gray-300">
+          <thead className="bg-gray-200">
+            <tr className="sticky top-0 bg-gray-200 z-10">
+              <th className="border p-2">User Email</th>
+              <th className="border p-2">Type</th>
+              <th className="border p-2">Original Content</th>
+              <th className="border p-2">Summary</th>
+              <th className="border p-2">Timestamp</th>
+              <th className="border p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {histories
+              .slice()
+              .reverse()
+              .flatMap((history) =>
+                history.contents
+                  .slice()
+                  .reverse()
+                  .map((item, index) => (
+                    <tr key={`${history.userId}-${index}`} className="border hover:bg-gray-100">
+                      <td className="border p-2">{history.email || "Unknown"}</td>
+                      <td className="border p-2">{item.type}</td>
+                      <td
+                        className="border p-2 truncate max-w-xs cursor-pointer"
+                        onClick={() => setSelectedContent({ ...item, email: history.email })}
+                      >
+                        {item.content?.slice(0, 50)}...
+                      </td>
+                      <td
+                        className="border p-2 truncate max-w-xs cursor-pointer"
+                        onClick={() => setSelectedContent({ ...item, email: history.email })}
+                      >
+                        {item.summary?.slice(0, 50) || "Not available"}
+                      </td>
+                      <td className="border p-2">{new Date(item.timestamp).toLocaleString()}</td>
+                      <td className="border p-2 text-center">
+                        <button
+                          onClick={async () => {
+                            const confirmDelete = window.confirm("Are you sure you want to delete this content?");
+                            if (!confirmDelete) return;
+                            try {
+                              const token = localStorage.getItem("token");
+                              await deleteUserContent(history.userId, item._id, token);
+                              setHistories((prev) =>
+                                prev.map((h) =>
+                                  h.userId === history.userId
+                                    ? { ...h, contents: h.contents.filter((c) => c._id !== item._id) }
+                                    : h
+                                )
+                              );
+                            } catch (err) {
+                              alert("Delete failed: " + err.message);
+                            }
+                          }}
+                          title="Delete"
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <FiTrash2 size={20} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+              )}
+          </tbody>
+        </table>
+      </div>
 
-                      try {
-                        const token = localStorage.getItem("token");
-                        await deleteUserContent(history.userId, item._id, token);
-
-                        // Cập nhật lại sau khi xoá
-                        setHistories((prev) =>
-                          prev.map((h) =>
-                            h.userId === history.userId
-                              ? { ...h, contents: h.contents.filter((c) => c._id !== item._id) }
-                              : h
-                          )
-                        );
-                      } catch (err) {
-                        alert("Delete failed: " + err.message);
-                      }
-                    }}
-                    title="Delete"
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <FiTrash2 size={20} />
-                  </button>
-                </td>
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-4">User Chat History</h2>
+        <div className="border border-gray-300 rounded overflow-y-scroll max-h-[400px]">
+          <table className="table-auto w-full border-collapse">
+            <thead className="sticky top-0 bg-gray-200 z-10">
+              <tr>
+                <th className="border p-2">User Email</th>
+                <th className="border p-2">Question</th>
+                <th className="border p-2">Answer</th>
+                <th className="border p-2">Source</th>
+                <th className="border p-2">Timestamp</th>
+                <th className="border p-2">Actions</th>
               </tr>
-            ))
-          )}
-        </tbody>
+            </thead>
+            <tbody>
+              {chatHistories
+                .slice()
+                .reverse()
+                .flatMap((chat) =>
+                  chat.messages
+                    .slice()
+                    .reverse()
+                    .map((msg, index) => (
+                      <tr key={`${chat._id}-${msg._id || index}`} className="border hover:bg-gray-100">
+                        <td className="border p-2">{chat.email || "Unknown"}</td>
+                        <td className="border p-2 truncate max-w-xs">{msg.question}</td>
+                        <td className="border p-2 truncate max-w-xs">{msg.answer}</td>
+                        <td className="border p-2">{msg.source}</td>
+                        <td className="border p-2">{new Date(msg.timestamp).toLocaleString()}</td>
+                        <td className="border p-2 text-center">
+                          <button
+                            onClick={async () => {
+                              const confirmDelete = window.confirm("Are you sure you want to delete this chat message?");
+                              if (!confirmDelete) return;
 
-      </table>
+                              try {
+                                const token = localStorage.getItem("token");
+                                await deleteChatMessage(chat._id, msg._id, token);
 
-      {/* Modal xem chi tiết */}
+                                setChatHistories((prev) =>
+                                  prev.map((c) =>
+                                    c._id === chat._id
+                                      ? {
+                                          ...c,
+                                          messages: c.messages.filter((m) => m._id !== msg._id),
+                                        }
+                                      : c
+                                  )
+                                );
+                              } catch (err) {
+                                alert("Delete failed: " + err.message);
+                              }
+                            }}
+                            title="Delete"
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <FiTrash2 size={20} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <Modal
         isOpen={!!selectedContent}
         onRequestClose={() => setSelectedContent(null)}
@@ -160,31 +250,22 @@ const AdminHistoryPage = () => {
             <h3 className="text-xl font-bold mb-2">Summary Details</h3>
             <p><strong>User:</strong> {selectedContent.email || "Unknown"}</p>
             <p><strong>Type:</strong> {selectedContent.type}</p>
-
             <p className="mt-3"><strong>Original Content:</strong></p>
             <div className="bg-gray-100 p-3 rounded mb-3 whitespace-pre-wrap">
               {selectedContent.content}
             </div>
-
             <p><strong>Summary:</strong></p>
             <div className="bg-green-100 p-3 rounded whitespace-pre-wrap">
               {selectedContent.summary || "Not available"}
             </div>
-
             {selectedContent.url && (
               <p className="mt-3">
                 <strong>URL:</strong>{" "}
-                <a
-                  href={selectedContent.url}
-                  className="text-blue-500 underline"
-                  target="_blank"
-                  rel="noreferrer"
-                >
+                <a href={selectedContent.url} className="text-blue-500 underline" target="_blank" rel="noreferrer">
                   {selectedContent.url}
                 </a>
               </p>
             )}
-
             <button
               onClick={() => setSelectedContent(null)}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
@@ -194,7 +275,6 @@ const AdminHistoryPage = () => {
           </div>
         )}
       </Modal>
-
     </div>
   );
 };
