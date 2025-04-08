@@ -189,7 +189,7 @@ const AdminHistoryPage = () => {
 
                             try {
                               const token = localStorage.getItem("token");
-                              await deleteChatMessage(userId, msg._id, token); // ✅ Đảm bảo userId không undefined
+                              await deleteChatMessage(chat.user._id, msg._id, token);
 
                               setChatHistories((prev) =>
                                 prev.map((c) =>
