@@ -34,24 +34,34 @@ router.get("/content-history", verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // DELETE /admin/delete-content/:userId/:contentId
+router.delete(
+  "/delete-content/:userId/:contentId",
+  verifyToken,    
+  verifyAdmin, 
+  async (req, res) => {
+    const { userId, contentId } = req.params;
 router.delete("/delete-content/:userId/:contentId", verifyAdmin, async (req, res) => {
   const { userId, contentId } = req.params;
 
-  try {
-    const userHistory = await ContentHistory.findOne({ userId });
+    try {
+      const userHistory = await ContentHistory.findOne({ userId });
 
-    if (!userHistory) return res.status(404).json({ message: "User history not found" });
+      if (!userHistory) {
+        return res.status(404).json({ message: "User history not found" });
+      }
 
-    // Lọc bỏ contentId cần xóa
-    userHistory.contents = userHistory.contents.filter(content => content._id.toString() !== contentId);
+      userHistory.contents = userHistory.contents.filter(
+        (content) => content._id.toString() !== contentId
+      );
 
-    await userHistory.save();
+      await userHistory.save();
 
-    res.json({ message: "Content deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+      res.json({ message: "Content deleted successfully" });
+    } catch (err) {
+      res.status(500).json({ message: "Server error", error: err.message });
+    }
   }
-});
+);
 
 
 module.exports = router;
