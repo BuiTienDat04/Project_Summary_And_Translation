@@ -36,12 +36,10 @@ router.get("/content-history", verifyToken, verifyAdmin, async (req, res) => {
 // DELETE /admin/delete-content/:userId/:contentId
 router.delete(
   "/delete-content/:userId/:contentId",
-  verifyToken,    
-  verifyAdmin, 
+  verifyToken,      
+  verifyAdmin,       
   async (req, res) => {
     const { userId, contentId } = req.params;
-router.delete("/delete-content/:userId/:contentId", verifyAdmin, async (req, res) => {
-  const { userId, contentId } = req.params;
 
     try {
       const userHistory = await ContentHistory.findOne({ userId });
