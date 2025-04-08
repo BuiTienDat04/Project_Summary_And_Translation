@@ -7,7 +7,7 @@ const chatHistorySchema = new mongoose.Schema({
     required: true,
   },
   messages: [{
-    _id: {
+    chat_id: {
       type: mongoose.Schema.Types.ObjectId,
       auto: true,
     },
