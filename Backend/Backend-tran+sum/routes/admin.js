@@ -36,13 +36,15 @@ router.get("/content-history", verifyToken, verifyAdmin, async (req, res) => {
 router.delete(
   "/delete-content/:userId/:contentId",
   verifyToken,
-  verifyAdmin,
   async (req, res) => {
     const { userId, contentId } = req.params;
+    
+    if (req.user._id !== userId && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Not authorized to delete this content" });
+    }
 
     try {
-      const userHistory = await ContentHistory.findById(userId); // ✅ fix tại đây
-
+      const userHistory = await ContentHistory.findById(userId);
       if (!userHistory) {
         return res.status(404).json({ message: "User history not found" });
       }
@@ -52,13 +54,13 @@ router.delete(
       );
 
       await userHistory.save();
-
       res.json({ message: "Content deleted successfully" });
     } catch (err) {
       res.status(500).json({ message: "Server error", error: err.message });
     }
   }
 );
+
 
 
 module.exports = router;
