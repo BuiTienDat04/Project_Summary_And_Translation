@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Send, X } from "lucide-react";
+import { Send, X, Loader2 } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import api from "../api/api"; // Import instance api
+import api from "../api/api";
 
 const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryContent, loggedInUser }) => {
     const location = useLocation();
@@ -23,7 +23,7 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
             setMessages([
                 {
                     role: "bot",
-                    content: "Hello! How can I help you?",
+                    content: "Hello! How can I assist you today?",
                 },
             ]);
         }
@@ -41,35 +41,30 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
 
     const handleSendMessage = async () => {
         const token = localStorage.getItem("token");
-        console.log("🔍 Token trước khi gửi request:", token);
-    
         if (!userInput.trim()) return;
         if (userInput.length > 500) {
             setError("Message too long (max 500 characters)");
             return;
         }
-    
+
         const newMessage = { role: "user", content: userInput };
         setMessages(prev => [...prev, newMessage]);
         setUserInput("");
         setError("");
         setIsLoading(true);
-    
+
         try {
-            const config = token ? {
-                headers: { Authorization: `Bearer ${token}` }
-            } : {};
-            
-            const response = await api.post("/chat", { 
-                question: userInput 
-            }, config);
-    
-            setMessages(prev => [...prev, { 
-                role: "bot", 
-                content: response.data.answer,
-                source: response.data.source 
-            }]);
-            
+            const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+            const response = await api.post("/chat", { question: userInput }, config);
+
+            setMessages(prev => [
+                ...prev,
+                { 
+                    role: "bot", 
+                    content: response.data.answer,
+                    source: response.data.source 
+                }
+            ]);
         } catch (error) {
             setError(error.response?.data?.error || "Failed to send message");
             console.error("Chat error:", error);
@@ -77,7 +72,6 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
             setIsLoading(false);
         }
     };
-
 
     const handleKeyPress = (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -90,21 +84,22 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
         setMessages([
             {
                 role: "bot",
-                content: "Hello! Summarize text, provide a URL, or upload a PDF so I can answer your question.",
+                content: "Hello! Summarize text, provide a URL, or upload a PDF so I can assist you.",
             },
         ]);
         setError("");
     };
+
     return (
-        <div className="fixed bottom-4 right-4 z-50 font-sans">
-            {/* Open Chat Button */}
+        <div className="fixed bottom-6 right-6 z-50 font-sans">
+            {/* Nút mở Chat */}
             {!isOpen && (
                 <button
                     onClick={() => setIsOpen(true)}
-                    className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-4 rounded-full shadow-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105"
+                    className="bg-gradient-to-br from-indigo-500 to-blue-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl hover:from-indigo-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-indigo-300"
                 >
                     <svg
-                        className="w-6 h-6"
+                        className="w-7 h-7"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -119,46 +114,49 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
                 </button>
             )}
 
-            {/* Chat     Box */}
+            {/* Chat Box */}
             {isOpen && (
-                <div className="bg-white rounded-xl shadow-2xl w-80 sm:w-96 h-[500px] flex flex-col overflow-hidden border border-gray-200">
+                <div className="bg-white rounded-2xl shadow-xl w-80 sm:w-[400px] h-[550px] flex flex-col overflow-hidden border border-gray-100 transition-all duration-300">
                     {/* Header */}
-                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 rounded-t-xl flex justify-between items-center">
-                        <h3 className="text-lg font-semibold tracking-wide">AI Chat</h3>
-                        <div className="flex gap-2">
+                    <div className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-4 rounded-t-2xl flex justify-between items-center shadow-md">
+                        <h3 className="text-lg font-semibold tracking-tight">AI Assistant</h3>
+                        <div className="flex items-center gap-3">
                             <button
                                 onClick={clearMessages}
-                                className="text-sm text-white hover:text-gray-200 transition-colors"
+                                className="text-sm text-indigo-100 hover:text-white transition-colors underline underline-offset-2"
                             >
                                 Clear
                             </button>
                             <button
                                 onClick={() => setIsOpen(false)}
-                                className="text-white hover:text-gray-200 transition-colors"
+                                className="text-indigo-100 hover:text-white p-1 rounded-full hover:bg-indigo-700 transition-all duration-200"
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
                     </div>
 
-                    {/* Chat Content */}
-                    <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto bg-gray-100 space-y-3">
+                    {/* Nội dung Chat */}
+                    <div
+                        ref={chatContainerRef}
+                        className="flex-1 p-4 bg-gray-50 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+                    >
                         {messages.map((message, index) => (
                             <div
                                 key={index}
                                 className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                             >
                                 <div
-                                    className={`max-w-[75%] p-3 rounded-lg shadow-sm transition-all duration-200 ${
+                                    className={`max-w-[80%] p-3 rounded-xl shadow-sm transition-all duration-200 ${
                                         message.role === "user"
-                                            ? "bg-blue-500 text-white"
+                                            ? "bg-indigo-500 text-white"
                                             : "bg-white text-gray-800 border border-gray-200"
                                     }`}
                                 >
-                                    {message.content}
+                                    <p className="text-sm leading-relaxed">{message.content}</p>
                                     {message.source && (
-                                        <span className="text-xs block mt-1 opacity-75">
-                                            (Source: {message.source})
+                                        <span className="text-xs block mt-1 opacity-70 italic">
+                                            Source: {message.source}
                                         </span>
                                     )}
                                 </div>
@@ -166,29 +164,14 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
                         ))}
                         {isLoading && (
                             <div className="flex justify-start">
-                                <div className="bg-white text-gray-600 p-3 rounded-lg shadow-sm flex items-center">
-                                    <svg className="animate-spin h-5 w-5 text-blue-500 mr-2" viewBox="0 0 24 24">
-                                        <circle
-                                            cx="12"
-                                            cy="12"
-                                            r="10"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                            fill="none"
-                                            className="opacity-25"
-                                        />
-                                        <path
-                                            fill="currentColor"
-                                            d="M4 12a8 8 0 018-8v8h-8z"
-                                            className="opacity-75"
-                                        />
-                                    </svg>
-                                    Processing...
+                                <div className="bg-white text-gray-600 p-3 rounded-xl shadow-sm flex items-center">
+                                    <Loader2 className="w-5 h-5 animate-spin text-indigo-500 mr-2" />
+                                    <span className="text-sm">Thinking...</span>
                                 </div>
                             </div>
                         )}
                         {error && (
-                            <div className="text-red-500 text-sm text-center bg-red-100 p-2 rounded-lg">
+                            <div className="text-red-600 text-sm text-center bg-red-50 p-2 rounded-xl border border-red-200">
                                 {error}
                             </div>
                         )}
@@ -201,16 +184,18 @@ const ChatBox = ({ textSummarizerContent, linkPageContent, documentSummaryConten
                                 value={userInput}
                                 onChange={(e) => setUserInput(e.target.value)}
                                 onKeyPress={handleKeyPress}
-                                placeholder="Enter your question..."
-                                className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
+                                placeholder="Ask me anything..."
+                                className="flex-1 p-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent resize-none text-sm placeholder-gray-400 transition-all duration-200"
                                 rows="2"
                                 maxLength={500}
                             />
                             <button
                                 onClick={handleSendMessage}
                                 disabled={isLoading}
-                                className={`p-2 rounded-full shadow-md transition-all duration-200 ${
-                                    isLoading ? "bg-gray-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"
+                                className={`p-2.5 rounded-full shadow-md transition-all duration-200 ${
+                                    isLoading
+                                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                        : "bg-indigo-500 text-white hover:bg-indigo-600"
                                 }`}
                             >
                                 <Send className="w-5 h-5" />
