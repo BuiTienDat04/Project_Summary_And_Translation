@@ -34,7 +34,7 @@ router.get("/content-history", verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // DELETE /admin/delete-content/:userId/:contentId
-router.delete("/delete-content/:userId/:contentId", authenticateAdmin, async (req, res) => {
+router.delete("/delete-content/:userId/:contentId", verifyAdmin, async (req, res) => {
   const { userId, contentId } = req.params;
 
   try {
@@ -52,5 +52,6 @@ router.delete("/delete-content/:userId/:contentId", authenticateAdmin, async (re
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+
 
 module.exports = router;
