@@ -101,7 +101,7 @@ router.delete("/delete-chat/:chatId/:messageId", verifyToken, async (req, res) =
     }
 
     chatHistory.messages = chatHistory.messages.filter(
-      (msg) => msg._id.toString() !== messageId
+      (msg) => msg.chat_id.toString() !== messageId
     );
 
     await chatHistory.save();
@@ -110,6 +110,7 @@ router.delete("/delete-chat/:chatId/:messageId", verifyToken, async (req, res) =
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+
 
 
 module.exports = router;

@@ -68,12 +68,11 @@ const AdminHistoryPage = () => {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
-  
+
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to delete chat message");
     return data;
-  };  
-
+  };
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (error) return <div className="p-6 text-red-500">Error: {error}</div>;
@@ -165,41 +164,34 @@ const AdminHistoryPage = () => {
               .slice()
               .reverse()
               .flatMap((chat) => {
-                const userId = chat._id; // Đảm bảo rõ ràng là userId
+                const chatId = chat._id;
 
                 return chat.messages
                   .slice()
                   .reverse()
                   .map((msg, index) => (
-                    <tr key={`${userId}-${msg._id}`} className="border hover:bg-gray-100">
+                    <tr key={`${chatId}-${msg.chat_id}`} className="border hover:bg-gray-100">
                       <td className="border p-2">{chat.email || "Unknown"}</td>
                       <td className="border p-2 truncate max-w-xs">{msg.question}</td>
                       <td className="border p-2 truncate max-w-xs">{msg.answer}</td>
                       <td className="border p-2">{msg.source}</td>
-                      <td className="border p-2">
-                        {new Date(msg.timestamp).toLocaleString()}
-                      </td>
+                      <td className="border p-2">{new Date(msg.timestamp).toLocaleString()}</td>
                       <td className="border p-2 text-center">
                         <button
                           onClick={async () => {
-                            const confirmDelete = window.confirm(
-                              "Are you sure you want to delete this chat message?"
-                            );
+                            const confirmDelete = window.confirm("Are you sure you want to delete this chat message?");
                             if (!confirmDelete) return;
 
                             try {
                               const token = localStorage.getItem("token");
-                              await deleteChatMessage(chat.user._id, msg._id, token);
-
+                              await deleteChatMessage(chatId, msg.chat_id, token);
                               setChatHistories((prev) =>
                                 prev.map((c) =>
-                                  c._id === userId
+                                  c._id === chatId
                                     ? {
-                                      ...c,
-                                      messages: c.messages.filter(
-                                        (m) => m._id !== msg._id
-                                      ),
-                                    }
+                                        ...c,
+                                        messages: c.messages.filter((m) => m.chat_id !== msg.chat_id),
+                                      }
                                     : c
                                 )
                               );
@@ -220,8 +212,7 @@ const AdminHistoryPage = () => {
         </table>
       </div>
 
-
-      {/* Modal for viewing full content */}
+      {/* Modal */}
       <Modal
         isOpen={!!selectedContent}
         onRequestClose={() => setSelectedContent(null)}
@@ -235,13 +226,9 @@ const AdminHistoryPage = () => {
             <p><strong>User:</strong> {selectedContent.email || "Unknown"}</p>
             <p><strong>Type:</strong> {selectedContent.type}</p>
             <p className="mt-3"><strong>Original Content:</strong></p>
-            <div className="bg-gray-100 p-3 rounded mb-3 whitespace-pre-wrap">
-              {selectedContent.content}
-            </div>
+            <div className="bg-gray-100 p-3 rounded mb-3 whitespace-pre-wrap">{selectedContent.content}</div>
             <p><strong>Summary:</strong></p>
-            <div className="bg-green-100 p-3 rounded whitespace-pre-wrap">
-              {selectedContent.summary || "Not available"}
-            </div>
+            <div className="bg-green-100 p-3 rounded whitespace-pre-wrap">{selectedContent.summary || "Not available"}</div>
             {selectedContent.url && (
               <p className="mt-3">
                 <strong>URL:</strong>{" "}
