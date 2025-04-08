@@ -6,8 +6,8 @@ import { API_BASE_URL } from "../api/api";
 
 const HistorySummary = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const [contentHistory, setContentHistory] = useState([]); // Lịch sử từ ContentHistory
-    const [chatHistory, setChatHistory] = useState([]);       // Lịch sử từ ChatHistory
+    const [contentHistory, setContentHistory] = useState([]);
+    const [chatHistory, setChatHistory] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [error, setError] = useState(null);
@@ -17,7 +17,6 @@ const HistorySummary = () => {
         if (selectedItem) setSelectedItem(null);
     };
 
-    // Hàm lấy dữ liệu từ cả ContentHistory và ChatHistory
     const fetchHistory = async () => {
         try {
             setLoading(true);
@@ -36,7 +35,6 @@ const HistorySummary = () => {
                 } 
             };
 
-            // Lấy ContentHistory
             const contentResponse = await axios.get(`${API_BASE_URL}/api/content-history/${userId}`, config);
             if (contentResponse.data.status === 'success') {
                 setContentHistory(contentResponse.data.data.history || []);
@@ -44,7 +42,6 @@ const HistorySummary = () => {
                 setError(contentResponse.data.message || 'Failed to load content history');
             }
 
-            // Lấy ChatHistory
             const chatResponse = await axios.get(`${API_BASE_URL}/api/chat-history/${userId}`, config);
             if (chatResponse.data.status === 'success') {
                 setChatHistory(chatResponse.data.data.history || []);
@@ -59,30 +56,52 @@ const HistorySummary = () => {
         }
     };
 
-    // Lấy dữ liệu khi component mount
     useEffect(() => {
         fetchHistory();
     }, []);
 
-    // Xóa một mục từ ContentHistory
+    // Hàm xóa cập nhật để khớp với backend
     const handleDelete = async (itemId, source) => {
         if (source !== 'content') return;
 
         try {
+            setLoading(true);
+            setError(null);
             const token = localStorage.getItem('token');
-            const _id = localStorage.getItem('_id');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
+            const userId = localStorage.getItem('_id');
 
-            await axios.delete(`${API_BASE_URL}/content-history/${_id}/${itemId}`, config);
-            setContentHistory(contentHistory.filter(item => item._id !== itemId));
-            setSelectedItem(null);
+            if (!token || !userId) {
+                throw new Error('Authentication required');
+            }
+
+            const config = { 
+                headers: { 
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                } 
+            };
+
+            // Gọi API DELETE với endpoint đúng
+            const response = await axios.delete(
+                `${API_BASE_URL}/api/delete-content/${userId}/${itemId}`,
+                config
+            );
+
+            if (response.status === 200) {
+                // Cập nhật state sau khi xóa thành công
+                setContentHistory(prevHistory => 
+                    prevHistory.filter(item => item._id !== itemId)
+                );
+                setSelectedItem(null);
+            }
         } catch (error) {
             console.error('Error deleting history item:', error);
-            setError('Failed to delete history item. Please try again.');
+            setError(error.response?.data?.message || 'Failed to delete history item. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
-    // Kết hợp dữ liệu từ ContentHistory và ChatHistory
     const combinedHistory = [
         ...contentHistory.map(item => ({
             ...item,
@@ -97,7 +116,7 @@ const HistorySummary = () => {
             timestamp: item.timestamp || new Date().toISOString(),
             source: 'chat'
         }))
-    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Sắp xếp theo thời gian giảm dần
+    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     return (
         <>
@@ -112,7 +131,6 @@ const HistorySummary = () => {
                     isOpen ? 'w-96 h-[calc(100vh-8rem)]' : 'w-14 h-14'
                 } bg-gradient-to-br from-indigo-600 via-purple-600 to-blue-700`}
             >
-                {/* Nút mở/đóng */}
                 <button
                     className="absolute top-0 left-0 w-full h-full flex items-center justify-center p-2 bg-transparent hover:bg-white/20 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50 rounded-2xl"
                     onClick={toggleOpen}
@@ -126,7 +144,6 @@ const HistorySummary = () => {
 
                 {isOpen && (
                     <div className="bg-white/90 backdrop-blur-md p-6 h-full overflow-y-auto text-gray-800">
-                        {/* Header với nút Refresh */}
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-2xl font-bold text-indigo-800 tracking-tight">
                                 Activity History
@@ -148,12 +165,10 @@ const HistorySummary = () => {
                             </div>
                         </div>
 
-                        {/* Mô tả */}
                         <p className="text-sm text-gray-600 mb-6 leading-relaxed">
                             Explore your past summaries and chat interactions.
                         </p>
 
-                        {/* Trạng thái */}
                         {error && (
                             <p className="text-red-500 bg-red-50 p-2 rounded-md mb-4 text-sm">{error}</p>
                         )}
@@ -168,7 +183,6 @@ const HistorySummary = () => {
                             <p className="text-gray-500 text-center italic">No history available yet.</p>
                         )}
 
-                        {/* Chi tiết mục được chọn */}
                         {!loading && combinedHistory.length > 0 && selectedItem && (
                             <div className="space-y-4 bg-gray-50 p-4 rounded-xl shadow-inner">
                                 <div className="flex justify-between items-center">
@@ -210,7 +224,6 @@ const HistorySummary = () => {
                             </div>
                         )}
 
-                        {/* Danh sách lịch sử */}
                         {!loading && combinedHistory.length > 0 && !selectedItem && (
                             <div className="space-y-6">
                                 {Object.entries(
