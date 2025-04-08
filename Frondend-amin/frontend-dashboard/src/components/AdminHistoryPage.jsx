@@ -64,15 +64,30 @@ const AdminHistoryPage = () => {
   };
 
   const deleteChatMessage = async (chatId, messageId, token) => {
-    const res = await fetch(`${API_BASE_URL}/admin/delete-chat/${chatId}/${messageId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/delete-chat/${chatId}/${messageId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Failed to delete chat message");
-    return data;
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("Delete chat error:", data);
+        throw new Error(data.message || "Failed to delete chat message");
+      }
+
+      console.log("Deleted chat message:", data);
+      return data;
+    } catch (err) {
+      console.error("Delete chat request failed:", err);
+      throw err;
+    }
   };
+
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (error) return <div className="p-6 text-red-500">Error: {error}</div>;
@@ -163,29 +178,42 @@ const AdminHistoryPage = () => {
             {chatHistories
               .slice()
               .reverse()
-              .flatMap((chat) =>
-                chat.messages
+              .flatMap((chat) => {
+                const userId = chat._id; // Đảm bảo rõ ràng là userId
+
+                return chat.messages
                   .slice()
                   .reverse()
                   .map((msg, index) => (
-                    <tr key={`${chat._id}-${index}`} className="border hover:bg-gray-100">
+                    <tr key={`${userId}-${msg._id}`} className="border hover:bg-gray-100">
                       <td className="border p-2">{chat.email || "Unknown"}</td>
                       <td className="border p-2 truncate max-w-xs">{msg.question}</td>
                       <td className="border p-2 truncate max-w-xs">{msg.answer}</td>
                       <td className="border p-2">{msg.source}</td>
-                      <td className="border p-2">{new Date(msg.timestamp).toLocaleString()}</td>
+                      <td className="border p-2">
+                        {new Date(msg.timestamp).toLocaleString()}
+                      </td>
                       <td className="border p-2 text-center">
                         <button
                           onClick={async () => {
-                            const confirmDelete = window.confirm("Are you sure you want to delete this chat message?");
+                            const confirmDelete = window.confirm(
+                              "Are you sure you want to delete this chat message?"
+                            );
                             if (!confirmDelete) return;
+
                             try {
                               const token = localStorage.getItem("token");
-                              await deleteChatMessage(chat._id, msg._id, token);
+                              await deleteChatMessage(userId, msg._id, token); // ✅ Đảm bảo userId không undefined
+
                               setChatHistories((prev) =>
                                 prev.map((c) =>
-                                  c._id === chat._id
-                                    ? { ...c, messages: c.messages.filter((m) => m._id !== msg._id) }
+                                  c._id === userId
+                                    ? {
+                                      ...c,
+                                      messages: c.messages.filter(
+                                        (m) => m._id !== msg._id
+                                      ),
+                                    }
                                     : c
                                 )
                               );
@@ -200,11 +228,12 @@ const AdminHistoryPage = () => {
                         </button>
                       </td>
                     </tr>
-                  ))
-              )}
+                  ));
+              })}
           </tbody>
         </table>
       </div>
+
 
       {/* Modal for viewing full content */}
       <Modal
