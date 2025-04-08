@@ -223,7 +223,7 @@ app.post("/translate", verifyToken, async (req, res) => {
 
         // Lưu vào lịch sử dịch
         const newEntry = {
-            type: "text",
+            type: "trabslate",
             content: text,
             summary: translation,
             url: null,
