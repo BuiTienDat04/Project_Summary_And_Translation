@@ -224,7 +224,7 @@ app.post("/translate", verifyToken, async (req, res) => {
         // Lưu vào lịch sử dịch
         const newEntry = {
             type: "text",
-            content: Translate ,
+            content: text,
             summary: translation,
             url: null,
             timestamp: new Date()
