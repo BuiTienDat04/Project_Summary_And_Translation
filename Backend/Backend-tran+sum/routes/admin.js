@@ -40,6 +40,8 @@ router.delete(
   verifyAdmin, 
   async (req, res) => {
     const { userId, contentId } = req.params;
+router.delete("/delete-content/:userId/:contentId", verifyAdmin, async (req, res) => {
+  const { userId, contentId } = req.params;
 
     try {
       const userHistory = await ContentHistory.findOne({ userId });
@@ -60,5 +62,6 @@ router.delete(
     }
   }
 );
+
 
 module.exports = router;
