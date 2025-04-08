@@ -90,34 +90,24 @@ router.get("/chat-history", verifyToken, verifyAdmin, async (req, res) => {
 router.delete("/delete-chat/:chatId/:messageId", verifyToken, async (req, res) => {
   const { chatId, messageId } = req.params;
 
-  // Chỉ cho admin hoặc chính chủ xóa
-  if (req.user._id !== chatId && req.user.role !== "admin") {
-    return res.status(403).json({ message: "Not authorized to delete this message" });
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Not authorized" });
   }
 
   try {
-    const chat = await ChatHistory.findById(chatId);
-
-    if (!chat) {
+    const chatHistory = await ChatHistory.findById(chatId);
+    if (!chatHistory) {
       return res.status(404).json({ message: "Chat history not found" });
     }
 
-    const originalLength = chat.messages.length;
-
-    // Xóa message theo _id
-    chat.messages = chat.messages.filter(
+    chatHistory.messages = chatHistory.messages.filter(
       (msg) => msg._id.toString() !== messageId
     );
 
-    if (chat.messages.length === originalLength) {
-      return res.status(404).json({ message: "Message not found" });
-    }
-
-    await chat.save();
-    return res.json({ message: "Message deleted successfully" });
+    await chatHistory.save();
+    res.json({ message: "Message deleted successfully" });
   } catch (err) {
-    console.error("Delete Chat Error:", err);
-    return res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
