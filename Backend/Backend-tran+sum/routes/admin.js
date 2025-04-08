@@ -39,17 +39,29 @@ router.delete(
   verifyToken,
   async (req, res) => {
     const { userId, contentId } = req.params;
-    
+
+    // Check if the requester is the owner or an admin
     if (req.user._id !== userId && req.user.role !== "admin") {
       return res.status(403).json({ message: "Not authorized to delete this content" });
     }
 
     try {
-      const userHistory = await ContentHistory.findById(userId);
+      // Find the content history by userId (not _id)
+      const userHistory = await ContentHistory.findOne({ userId });
       if (!userHistory) {
         return res.status(404).json({ message: "User history not found" });
       }
 
+      // Check if the content exists
+      const contentExists = userHistory.contents.some(
+        (content) => content._id.toString() === contentId
+      );
+
+      if (!contentExists) {
+        return res.status(404).json({ message: "Content not found" });
+      }
+
+      // Filter out the content to be deleted
       userHistory.contents = userHistory.contents.filter(
         (content) => content._id.toString() !== contentId
       );
@@ -57,10 +69,12 @@ router.delete(
       await userHistory.save();
       res.json({ message: "Content deleted successfully" });
     } catch (err) {
+      console.error("Delete content error:", err);
       res.status(500).json({ message: "Server error", error: err.message });
     }
   }
 );
+
 
 // GET: Get all chat history of users (for Admin view)
 router.get("/chat-history", verifyToken, verifyAdmin, async (req, res) => {
