@@ -205,10 +205,16 @@ app.post("/summarize", verifyToken, async (req, res) => {
 // API to translate text
 app.post("/translate", verifyToken, async (req, res) => {
     const { text, targetLang } = req.body;
+    const _id = req.user._id;
+
     if (!text || !targetLang || text.trim().length < 10) {
         return res.status(400).json({ error: "Missing or invalid text/targetLang." });
     }
-
+    await ContentHistory.findOneAndUpdate(
+        { _id: _id },
+        { $push: { contents: { type: "link", content, summary, url } }, $set: { lastUpdated: Date.now() } },
+        { upsert: true }
+    );
     try {
         const translation = await translateText(text, targetLang);
         await Visit.findOneAndUpdate({}, { $inc: { translatedPosts: 1 } }, { upsert: true, new: true });
