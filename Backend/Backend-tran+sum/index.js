@@ -190,7 +190,7 @@ app.post("/summarize", verifyToken, async (req, res) => {
 
         await ContentHistory.findOneAndUpdate(
             { _id: _id },
-            { $push: { contents: { type: "text", content: text, summary } }, $set: { lastUpdated: Date.now() } },
+            { $push: { contents: { type: "translate", content: text, summary: translation } }, $set: { lastUpdated: Date.now() } },
             { upsert: true }
         );
 
