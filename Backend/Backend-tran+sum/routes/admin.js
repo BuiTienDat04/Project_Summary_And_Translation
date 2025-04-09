@@ -1,5 +1,4 @@
 const express = require("express");
-const mongoose = require("mongoose");
 const { verifyToken, verifyAdmin } = require("../middleware/authMiddleware");
 const ContentHistory = require("../models/ContentHistory");
 const User = require("../models/User"); 
@@ -15,10 +14,14 @@ router.get("/dashboard", verifyAdmin, (req, res) => {
 router.get("/content-history", verifyToken, verifyAdmin, async (req, res) => {
   try {
     const histories = await ContentHistory.find()
-      .populate({ path: "_id", model: "User", select: "email name" });
+      .populate({
+        path: "_id",
+        model: "User",
+        select: "email name", 
+      });
 
     const formatted = histories.map((h) => ({
-      userId: h._id._id,
+      userId: h._id._id,        
       email: h._id.email,
       contents: h.contents,
       lastUpdated: h.lastUpdated,
@@ -31,7 +34,6 @@ router.get("/content-history", verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
-// DELETE: Xóa nội dung
 router.delete("/delete-content/:userId/:contentId", verifyToken, async (req, res) => {
   const { userId, contentId } = req.params;
 
@@ -40,7 +42,7 @@ router.delete("/delete-content/:userId/:contentId", verifyToken, async (req, res
   }
 
   try {
-    const userHistory = await ContentHistory.findById(userId);
+    const userHistory = await ContentHistory.findById(userId); // _id là userId
     if (!userHistory) return res.status(404).json({ message: "User history not found" });
 
     const index = userHistory.contents.findIndex(c => c._id.toString() === contentId);
@@ -56,17 +58,24 @@ router.delete("/delete-content/:userId/:contentId", verifyToken, async (req, res
   }
 });
 
+
 // GET: Get all chat history of users (for Admin view)
 router.get("/chat-history", verifyToken, verifyAdmin, async (req, res) => {
   try {
     const histories = await ChatHistory.find()
-      .populate({ path: "_id", model: "User", select: "email name" })
-      .sort({ lastUpdated: -1 });
+      .populate({
+        path: "_id",
+        model: "User",
+        select: "email name", // Include email and name of user
+      })
+      .sort({ lastUpdated: -1 }); // Sort by most recently updated
 
     const formatted = histories.map((h) => ({
-      userId: h._id._id,
+      userId: h._id._id,               // Get original user ID
       email: h._id.email,
-      messages: h.messages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)),
+      messages: h.messages.sort(
+        (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+      ),                               // Sort messages by timestamp DESC
       lastUpdated: h.lastUpdated,
     }));
 
@@ -77,29 +86,45 @@ router.get("/chat-history", verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
-// DELETE: Xóa tin nhắn trong ChatHistory
+// DELETE: Delete a specific message in ChatHistory
+// routes/admin.js hoặc tương tự
 router.delete("/delete-chat/:userId/:chatId", async (req, res) => {
   const { userId, chatId } = req.params;
 
   try {
+    console.log("Received DELETE request:", { userId, chatId });
+
+    // Kiểm tra ObjectId hợp lệ
     if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(chatId)) {
+      console.log("Invalid ObjectId:", { userId, chatId });
       return res.status(400).json({ message: "Invalid userId or chatId" });
     }
 
+    console.log("Finding chat history for userId:", userId);
     const chatHistory = await ChatHistory.findById(userId);
-    if (!chatHistory) return res.status(404).json({ message: "Chat history not found" });
+    if (!chatHistory) {
+      console.log("Chat history not found for userId:", userId);
+      return res.status(404).json({ message: "Chat history not found" });
+    }
 
+    console.log("Filtering messages, chatId:", chatId);
     const originalLength = chatHistory.messages.length;
-    chatHistory.messages = chatHistory.messages.filter(msg => msg.chat_id && msg.chat_id.toString() !== chatId);
+    chatHistory.messages = chatHistory.messages.filter(
+      (msg) => msg.chat_id.toString() !== chatId
+    );
 
     if (chatHistory.messages.length === originalLength) {
+      console.log("Message not found for chatId:", chatId);
       return res.status(404).json({ message: "Message not found" });
     }
 
+    console.log("Saving updated chat history");
     await chatHistory.save();
+
+    console.log("Chat message deleted successfully");
     return res.status(200).json({ message: "Chat message deleted successfully" });
   } catch (err) {
-    console.error("Error deleting chat:", err.message);
+    console.error("Error deleting chat:", err.message, err.stack); // Log cả stack trace
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 });

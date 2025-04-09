@@ -64,21 +64,17 @@ const AdminHistoryPage = () => {
   };
 
   const deleteChatMessage = async (userId, chatId, token) => {
+    console.log("Sending DELETE request:", { userId, chatId }); // Thêm log
+    if (!token) throw new Error("No authentication token found");
     const res = await fetch(`${API_BASE_URL}/admin/delete-chat/${userId}/${chatId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
-  
-    if (!res.ok) {
-      const errText = await res.text(); // 👈 tránh lỗi nếu không phải JSON
-      console.error("Delete API error response:", errText);
-      throw new Error("Failed to delete chat message");
-    }
-  
     const data = await res.json();
+    console.log("Delete response:", { status: res.status, data });
+    if (!res.ok) throw new Error(data.message || "Failed to delete chat message");
     return data;
   };
-  
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (error) return <div className="p-6 text-red-500">Error: {error}</div>;
@@ -170,13 +166,13 @@ const AdminHistoryPage = () => {
               .slice()
               .reverse()
               .flatMap((chat) => {
-                const userId = chat.userId || (chat._id && chat._id._id) || chat._id;
                 const chatId = chat._id; 
+
                 return chat.messages
                   .slice()
                   .reverse()
                   .map((msg, index) => (
-                    <tr key={`${userId}-${msg.chat_id}`} className="border hover:bg-gray-100">
+                    <tr key={`${chatId}-${msg.chat_id}`} className="border hover:bg-gray-100">
                       <td className="border p-2">{chat.email || "Unknown"}</td>
                       <td className="border p-2 truncate max-w-xs">{msg.question}</td>
                       <td className="border p-2 truncate max-w-xs">{msg.answer}</td>
@@ -190,14 +186,14 @@ const AdminHistoryPage = () => {
 
                             try {
                               const token = localStorage.getItem("token");
-                              await deleteChatMessage(userId, msg.chat_id, token); // <-- ✅ dùng đúng thuộc tính
+                              await deleteChatMessage(chat._id, msg.chat_id, token);
                               setChatHistories((prev) =>
                                 prev.map((c) =>
-                                  c._id._id === userId || c.userId === userId
+                                  c._id === chatId
                                     ? {
-                                      ...c,
-                                      messages: c.messages.filter((m) => m.chat_id !== msg.chat_id),
-                                    }
+                                        ...c,
+                                        messages: c.messages.filter((m) => m.chat_id !== msg.chat_id),
+                                      }
                                     : c
                                 )
                               );
@@ -257,3 +253,5 @@ const AdminHistoryPage = () => {
 };
 
 export default AdminHistoryPage;
+
+
