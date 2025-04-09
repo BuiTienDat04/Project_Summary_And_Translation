@@ -18,10 +18,10 @@ const AdminHistoryPage = () => {
       if (!token) throw new Error("Missing token");
 
       const [contentRes, chatRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/admin/content-history`, {
+        fetch(`${API_BASE_URL}/api/content-history/:userId`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`${API_BASE_URL}/admin/chat-history`, {
+        fetch(`${API_BASE_URL}/api/chat-history/:userId`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -64,12 +64,14 @@ const AdminHistoryPage = () => {
   };
 
   const deleteChatMessage = async (userId, chatId, token) => {
+    console.log("Sending DELETE request:", { userId, chatId }); // Thêm log
+    if (!token) throw new Error("No authentication token found");
     const res = await fetch(`${API_BASE_URL}/admin/delete-chat/${userId}/${chatId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
-
     const data = await res.json();
+    console.log("Delete response:", { status: res.status, data });
     if (!res.ok) throw new Error(data.message || "Failed to delete chat message");
     return data;
   };
@@ -165,6 +167,7 @@ const AdminHistoryPage = () => {
               .reverse()
               .flatMap((chat) => {
                 const userId = chat.userId || (chat._id && chat._id._id) || chat._id;
+                const chatId = chat._id; 
                 return chat.messages
                   .slice()
                   .reverse()
