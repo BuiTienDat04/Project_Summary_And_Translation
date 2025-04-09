@@ -18,10 +18,10 @@ const AdminHistoryPage = () => {
       if (!token) throw new Error("Missing token");
 
       const [contentRes, chatRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/admin/content-history`, {
+        fetch(`${API_BASE_URL}/api/content-history/:userId`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`${API_BASE_URL}/admin/chat-history`, {
+        fetch(`${API_BASE_URL}/api/chat-history/:userId`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
