@@ -166,13 +166,13 @@ const AdminHistoryPage = () => {
               .slice()
               .reverse()
               .flatMap((chat) => {
+                const userId = chat.userId || (chat._id && chat._id._id) || chat._id;
                 const chatId = chat._id; 
-
                 return chat.messages
                   .slice()
                   .reverse()
                   .map((msg, index) => (
-                    <tr key={`${chatId}-${msg.chat_id}`} className="border hover:bg-gray-100">
+                    <tr key={`${userId}-${msg.chat_id}`} className="border hover:bg-gray-100">
                       <td className="border p-2">{chat.email || "Unknown"}</td>
                       <td className="border p-2 truncate max-w-xs">{msg.question}</td>
                       <td className="border p-2 truncate max-w-xs">{msg.answer}</td>
@@ -186,14 +186,14 @@ const AdminHistoryPage = () => {
 
                             try {
                               const token = localStorage.getItem("token");
-                              await deleteChatMessage(chat._id, msg.chat_id, token);
+                              await deleteChatMessage(userId, msg.chat_id, token); // <-- ✅ dùng đúng thuộc tính
                               setChatHistories((prev) =>
                                 prev.map((c) =>
-                                  c._id === chatId
+                                  c._id._id === userId || c.userId === userId
                                     ? {
-                                        ...c,
-                                        messages: c.messages.filter((m) => m.chat_id !== msg.chat_id),
-                                      }
+                                      ...c,
+                                      messages: c.messages.filter((m) => m.chat_id !== msg.chat_id),
+                                    }
                                     : c
                                 )
                               );

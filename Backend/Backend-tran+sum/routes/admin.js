@@ -87,9 +87,9 @@ router.get("/chat-history", verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // DELETE: Delete a specific message in ChatHistory
-// routes/admin.js hoặc tương tự
 router.delete("/delete-chat/:userId/:chatId", async (req, res) => {
   const { userId, chatId } = req.params;
+  console.log(">>> Delete chat for userId:", userId, "chatId:", chatId);
 
   try {
     console.log("Received DELETE request:", { userId, chatId });
@@ -103,6 +103,11 @@ router.delete("/delete-chat/:userId/:chatId", async (req, res) => {
     console.log("Finding chat history for userId:", userId);
     const chatHistory = await ChatHistory.findById(userId);
     if (!chatHistory) {
+      console.log("Chat history not found");
+      return res.status(404).json({ message: "Chat history not found" });
+    }
+
+    console.log("Messages before delete:", chatHistory.messages.length);
       console.log("Chat history not found for userId:", userId);
       return res.status(404).json({ message: "Chat history not found" });
     }
@@ -110,7 +115,7 @@ router.delete("/delete-chat/:userId/:chatId", async (req, res) => {
     console.log("Filtering messages, chatId:", chatId);
     const originalLength = chatHistory.messages.length;
     chatHistory.messages = chatHistory.messages.filter(
-      (msg) => msg.chat_id.toString() !== chatId
+      (msg) => msg.chat_id && msg.chat_id.toString() !== chatId
     );
 
     if (chatHistory.messages.length === originalLength) {
