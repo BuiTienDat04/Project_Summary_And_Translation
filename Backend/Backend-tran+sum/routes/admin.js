@@ -34,30 +34,33 @@ router.get("/content-history", verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
-router.delete("/delete-content/:userId/:contentId", verifyToken, async (req, res) => {
-  const { userId, contentId } = req.params;
+router.delete(
+  "/delete-content/:userId/:contentId",
+  verifyToken,
+  async (req, res) => {
+    const { userId, contentId } = req.params;
+    
+    if (req.user._id !== userId && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Not authorized to delete this content" });
+    }
 
-  if (req.user._id !== userId && req.user.role !== "admin") {
-    return res.status(403).json({ message: "Not authorized to delete this content" });
+    try {
+      const userHistory = await ContentHistory.findById(userId);
+      if (!userHistory) {
+        return res.status(404).json({ message: "User history not found" });
+      }
+
+      userHistory.contents = userHistory.contents.filter(
+        (content) => content._id.toString() !== contentId
+      );
+
+      await userHistory.save();
+      res.json({ message: "Content deleted successfully" });
+    } catch (err) {
+      res.status(500).json({ message: "Server error", error: err.message });
+    }
   }
-
-  try {
-    const userHistory = await ContentHistory.findById(userId); // _id là userId
-    if (!userHistory) return res.status(404).json({ message: "User history not found" });
-
-    const index = userHistory.contents.findIndex(c => c._id.toString() === contentId);
-    if (index === -1) return res.status(404).json({ message: "Content not found" });
-
-    userHistory.contents.splice(index, 1);
-    await userHistory.save();
-
-    res.json({ message: "Content deleted successfully" });
-  } catch (err) {
-    console.error("Delete content error:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
-
+);
 
 // GET: Get all chat history of users (for Admin view)
 router.get("/chat-history", verifyToken, verifyAdmin, async (req, res) => {
@@ -87,46 +90,42 @@ router.get("/chat-history", verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // DELETE: Delete a specific message in ChatHistory
-// routes/admin.js hoặc tương tự
-router.delete("/delete-chat/:userId/:chatId", async (req, res) => {
-  const { userId, chatId } = req.params;
+router.delete(
+  "/delete-chat/:userId/:messageId",
+  verifyToken,
+  async (req, res) => {
+    const { userId, messageId } = req.params;
 
-  try {
-    console.log("Received DELETE request:", { userId, chatId });
-
-    // Kiểm tra ObjectId hợp lệ
-    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(chatId)) {
-      console.log("Invalid ObjectId:", { userId, chatId });
-      return res.status(400).json({ message: "Invalid userId or chatId" });
+    if (req.user._id !== userId && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Not authorized to delete this message" });
     }
 
-    console.log("Finding chat history for userId:", userId);
-    const chatHistory = await ChatHistory.findById(userId);
-    if (!chatHistory) {
-      console.log("Chat history not found for userId:", userId);
-      return res.status(404).json({ message: "Chat history not found" });
+    try {
+      const chatHistory = await ChatHistory.findById(userId);
+      if (!chatHistory) {
+        return res.status(404).json({ message: "Chat history not found" });
+      }
+
+      const originalLength = chatHistory.messages.length;
+
+      chatHistory.messages = chatHistory.messages.filter(
+        (msg) => msg._id.toString() !== messageId
+      );
+
+      if (chatHistory.messages.length === originalLength) {
+        return res.status(404).json({ message: "Message not found in history" });
+      }
+
+      chatHistory.lastUpdated = Date.now();
+      await chatHistory.save();
+
+      res.json({ message: "Chat message deleted successfully" });
+    } catch (err) {
+      console.error("Delete chat message error:", err);
+      res.status(500).json({ message: "Server error", error: err.message });
     }
-
-    console.log("Filtering messages, chatId:", chatId);
-    const originalLength = chatHistory.messages.length;
-    chatHistory.messages = chatHistory.messages.filter(
-      (msg) => msg.chat_id.toString() !== chatId
-    );
-
-    if (chatHistory.messages.length === originalLength) {
-      console.log("Message not found for chatId:", chatId);
-      return res.status(404).json({ message: "Message not found" });
-    }
-
-    console.log("Saving updated chat history");
-    await chatHistory.save();
-
-    console.log("Chat message deleted successfully");
-    return res.status(200).json({ message: "Chat message deleted successfully" });
-  } catch (err) {
-    console.error("Error deleting chat:", err.message, err.stack); // Log cả stack trace
-    return res.status(500).json({ message: "Server error", error: err.message });
   }
-});
+);
+
 
 module.exports = router;
