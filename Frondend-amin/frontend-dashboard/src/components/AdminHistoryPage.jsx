@@ -68,11 +68,11 @@ const AdminHistoryPage = () => {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
-  
+
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to delete chat message");
     return data;
-  };  
+  };
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (error) return <div className="p-6 text-red-500">Error: {error}</div>;
@@ -164,13 +164,12 @@ const AdminHistoryPage = () => {
               .slice()
               .reverse()
               .flatMap((chat) => {
-                const chatId = chat._id;
-
+                const userId = chat.userId || (chat._id && chat._id._id) || chat._id;
                 return chat.messages
                   .slice()
                   .reverse()
                   .map((msg, index) => (
-                    <tr key={`${chatId}-${msg.chat_id}`} className="border hover:bg-gray-100">
+                    <tr key={`${userId}-${msg.chat_id}`} className="border hover:bg-gray-100">
                       <td className="border p-2">{chat.email || "Unknown"}</td>
                       <td className="border p-2 truncate max-w-xs">{msg.question}</td>
                       <td className="border p-2 truncate max-w-xs">{msg.answer}</td>
@@ -184,14 +183,14 @@ const AdminHistoryPage = () => {
 
                             try {
                               const token = localStorage.getItem("token");
-                              await deleteChatMessage(chat._id, msg.chat_id, token);
+                              await deleteChatMessage(userId, msg.chat_id, token); // <-- ✅ dùng đúng thuộc tính
                               setChatHistories((prev) =>
                                 prev.map((c) =>
-                                  c._id === chatId
+                                  c._id._id === userId || c.userId === userId
                                     ? {
-                                        ...c,
-                                        messages: c.messages.filter((m) => m.chat_id !== msg.chat_id),
-                                      }
+                                      ...c,
+                                      messages: c.messages.filter((m) => m.chat_id !== msg.chat_id),
+                                    }
                                     : c
                                 )
                               );
