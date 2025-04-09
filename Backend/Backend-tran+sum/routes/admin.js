@@ -87,37 +87,32 @@ router.get("/chat-history", verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // DELETE: Delete a specific message in ChatHistory
-router.delete("/:userId/message/:chatId", async (req, res) => {
+// routes/admin.js hoặc tương tự
+router.delete("/delete-chat/:userId/:chatId", async (req, res) => {
   const { userId, chatId } = req.params;
-
-  if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(chatId)) {
-    return res.status(400).json({ error: "Invalid userId or chatId" });
-  }
 
   try {
     const chatHistory = await ChatHistory.findById(userId);
     if (!chatHistory) {
-      return res.status(404).json({ error: "Chat history not found" });
+      return res.status(404).json({ message: "Chat history not found" });
     }
 
     const originalLength = chatHistory.messages.length;
 
-    // Lọc ra các message không có chat_id bằng chatId
     chatHistory.messages = chatHistory.messages.filter(
       (msg) => msg.chat_id.toString() !== chatId
     );
 
     if (chatHistory.messages.length === originalLength) {
-      return res.status(404).json({ error: "Message not found" });
+      return res.status(404).json({ message: "Message not found" });
     }
 
-    chatHistory.lastUpdated = Date.now();
     await chatHistory.save();
 
-    res.status(200).json({ message: "Message deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting message:", error);
-    res.status(500).json({ error: "Server error" });
+    return res.status(200).json({ message: "Chat message deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting chat:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
