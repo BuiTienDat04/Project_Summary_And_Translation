@@ -58,7 +58,6 @@ router.delete("/delete-content/:userId/:contentId", verifyToken, async (req, res
   }
 });
 
-
 // GET: Get all chat history of users (for Admin view)
 router.get("/chat-history", verifyToken, verifyAdmin, async (req, res) => {
   try {
@@ -87,17 +86,16 @@ router.get("/chat-history", verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // DELETE: Delete a specific message in ChatHistory
-router.delete("/delete-chat/:userId/:chatId", async (req, res) => {
+router.delete("/delete-chat/:userId/:chatId", verifyToken, async (req, res) => {
   const { userId, chatId } = req.params;
   console.log(">>> Delete chat for userId:", userId, "chatId:", chatId);
 
   try {
     console.log("Received DELETE request:", { userId, chatId });
 
-    // Kiểm tra ObjectId hợp lệ
-    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(chatId)) {
-      console.log("Invalid ObjectId:", { userId, chatId });
-      return res.status(400).json({ message: "Invalid userId or chatId" });
+    // Check if user is admin or owns the chat
+    if (req.user._id !== userId && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Not authorized to delete this chat" });
     }
 
     console.log("Finding chat history for userId:", userId);
@@ -108,11 +106,6 @@ router.delete("/delete-chat/:userId/:chatId", async (req, res) => {
     }
 
     console.log("Messages before delete:", chatHistory.messages.length);
-      console.log("Chat history not found for userId:", userId);
-      return res.status(404).json({ message: "Chat history not found" });
-    }
-
-    console.log("Filtering messages, chatId:", chatId);
     const originalLength = chatHistory.messages.length;
     chatHistory.messages = chatHistory.messages.filter(
       (msg) => msg.chat_id && msg.chat_id.toString() !== chatId
@@ -129,7 +122,7 @@ router.delete("/delete-chat/:userId/:chatId", async (req, res) => {
     console.log("Chat message deleted successfully");
     return res.status(200).json({ message: "Chat message deleted successfully" });
   } catch (err) {
-    console.error("Error deleting chat:", err.message, err.stack); // Log cả stack trace
+    console.error("Error deleting chat:", err.message, err.stack);
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 });
