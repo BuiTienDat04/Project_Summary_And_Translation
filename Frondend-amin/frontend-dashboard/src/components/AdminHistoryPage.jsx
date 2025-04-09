@@ -18,22 +18,32 @@ const AdminHistoryPage = () => {
       if (!token) throw new Error("Missing token");
 
       const [contentRes, chatRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/content-history/:userId`, {
+        fetch(`${API_BASE_URL}/admin/content-history`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`${API_BASE_URL}/api/chat-history/:userId`, {
+        fetch(`${API_BASE_URL}/admin/chat-history`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
 
-      const contentData = await contentRes.json();
-      const chatData = await chatRes.json();
+      // Kiểm tra mã trạng thái
+      if (contentRes.status === 429 || chatRes.status === 429) {
+        throw new Error("Quá nhiều yêu cầu. Vui lòng thử lại sau vài phút.");
+      }
 
-      if (!contentRes.ok) throw new Error(contentData.message || "Failed to fetch content history");
-      if (!chatRes.ok) throw new Error(chatData.message || "Failed to fetch chat history");
+      let contentData, chatData;
+      try {
+        contentData = await contentRes.json();
+        chatData = await chatRes.json();
+      } catch (jsonErr) {
+        throw new Error("Phản hồi từ server không hợp lệ.");
+      }
+
+      if (!contentRes.ok) throw new Error(contentData.message || "Không thể tải lịch sử nội dung");
+      if (!chatRes.ok) throw new Error(chatData.message || "Không thể tải lịch sử trò chuyện");
 
       if (!Array.isArray(contentData) || !Array.isArray(chatData)) {
-        throw new Error("Invalid data format");
+        throw new Error("Định dạng dữ liệu không hợp lệ");
       }
 
       setHistories(contentData);
@@ -48,7 +58,7 @@ const AdminHistoryPage = () => {
 
   useEffect(() => {
     fetchAllHistories();
-    const interval = setInterval(fetchAllHistories, 3000);
+    const interval = setInterval(fetchAllHistories, 10000); // Tăng lên 30 giây
     return () => clearInterval(interval);
   }, []);
 
@@ -59,7 +69,7 @@ const AdminHistoryPage = () => {
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Failed to delete content");
+    if (!res.ok) throw new Error(data.message || "Không thể xóa nội dung");
     return data;
   };
 
@@ -68,26 +78,24 @@ const AdminHistoryPage = () => {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
-  
+
     if (!res.ok) {
-      const errText = await res.text(); // 👈 tránh lỗi nếu không phải JSON
+      const errText = await res.text();
       console.error("Delete API error response:", errText);
-      throw new Error("Failed to delete chat message");
+      throw new Error("Không thể xóa tin nhắn trò chuyện");
     }
-  
+
     const data = await res.json();
     return data;
   };
-  
 
-  if (loading) return <div className="p-6">Loading...</div>;
-  if (error) return <div className="p-6 text-red-500">Error: {error}</div>;
-  if (histories.length === 0 && chatHistories.length === 0) return <div className="p-6">No data available</div>;
+  if (loading) return <div className="p-6">Đang tải...</div>;
+  if (error) return <div className="p-6 text-red-500">Lỗi: {error}</div>;
+  if (histories.length === 0 && chatHistories.length === 0) return <div className="p-6">Không có dữ liệu</div>;
 
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">User Content Summary History</h2>
-      {/* Content Summary Table */}
       <div className="overflow-x-auto overflow-y-auto max-h-[500px] border rounded-lg mb-12">
         <table className="table-auto w-full border-collapse border border-gray-300">
           <thead className="bg-gray-200">
@@ -151,7 +159,6 @@ const AdminHistoryPage = () => {
         </table>
       </div>
 
-      {/* Chat History Table */}
       <h2 className="text-2xl font-bold mb-4">User Chat History</h2>
       <div className="overflow-x-auto overflow-y-auto max-h-[500px] border rounded-lg mb-12">
         <table className="table-auto w-full border-collapse border border-gray-300">
@@ -171,11 +178,10 @@ const AdminHistoryPage = () => {
               .reverse()
               .flatMap((chat) => {
                 const userId = chat.userId || (chat._id && chat._id._id) || chat._id;
-                const chatId = chat._id; 
                 return chat.messages
                   .slice()
                   .reverse()
-                  .map((msg, index) => (
+                  .map((msg) => (
                     <tr key={`${userId}-${msg.chat_id}`} className="border hover:bg-gray-100">
                       <td className="border p-2">{chat.email || "Unknown"}</td>
                       <td className="border p-2 truncate max-w-xs">{msg.question}</td>
@@ -190,14 +196,14 @@ const AdminHistoryPage = () => {
 
                             try {
                               const token = localStorage.getItem("token");
-                              await deleteChatMessage(userId, msg.chat_id, token); // <-- ✅ dùng đúng thuộc tính
+                              await deleteChatMessage(userId, msg.chat_id, token);
                               setChatHistories((prev) =>
                                 prev.map((c) =>
                                   c._id._id === userId || c.userId === userId
                                     ? {
-                                      ...c,
-                                      messages: c.messages.filter((m) => m.chat_id !== msg.chat_id),
-                                    }
+                                        ...c,
+                                        messages: c.messages.filter((m) => m.chat_id !== msg.chat_id),
+                                      }
                                     : c
                                 )
                               );
@@ -218,7 +224,6 @@ const AdminHistoryPage = () => {
         </table>
       </div>
 
-      {/* Modal */}
       <Modal
         isOpen={!!selectedContent}
         onRequestClose={() => setSelectedContent(null)}
