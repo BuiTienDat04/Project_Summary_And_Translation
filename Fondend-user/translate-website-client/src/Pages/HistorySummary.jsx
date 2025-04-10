@@ -29,11 +29,11 @@ const HistorySummary = () => {
                 throw new Error('Authentication required');
             }
 
-            const config = { 
-                headers: { 
+            const config = {
+                headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json'
-                } 
+                }
             };
 
             // Lấy ContentHistory
@@ -65,20 +65,24 @@ const HistorySummary = () => {
     }, []);
 
     // Xóa một mục từ ContentHistory
-    const handleDelete = async (itemId, source) => {
-        if (source !== 'content') return;
-
+    const deleteUserContent = async (userId, contentId, token) => {
         try {
-            const token = localStorage.getItem('token');
-            const _id = localStorage.getItem('_id');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
+            const res = await fetch(`${API_BASE_URL}/admin/delete-content/${userId}/${contentId}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
 
-            await axios.delete(`${API_BASE_URL}/content-history/${_id}/${itemId}`, config);
-            setContentHistory(contentHistory.filter(item => item._id !== itemId));
-            setSelectedItem(null);
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.message || "Failed to delete content");
+            }
+
+            return data;
         } catch (error) {
-            console.error('Error deleting history item:', error);
-            setError('Failed to delete history item. Please try again.');
+            console.error("Delete error:", error);
+            throw error;
         }
     };
 
@@ -102,15 +106,14 @@ const HistorySummary = () => {
     return (
         <>
             {isOpen && (
-                <div 
-                    className="fixed inset-0 bg-gray-900/50 z-40 backdrop-blur-sm" 
-                    onClick={toggleOpen} 
+                <div
+                    className="fixed inset-0 bg-gray-900/50 z-40 backdrop-blur-sm"
+                    onClick={toggleOpen}
                 />
             )}
             <div
-                className={`fixed top-20 left-6 shadow-2xl rounded-2xl overflow-hidden transition-all duration-500 ease-in-out z-50 ${
-                    isOpen ? 'w-96 h-[calc(100vh-8rem)]' : 'w-14 h-14'
-                } bg-gradient-to-br from-indigo-600 via-purple-600 to-blue-700`}
+                className={`fixed top-20 left-6 shadow-2xl rounded-2xl overflow-hidden transition-all duration-500 ease-in-out z-50 ${isOpen ? 'w-96 h-[calc(100vh-8rem)]' : 'w-14 h-14'
+                    } bg-gradient-to-br from-indigo-600 via-purple-600 to-blue-700`}
             >
                 {/* Nút mở/đóng */}
                 <button
@@ -174,16 +177,30 @@ const HistorySummary = () => {
                                 <div className="flex justify-between items-center">
                                     <button
                                         onClick={() => setSelectedItem(null)}
-                                        className="text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"
+                                        className="w-1010 h-10 text-xl text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"
                                     >
                                         <span>←</span> Back
                                     </button>
+
                                     {selectedItem.source === 'content' && (
                                         <button
-                                            onClick={() => handleDelete(selectedItem._id, selectedItem.source)}
-                                            className="text-red-500 hover:text-red-700 font-medium flex items-center gap-1"
+                                            onClick={() =>
+                                                deleteUserContent(localStorage.getItem('_id'), selectedItem._id, localStorage.getItem('token'))
+                                                    .then(() => {
+                                                        // Xoá thành công thì cập nhật lại lịch sử hiển thị
+                                                        setContentHistory(prev => prev.filter(item => item._id !== selectedItem._id));
+                                                        setSelectedItem(null);
+                                                    })
+                                                    .catch(err => {
+                                                        setError(err.message);
+                                                    })
+                                            }
+
                                         >
-                                            <TrashIcon className="w-4 h-4" /> Delete
+                                            <button className="group flex items-center gap-1">
+                                                <TrashIcon className="w-7 h-7 text-red-500 group-hover:text-red-700" />
+                                            </button>
+
                                         </button>
                                     )}
                                 </div>
@@ -237,6 +254,7 @@ const HistorySummary = () => {
                                                         {item.type === 'pdf' && 'PDF: ' + (item.content.slice(0, 30) + '...')}
                                                         {item.type === 'link' && 'Link: ' + (item.url || item.content.slice(0, 30) + '...')}
                                                         {item.type === 'chat' && 'Chat: ' + (item.content.slice(0, 30) + '...')}
+                                                        {item.type === 'translate' && 'Translate: ' + (item.content.slice(0, 30) + '...')} {/* Thêm điều kiện cho translate */}
                                                     </span>
                                                     <span className="text-xs text-gray-500">
                                                         {new Date(item.timestamp).toLocaleTimeString()}

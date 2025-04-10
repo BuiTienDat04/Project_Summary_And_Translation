@@ -203,58 +203,58 @@ app.post("/summarize", verifyToken, async (req, res) => {
 });
 
 // API to translate text
-app.post("/translate", verifyToken, async (req, res) => {
-    const { text, targetLang } = req.body;
-    const _id = req.user._id; // Lấy user ID từ middleware verifyToken
+    app.post("/translate", verifyToken, async (req, res) => {
+        const { text, targetLang } = req.body;
+        const _id = req.user._id; // Lấy user ID từ middleware verifyToken
 
-    if (!text || !targetLang || text.trim().length < 10) {
-        return res.status(400).json({ error: "Missing or invalid text/targetLang." });
-    }
-
-    try {
-        const translation = await translateText(text, targetLang);
-
-        // Tăng số lượt dịch
-        await Visit.findOneAndUpdate(
-            {}, 
-            { $inc: { translatedPosts: 1 } }, 
-            { upsert: true, new: true }
-        );
-
-        // Lưu vào lịch sử dịch
-        const newEntry = {
-            type: "translate", // sửa từ "text" thành "translate"
-            content: text,
-            summary: translation,
-            url: null,
-            timestamp: new Date()
-        };
-        
-
-        // Cập nhật ContentHistory, hoặc tạo mới nếu chưa có
-        const history = await ContentHistory.findById(_id);
-
-        if (history) {
-            history.contents.push(newEntry);
-            if (history.contents.length > 50) {
-                history.contents = history.contents.slice(-50); // giữ lại 50 bản ghi mới nhất
-            }
-            history.lastUpdated = new Date();
-            await history.save();
-        } else {
-            await ContentHistory.create({
-                _id,
-                contents: [newEntry],
-                lastUpdated: new Date()
-            });
+        if (!text || !targetLang || text.trim().length < 10) {
+            return res.status(400).json({ error: "Missing or invalid text/targetLang." });
         }
 
-        res.json({ translation });
-    } catch (error) {
-        console.error("Translation error:", error);
-        res.status(500).json({ error: `Error translating: ${error.message}` });
-    }
-});
+        try {
+            const translation = await translateText(text, targetLang);
+
+            // Tăng số lượt dịch
+            await Visit.findOneAndUpdate(
+                {}, 
+                { $inc: { translatedPosts: 1 } }, 
+                { upsert: true, new: true }
+            );
+
+            // Lưu vào lịch sử dịch
+            const newEntry = {
+                type: "translate", // sửa từ "text" thành "translate"
+                content: text,
+                summary: translation,
+                url: null,
+                timestamp: new Date()
+            };
+            
+
+            // Cập nhật ContentHistory, hoặc tạo mới nếu chưa có
+            const history = await ContentHistory.findById(_id);
+
+            if (history) {
+                history.contents.push(newEntry);
+                if (history.contents.length > 50) {
+                    history.contents = history.contents.slice(-50); // giữ lại 50 bản ghi mới nhất
+                }
+                history.lastUpdated = new Date();
+                await history.save();
+            } else {
+                await ContentHistory.create({
+                    _id,
+                    contents: [newEntry],
+                    lastUpdated: new Date()
+                });
+            }
+
+            res.json({ translation });
+        } catch (error) {
+            console.error("Translation error:", error);
+            res.status(500).json({ error: `Error translating: ${error.message}` });
+        }
+    });
 
 // API to summarize a URL
 app.post("/summarize-link", verifyToken, async (req, res) => {
