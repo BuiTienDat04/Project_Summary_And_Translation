@@ -2,6 +2,8 @@ const express = require("express");
 const { verifyToken, verifyAdmin } = require("../middleware/authMiddleware");
 const ContentHistory = require("../models/ContentHistory");
 const router = express.Router();
+const Visit = require('../models/Visit'); 
+
 
 // API dành riêng cho Admin
 router.get("/dashboard", verifyAdmin, (req, res) => {
