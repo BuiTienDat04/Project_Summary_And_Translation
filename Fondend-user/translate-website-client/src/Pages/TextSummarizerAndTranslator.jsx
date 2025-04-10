@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FaSignInAlt } from "react-icons/fa";
 import { Trash2 } from "lucide-react";
-import ChatBox from "../Pages/ChatBox";
 import api from "../api/api"; // Import instance api
 import HistorySummary from "./HistorySummary"; // Thêm import HistorySummary
 
@@ -269,7 +268,6 @@ const TextSummarizerAndTranslator = ({ loggedInUser }) => {
                 </div>
 
                 {/* Truyền dữ liệu vào ChatBox */}
-                <ChatBox textSummarizerContent={textSummarizerContent} loggedInUser={loggedInUser} />
             </div>
         </div>
     );

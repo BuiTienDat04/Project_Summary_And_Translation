@@ -11,7 +11,6 @@ import ServicesSection from "./Pages/ServicesSection";
 import Homepage from "./Pages/HomePage";
 import NaAboutus from "./components/ui/naAboutus";
 import LinkPage from "./Pages/LinkPage";
-import ChatBox from "./Pages/ChatBox";
 
 export default function App() {
   const [textSummarizerContent, setTextSummarizerContent] = useState("");
@@ -77,13 +76,7 @@ export default function App() {
         </Routes>
         <Footer />
         {/* ChatBox có thể cần kiểm tra isAuthenticated() trước khi hiển thị nếu chỉ dành cho người dùng đăng nhập */}
-        {isAuthenticated() && (
-             <ChatBox
-                textSummarizerContent={textSummarizerContent}
-                linkPageContent={linkPageContent}
-                documentSummaryContent={documentSummaryContent}
-             />
-        )}
+       
 
       </div>
     </BrowserRouter>
