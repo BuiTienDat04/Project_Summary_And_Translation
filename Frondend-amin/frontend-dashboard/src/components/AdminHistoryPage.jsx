@@ -61,7 +61,7 @@ const AdminHistoryPage = () => {
     };
 
     fetchAll();
-    const interval = setInterval(fetchAll, 3000);
+    const interval = setInterval(fetchAll, 10000);
     return () => clearInterval(interval);
   }, []);
 
