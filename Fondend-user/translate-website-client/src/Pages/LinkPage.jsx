@@ -5,9 +5,7 @@ import { FaFileAlt, FaCheckCircle, FaFilePdf, FaLink } from "react-icons/fa";
 import LoginPage from "../Pages/LoginPage";
 import RegisterPage from "../Pages/RegisterPage";
 import Navigation from "../Pages/Navigation";
-import Footer from "../Pages/Footer";
 import { motion } from "framer-motion";
-import ChatBox from "../Pages/ChatBox";
 import api from "../api/api";
 import HistorySummary from "./HistorySummary";
 import {
@@ -773,7 +771,6 @@ const LinkPage = () => {
                 </motion.div>
             </motion.section>
 
-            <ChatBox linkPageContent={linkPageContent} />
         </div>
     );
 };

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Upload, Download, Trash2 } from "lucide-react";
-import ChatBox from "../Pages/ChatBox";
 import { API_BASE_URL } from "../api/api";
 import nlp from "compromise";
 import HistorySummary from "./HistorySummary"; // Import HistorySummary
@@ -479,7 +478,6 @@ export default function DocumentSummarySection() {
                 </div>
             </div>
 
-            <ChatBox documentSummaryContent={documentSummaryContent} />
         </div>
     );
 }
