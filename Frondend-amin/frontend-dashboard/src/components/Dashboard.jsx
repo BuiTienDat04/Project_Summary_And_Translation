@@ -63,7 +63,7 @@ const Dashboard = () => {
           <p className="text-4xl font-bold">{data.totalUsers}</p>
         </div>
         <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6 rounded-lg shadow-lg text-white">
-          <h2 className="text-lg font-semibold">Translated Posts</h2>
+          <h2 className="text-lg font-semibold">Total summaries</h2>
           <p className="text-4xl font-bold">{data.translatedPosts}</p>
         </div>
       </div>
