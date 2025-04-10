@@ -9,7 +9,7 @@ const contentHistorySchema = new mongoose.Schema({
     contents: [{
         type: {
             type: String,
-            enum: ["text", "pdf", "link"],
+            enum: ["text", "pdf", "link","translate"],
             required: true,
         },
         content: {

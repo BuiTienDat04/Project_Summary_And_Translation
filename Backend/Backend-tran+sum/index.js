@@ -223,12 +223,13 @@ app.post("/translate", verifyToken, async (req, res) => {
 
         // Lưu vào lịch sử dịch
         const newEntry = {
-            type: "text",
+            type: "translate", // sửa từ "text" thành "translate"
             content: text,
             summary: translation,
             url: null,
             timestamp: new Date()
         };
+        
 
         // Cập nhật ContentHistory, hoặc tạo mới nếu chưa có
         const history = await ContentHistory.findById(_id);
