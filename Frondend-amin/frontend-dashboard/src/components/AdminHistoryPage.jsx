@@ -7,7 +7,6 @@ Modal.setAppElement("#root");
 
 const AdminHistoryPage = () => {
   const [histories, setHistories] = useState([]);
-  const [chatHistories, setChatHistories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedContent, setSelectedContent] = useState(null);
@@ -33,54 +32,26 @@ const AdminHistoryPage = () => {
     }
   };
 
-  const deleteChatMessage = async (userId, messageId, token) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/admin/delete-chat/${userId}/${messageId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to delete chat message");
-      }
-
-      return data;
-    } catch (error) {
-      console.error("Delete chat error:", error);
-      throw error;
-    }
-  };
-
   useEffect(() => {
     const fetchAll = async () => {
       try {
         const token = localStorage.getItem("token");
 
-        const [contentRes, chatRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/admin/content-history`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch(`${API_BASE_URL}/admin/chat-history`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
+        const contentRes = await fetch(`${API_BASE_URL}/admin/content-history`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-        if (!contentRes.ok || !chatRes.ok) {
-          throw new Error("Failed to fetch content or chat history");
+        if (!contentRes.ok) {
+          throw new Error("Failed to fetch content history");
         }
 
         const contentData = await contentRes.json();
-        const chatData = await chatRes.json();
 
-        if (!Array.isArray(contentData) || !Array.isArray(chatData)) {
+        if (!Array.isArray(contentData)) {
           throw new Error("Invalid data format");
         }
 
         setHistories(contentData);
-        setChatHistories(chatData);
       } catch (err) {
         console.error("Fetch error:", err);
         setError(err.message);
@@ -96,7 +67,7 @@ const AdminHistoryPage = () => {
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (error) return <div className="p-6 text-red-500">Error: {error}</div>;
-  if (histories.length === 0 && chatHistories.length === 0) return <div className="p-6">No history data available</div>;
+  if (histories.length === 0) return <div className="p-6">No history data available</div>;
 
   return (
     <div className="p-6">
@@ -169,73 +140,6 @@ const AdminHistoryPage = () => {
               )}
           </tbody>
         </table>
-      </div>
-
-      <div className="mt-8">
-        <h2 className="text-2xl font-bold mb-4">User Chat History</h2>
-        <div className="border border-gray-300 rounded overflow-y-scroll max-h-[400px]">
-          <table className="table-auto w-full border-collapse">
-            <thead className="sticky top-0 bg-gray-200 z-10">
-              <tr>
-                <th className="border p-2">User Email</th>
-                <th className="border p-2">Question</th>
-                <th className="border p-2">Answer</th>
-                <th className="border p-2">Source</th>
-                <th className="border p-2">Timestamp</th>
-                <th className="border p-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {chatHistories
-                .slice()
-                .reverse()
-                .flatMap((chat) =>
-                  chat.messages
-                    .slice()
-                    .reverse()
-                    .map((msg, index) => (
-                      <tr key={`${chat._id}-${msg._id || index}`} className="border hover:bg-gray-100">
-                        <td className="border p-2">{chat.email || "Unknown"}</td>
-                        <td className="border p-2 truncate max-w-xs">{msg.question}</td>
-                        <td className="border p-2 truncate max-w-xs">{msg.answer}</td>
-                        <td className="border p-2">{msg.source}</td>
-                        <td className="border p-2">{new Date(msg.timestamp).toLocaleString()}</td>
-                        <td className="border p-2 text-center">
-                          <button
-                            onClick={async () => {
-                              const confirmDelete = window.confirm("Are you sure you want to delete this chat message?");
-                              if (!confirmDelete) return;
-
-                              try {
-                                const token = localStorage.getItem("token");
-                                await deleteChatMessage(chat._id, msg._id, token);
-
-                                setChatHistories((prev) =>
-                                  prev.map((c) =>
-                                    c._id === chat._id
-                                      ? {
-                                          ...c,
-                                          messages: c.messages.filter((m) => m._id !== msg._id),
-                                        }
-                                      : c
-                                  )
-                                );
-                              } catch (err) {
-                                alert("Delete failed: " + err.message);
-                              }
-                            }}
-                            title="Delete"
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <FiTrash2 size={20} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                )}
-            </tbody>
-          </table>
-        </div>
       </div>
 
       <Modal
