@@ -56,7 +56,7 @@ router.delete(
 
       await userHistory.save();
 
-      await Visit.findOneAndUpdate({}, { $inc: { translatedPosts: 1 } }, { upsert: true, new: true });
+      await Visit.findOneAndUpdate({}, { $inc: { translatedPosts: -1 } }, { upsert: true, new: true });
 
       res.json({ message: "Content deleted successfully" });
     } catch (err) {
