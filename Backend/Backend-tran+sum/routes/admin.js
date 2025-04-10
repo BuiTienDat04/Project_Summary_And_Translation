@@ -1,8 +1,6 @@
 const express = require("express");
 const { verifyToken, verifyAdmin } = require("../middleware/authMiddleware");
 const ContentHistory = require("../models/ContentHistory");
-const User = require("../models/User"); 
-const ChatHistory = require("../models/ChatHistory");
 const router = express.Router();
 
 // API dành riêng cho Admin
@@ -55,6 +53,9 @@ router.delete(
       );
 
       await userHistory.save();
+
+      await Visit.findOneAndUpdate({}, { $inc: { translatedPosts: 1 } }, { upsert: true, new: true });
+
       res.json({ message: "Content deleted successfully" });
     } catch (err) {
       res.status(500).json({ message: "Server error", error: err.message });

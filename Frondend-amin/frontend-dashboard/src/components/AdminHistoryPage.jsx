@@ -86,59 +86,63 @@ const AdminHistoryPage = () => {
             </tr>
           </thead>
           <tbody>
-            {histories
-              .slice()
-              .reverse()
-              .flatMap((history) =>
-                history.contents
-                  .slice()
-                  .reverse()
-                  .map((item, index) => (
-                    <tr key={`${history.userId}-${index}`} className="border hover:bg-gray-100">
-                      <td className="border p-2">{history.email || "Unknown"}</td>
-                      <td className="border p-2">{item.type}</td>
-                      <td
-                        className="border p-2 truncate max-w-xs cursor-pointer"
-                        onClick={() => setSelectedContent({ ...item, email: history.email })}
-                      >
-                        {item.content?.slice(0, 50)}...
-                      </td>
-                      <td
-                        className="border p-2 truncate max-w-xs cursor-pointer"
-                        onClick={() => setSelectedContent({ ...item, email: history.email })}
-                      >
-                        {item.summary?.slice(0, 50) || "Not available"}
-                      </td>
-                      <td className="border p-2">{new Date(item.timestamp).toLocaleString()}</td>
-                      <td className="border p-2 text-center">
-                        <button
-                          onClick={async () => {
-                            const confirmDelete = window.confirm("Are you sure you want to delete this content?");
-                            if (!confirmDelete) return;
-                            try {
-                              const token = localStorage.getItem("token");
-                              await deleteUserContent(history.userId, item._id, token);
-                              setHistories((prev) =>
-                                prev.map((h) =>
-                                  h.userId === history.userId
-                                    ? { ...h, contents: h.contents.filter((c) => c._id !== item._id) }
-                                    : h
-                                )
-                              );
-                            } catch (err) {
-                              alert("Delete failed: " + err.message);
-                            }
-                          }}
-                          title="Delete"
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <FiTrash2 size={20} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-              )}
+            {[]
+              .concat(
+                ...histories.map((history) =>
+                  history.contents.map((item) => ({
+                    ...item,
+                    email: history.email,
+                    userId: history.userId,
+                  }))
+                )
+              )
+              .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)) // sort từ mới tới cũ
+              .map((item, index) => (
+                <tr key={`${item.userId}-${item._id}-${index}`} className="border hover:bg-gray-100">
+                  <td className="border p-2">{item.email || "Unknown"}</td>
+                  <td className="border p-2">{item.type}</td>
+                  <td
+                    className="border p-2 truncate max-w-xs cursor-pointer"
+                    onClick={() => setSelectedContent(item)}
+                  >
+                    {item.content?.slice(0, 50)}...
+                  </td>
+                  <td
+                    className="border p-2 truncate max-w-xs cursor-pointer"
+                    onClick={() => setSelectedContent(item)}
+                  >
+                    {item.summary?.slice(0, 50) || "Not available"}
+                  </td>
+                  <td className="border p-2">{new Date(item.timestamp).toLocaleString()}</td>
+                  <td className="border p-2 text-center">
+                    <button
+                      onClick={async () => {
+                        const confirmDelete = window.confirm("Are you sure you want to delete this content?");
+                        if (!confirmDelete) return;
+                        try {
+                          const token = localStorage.getItem("token");
+                          await deleteUserContent(item.userId, item._id, token);
+                          setHistories((prev) =>
+                            prev.map((h) =>
+                              h.userId === item.userId
+                                ? { ...h, contents: h.contents.filter((c) => c._id !== item._id) }
+                                : h
+                            )
+                          );
+                        } catch (err) {
+                          alert("Delete failed: " + err.message);
+                        }
+                      }}
+                      title="Delete"
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <FiTrash2 size={20} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
           </tbody>
+
         </table>
       </div>
 
