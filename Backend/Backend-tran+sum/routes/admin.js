@@ -15,14 +15,16 @@ router.get("/content-history", verifyToken, verifyAdmin, async (req, res) => {
   try {
     const histories = await ContentHistory.find()
       .populate({
-        path: "_id",
+        path: "_id", 
         model: "User",
-        select: "email name", 
-      });
+        select: "email name",
+      })
+      .lean(); 
 
     const formatted = histories.map((h) => ({
-      userId: h._id._id,        
-      email: h._id.email,
+      userId: h._id?._id,      
+      email: h._id?.email,
+      name: h._id?.name,
       contents: h.contents,
       lastUpdated: h.lastUpdated,
     }));
