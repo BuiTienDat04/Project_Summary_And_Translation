@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const contentHistorySchema = new mongoose.Schema({
-    userId: {
+    _id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true,
@@ -9,7 +9,7 @@ const contentHistorySchema = new mongoose.Schema({
     contents: [{
         type: {
             type: String,
-            enum: ["text", "pdf", "link", "translate"],
+            enum: ["text", "pdf", "link","translate"],
             required: true,
         },
         content: {
@@ -20,7 +20,7 @@ const contentHistorySchema = new mongoose.Schema({
             type: String,
             default: null,
         },
-        url: {
+        url: {  // Chỉ dùng cho link
             type: String,
             default: null,
         },
@@ -35,12 +35,10 @@ const contentHistorySchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
-// Thêm index cho userId để tối ưu truy vấn
-contentHistorySchema.index({ userId: 1 });
-
+// Giới hạn tối đa 50 nội dung mỗi tài khoản
 contentHistorySchema.pre("save", function(next) {
     if (this.contents.length > 50) {
-        this.contents = this.contents.slice(-50);
+        this.contents = this.contents.slice(-50); // Giữ lại 50 nội dung mới nhất
     }
     this.lastUpdated = Date.now();
     next();
