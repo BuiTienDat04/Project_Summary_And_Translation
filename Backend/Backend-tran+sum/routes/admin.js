@@ -5,22 +5,25 @@ const router = express.Router();
 const Visit = require("../models/Visit");
 
 router.get("/dashboard", verifyAdmin, (req, res) => {
-  res.json({ message: `Welcome Admin ${req.user.name}, this is your dashboard!` });
+  const userName = req.user && req.user.name ? req.user.name : "Admin";
+  res.json({ message: `Welcome ${userName}, this is your dashboard!` });
 });
 
 router.get("/content-history/:limit?", verifyToken, verifyAdmin, async (req, res) => {
   try {
     const limit = parseInt(req.params.limit) || 100;
-    const histories = await ContentHistory.find()
+    // Chỉ lấy các bản ghi trong 30 ngày gần nhất để tối ưu hiệu suất
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const histories = await ContentHistory.find({ lastUpdated: { $gte: thirtyDaysAgo } })
       .populate({
         path: "userId",
         model: "User",
         select: "email name",
       })
-      .sort({ lastUpdated: -1 }) // Sắp xếp theo lastUpdated, mới nhất trước
+      .sort({ lastUpdated: -1 })
       .limit(limit);
 
-    if (!histories || histories.length === 0) {
+    if (histories.length === 0) {
       return res.status(404).json({ message: "No history data found" });
     }
 
@@ -57,23 +60,25 @@ router.delete("/delete-content/:userId/:contentId", verifyToken, async (req, res
   }
 
   try {
-    const userHistory = await ContentHistory.findOne({ userId });
+    const userHistory = await ContentHistory.findOneAndUpdate(
+      { userId },
+      { $pull: { contents: { _id: contentId } } },
+      { new: true }
+    );
+
     if (!userHistory) {
       return res.status(404).json({ message: "User history not found" });
     }
 
-    userHistory.contents = userHistory.contents.filter(
-      (content) => content._id.toString() !== contentId
-    );
-
-    await userHistory.save();
-
-    // Kiểm tra xem có cần cập nhật Visit không
+    // Bỏ đoạn mã cập nhật Visit nếu không cần thiết
+    // Nếu cần, sửa logic để giảm translatedPosts (nếu nội dung bị xóa là bài dịch)
+    /*
     await Visit.findOneAndUpdate(
       {},
-      { $inc: { translatedPosts: 1 } },
+      { $inc: { translatedPosts: -1 } },
       { upsert: true, new: true }
     );
+    */
 
     res.json({ message: "Content deleted successfully", userId, contentId });
   } catch (err) {
