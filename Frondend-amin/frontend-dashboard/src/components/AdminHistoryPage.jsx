@@ -12,6 +12,9 @@ const AdminHistoryPage = () => {
   const [selectedContent, setSelectedContent] = useState(null);
 
   const deleteUserContent = async (userId, contentId, token) => {
+    if (!userId || userId === "undefined") {
+      throw new Error("Invalid user ID");
+    }
     try {
       const res = await fetch(`${API_BASE_URL}/admin/delete-content/${userId}/${contentId}`, {
         method: "DELETE",
@@ -117,6 +120,10 @@ const AdminHistoryPage = () => {
                   <td className="border p-2 text-center">
                     <button
                       onClick={async () => {
+                        if (!item.userId) {
+                          alert("Cannot delete: Invalid user ID");
+                          return;
+                        }
                         const confirmDelete = window.confirm("Are you sure you want to delete this content?");
                         if (!confirmDelete) return;
                         try {
