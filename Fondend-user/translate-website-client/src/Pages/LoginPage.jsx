@@ -133,13 +133,8 @@ const LoginPage = ({ onClose, onOpenRegister }) => { // Giữ lại props nếu 
     };
   }, []);
 
-  const FeatureItem = ({ icon, title, description, delay }) => (
-    <motion.div
-      className="bg-white/5 backdrop-blur-md rounded-lg p-5 shadow-md border border-white/10 flex items-center space-x-4"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay }}
-    >
+  const FeatureItem = ({ icon, title, description }) => (
+    <div className="bg-white/5 backdrop-blur-md rounded-lg p-5 shadow-md border border-white/10 flex items-center space-x-4">
       <div className="p-2 rounded-md bg-gradient-to-br from-gray-200/10 to-gray-700/10">
         {icon}
       </div>
@@ -147,7 +142,7 @@ const LoginPage = ({ onClose, onOpenRegister }) => { // Giữ lại props nếu 
         <h4 className="text-lg font-semibold text-white">{title}</h4>
         <p className="text-white/70 text-sm">{description}</p>
       </div>
-    </motion.div>
+    </div>
   );
 
   return (
@@ -226,25 +221,21 @@ const LoginPage = ({ onClose, onOpenRegister }) => { // Giữ lại props nếu 
               icon={<FaMagic className="w-7 h-7 text-yellow-300" />}
               title="Summarize Smartly"
               description="Get key insights quickly. AI-powered summaries for rapid understanding."
-              delay={0.3}
             />
             <FeatureItem
               icon={<FaLanguage className="w-7 h-7 text-green-300" />}
               title="Translate Instantly"
               description="Break language barriers. Accurate translations at your fingertips."
-              delay={0.4}
             />
             <FeatureItem
               icon={<FaBookOpen className="w-7 h-7 text-purple-300" />}
               title="Manage Effortlessly"
               description="Organize, merge, split, and more. Streamline your PDF workflow."
-              delay={0.5}
             />
             <FeatureItem
               icon={<FaCheckCircle className="w-7 h-7 text-cyan-300" />}
               title="Secure & Reliable"
               description="Your documents are safe. Fast processing you can trust."
-              delay={0.6}
             />
           </div>
         </motion.div>
