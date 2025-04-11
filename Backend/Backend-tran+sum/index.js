@@ -317,7 +317,7 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
     let filePath;
     try {
         const _id = req.user._id;
-                if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
+        if (!req.file) return res.status(400).json({ error: "Không có file được tải lên." });
 
         filePath = req.file.path;
         const dataBuffer = await fs.readFile(filePath);
@@ -333,6 +333,12 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
             { _id: _id },
             { $push: { contents: { type: "pdf", content: filteredText, summary } }, $set: { lastUpdated: Date.now() } },
             { upsert: true }
+        );
+
+        await Visit.findOneAndUpdate(
+            {},
+            { $inc: { translatedPosts: 1 } },
+            { upsert: true, new: true }
         );
 
         res.json({ originalText: filteredText, summary });
