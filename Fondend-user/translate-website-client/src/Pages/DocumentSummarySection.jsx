@@ -20,7 +20,7 @@ export default function DocumentSummarySection() {
     const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
 
     const availableLanguages = [
-        { code: "en", name: "English" },
+        { code: "en", name: "English " },
         { code: "vi", name: "Vietnamese " },
         { code: "fr", name: "French " },
         { code: "es", name: "Spanish " },
@@ -195,20 +195,24 @@ export default function DocumentSummarySection() {
             setError("Please summarize the text first and select a target language.");
             return;
         }
+
         setIsLoading(true);
         setError(null);
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-        let cleanedSummary = cleanText(summaryContent);
-        const doc = nlp(cleanedSummary);
+        // Xử lý tên riêng
+        let textToTranslate = summaryContent;
+        const doc = nlp(summaryContent);
         const people = doc.people().out("array");
 
-        people.forEach((name) => {
-            cleanedSummary = cleanedSummary.replace(
-                new RegExp(`\\b${name}\\b`, "g"),
-                `[${name}]`
+        people.forEach((fullName) => {
+            const nameWithoutDiacritics = removeVietnameseDiacritics(fullName);
+            const escapedFullName = fullName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            textToTranslate = textToTranslate.replace(
+                new RegExp(`\\b${escapedFullName}\\b`, "gi"),
+                nameWithoutDiacritics
             );
         });
 
@@ -220,34 +224,49 @@ export default function DocumentSummarySection() {
                     "Content-Type": "application/json",
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
-                body: JSON.stringify({ text: cleanedSummary, targetLang }),
+                body: JSON.stringify({
+                    text: textToTranslate,
+                    targetLang,
+                }),
                 signal: controller.signal,
             });
 
             clearTimeout(timeoutId);
+
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || `Error translating text (HTTP ${response.status})`);
+                throw new Error(errorData.error || `Translation failed (HTTP ${response.status})`);
             }
 
             const data = await response.json();
-            setTranslatedContent(data.translation || "Unable to translate content.");
+            console.log("Translation response:", data);
 
-            const content = `File Name: ${file?.name || "document"}\n\nOriginal Text:\n${originalContent}\n\nSummary:\n${summaryContent}\n\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}):\n${data.translation || "No translation"}`;
+            const translatedText = data.translation || "Unable to translate content.";
+            setTranslatedContent(translatedText);
+
+            const translatedLangName = availableLanguages.find((l) => l.code === targetLang)?.name || "English";
+            const content = `File Name: ${file?.name || "document"}\n\nOriginal Text:\n${originalContent}\n\nSummary:\n${summaryContent}\n\nTranslation (${translatedLangName}):\n${translatedText}`;
             updateSummaryFile(content);
         } catch (err) {
+            clearTimeout(timeoutId);
+
             if (err.name === "AbortError") {
-                setError("Request timed out. Please try again.");
+                setError("Request timed out after 60 seconds. Please try again.");
             } else if (err.message.includes("Failed to fetch")) {
                 setError("Unable to connect to server. Check your network or server status.");
             } else {
-                setError(err.message);
+                setError(`Translation error: ${err.message}`);
             }
             console.error("Error in translateSummary:", err);
         } finally {
             setIsLoading(false);
         }
     };
+
+    // Hàm loại bỏ dấu tiếng Việt
+    function removeVietnameseDiacritics(str) {
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
+    }
 
     const documentSummaryContent = summaryContent
         ? `File Name: ${file?.name || "Unknown"}\nOriginal Content: ${originalContent}\nSummary: ${summaryContent}\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}): ${translatedContent}`
