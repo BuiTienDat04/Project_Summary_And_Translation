@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://api.pdfsmart.online"; // Export API_BASE_URL
+const API_BASE_URL = "http://localhost:5001"; // Export API_BASE_URL
 
 const api = axios.create({
     baseURL: API_BASE_URL,
