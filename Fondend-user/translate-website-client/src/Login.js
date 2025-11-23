@@ -5,9 +5,24 @@ const LoginForm = () => {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(`Email: ${email}\nMật khẩu: ${password}\nDuy trì kết nối: ${remember}`);
+
+    try {
+      const res = await axios.post("http://localhost:5000/api/login", {
+        email,
+        password,
+      });
+
+      // Lưu token vào localStorage
+      localStorage.setItem("token", res.data.token);
+
+      alert("Đăng nhập thành công!");
+      console.log("Token:", res.data.token);
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+      alert("Đăng nhập thất bại! Vui lòng kiểm tra lại thông tin.");
+    }
   };
 
   return (

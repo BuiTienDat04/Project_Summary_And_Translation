@@ -1,29 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { HelpCircle, Link2, X } from "lucide-react";
+import { HelpCircle, Link2, X, Sparkles, Zap, Globe, Cpu, Clock, Languages } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { FaFileAlt, FaCheckCircle, FaFilePdf, FaLink } from "react-icons/fa";
 import LoginPage from "../Pages/LoginPage";
 import RegisterPage from "../Pages/RegisterPage";
 import Navigation from "../Pages/Navigation";
+import Footer from "../Pages/Footer";
 import { motion } from "framer-motion";
 import api from "../api/api";
 import HistorySummary from "./HistorySummary";
-import {
-    SparklesIcon,
-    CpuChipIcon,
-    GlobeAltIcon,
-    ScaleIcon,
-    FunnelIcon,
-    DocumentTextIcon,
-    RocketLaunchIcon,
-    ClockIcon,
-    LanguageIcon,
-    AdjustmentsHorizontalIcon,
-    CloudArrowDownIcon,
-    AcademicCapIcon,
-    BriefcaseIcon,
-    NewspaperIcon
-} from "@heroicons/react/24/outline";
 
 const LinkPage = () => {
     const navigate = useNavigate();
@@ -37,11 +22,13 @@ const LinkPage = () => {
     const [translatedContent, setTranslatedContent] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
-    const [targetLang, setTargetLang] = useState("en");
+    const [targetLang, setTargetLang] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
     const [historyUpdated, setHistoryUpdated] = useState(false);
+    const [isNavVisible, setIsNavVisible] = useState(true);
+    const [lastScrollY, setLastScrollY] = useState(0);
 
     const availableLanguages = [
         { code: "en", name: "English" },
@@ -77,6 +64,7 @@ const LinkPage = () => {
         setIsPopupVisible(true);
         setShowRegister(false);
     };
+
     const handleLanguageSelect = (code, name) => {
         setTargetLang(code);
         setSearchTerm(name);
@@ -92,6 +80,20 @@ const LinkPage = () => {
         }
     }, []);
 
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+            if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                setIsNavVisible(false);
+            } else {
+                setIsNavVisible(true);
+            }
+            setLastScrollY(currentScrollY);
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [lastScrollY]);
+
     const handleLoginClick = () => setShowLogin(true);
     const handleRegisterClick = () => setShowRegister(true);
 
@@ -106,6 +108,7 @@ const LinkPage = () => {
         setLoggedInUsername(null);
         setLoggedInUser(null);
         localStorage.removeItem("loggedInUser");
+        localStorage.removeItem("token");
         navigate("/");
         window.location.reload();
     };
@@ -113,6 +116,8 @@ const LinkPage = () => {
     const handleLinkChange = (e) => {
         setLinkInput(e.target.value);
         setError("");
+        setSummaryResult("");
+        setTranslatedContent("");
     };
 
     const handleGenerateSummary = async () => {
@@ -122,28 +127,24 @@ const LinkPage = () => {
             setShowLogin(true);
             return;
         }
-    
         if (!linkInput) {
             setError("Please enter a valid URL.");
             return;
         }
-    
         const urlPattern = /^https?:\/\//;
         if (!urlPattern.test(linkInput)) {
             setError("URL must start with http:// or https://");
             return;
         }
-    
         setIsLoading(true);
         setError("");
         setSummaryResult("");
         setTranslatedContent("");
-    
         try {
             const response = await api.post("/summarize-link", { url: linkInput });
             const { summary } = response.data;
             setSummaryResult(summary || "No summary generated.");
-            setHistoryUpdated(prev => !prev); // Trigger history refresh
+            setHistoryUpdated(prev => !prev);
         } catch (error) {
             console.error("Error summarizing link:", error);
             if (error.response?.status === 401) {
@@ -158,7 +159,7 @@ const LinkPage = () => {
             setIsLoading(false);
         }
     };
-    
+
     const translateSummary = async () => {
         const token = localStorage.getItem("token");
         if (!loggedInUser || !token) {
@@ -166,22 +167,26 @@ const LinkPage = () => {
             setShowLogin(true);
             return;
         }
-    
-        if (!summaryResult || !targetLang) {
-            setError("Please generate a summary first and select a target language.");
+        if (!summaryResult) {
+            setError("Please generate a summary first.");
             return;
         }
-    
+        if (!targetLang) {
+            setError("Please select a target language.");
+            return;
+        }
         setIsLoading(true);
         setError("");
-    
+        setTranslatedContent("");
         try {
             const response = await api.post("/translate", {
                 text: summaryResult,
                 targetLang,
+                isSummary: true,
             });
             const { translation } = response.data;
             setTranslatedContent(translation || "No translation generated.");
+            setHistoryUpdated(prev => !prev);
         } catch (error) {
             console.error("Error translating summary:", error);
             if (error.response?.status === 401) {
@@ -197,580 +202,646 @@ const LinkPage = () => {
         }
     };
 
-    const linkPageContent = `URL: ${linkInput}\nSummary: ${summaryResult}\nTranslation (${availableLanguages.find((l) => l.code === targetLang)?.name || "English"}): ${translatedContent}`;
-
     return (
-        <div className="relative min-h-screen bg-indigo-200 font-sans">
-            <Navigation
-                loggedInUsername={loggedInUsername}
-                onLoginClick={handleLoginClick}
-                onRegisterClick={handleRegisterClick}
-                onLogout={handleLogout}
-            />
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 font-sans">
+            {/* Background Decorations */}
+            <div className="fixed inset-0 pointer-events-none">
+                <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-200 rounded-full blur-3xl opacity-20 animate-pulse"></div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-100 rounded-full blur-3xl opacity-10"></div>
+            </div>
 
-            {/* Add HistorySummary with refresh trigger */}
-            <HistorySummary key={historyUpdated ? 'refresh' : 'normal'} />
-
+            {/* Popups for Login and Register */}
             {showLogin && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[1000]"
-                >
+                <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-[1000]">
                     <LoginPage onClose={handleCloseLogin} onLoginSuccess={onLoginSuccess} />
-                </motion.div>
+                </div>
             )}
-
             {showRegister && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[1000]"
-                >
+                <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-[1000]">
                     <RegisterPage onClose={handleCloseRegister} onRegistrationSuccess={handleRegistrationSuccess} />
-                </motion.div>
+                </div>
             )}
 
-            <div className="container mx-auto px-6 pt-16">
-                <motion.header
-                    initial={{ y: -50, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.8 }}
-                    className="container mx-auto mt-20 px-6 text-center"
-                >
-                    <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6">
-                        <span className="bg-gradient-to-r from-blue-600 to-green-500 text-transparent bg-clip-text bg-[length:200%_auto] animate-gradient">
-                            Summarize Any Website Instantly
-                        </span>
-                        <FaLink className="inline-block ml-4 text-blue-500" />
-                    </h1>
-                    <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                        Enter a URL and get a concise summary powered by AI. Save time by extracting key insights from web pages instantly.
-                    </p>
-                </motion.header>
+            {/* Navigation Bar - Fixed with smooth hide/show */}
+            <div className={`fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md shadow-sm border-b border-white/20 transition-transform duration-300 ${isNavVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+                <Navigation
+                    loggedInUsername={loggedInUsername}
+                    onLoginClick={handleLoginClick}
+                    onRegisterClick={handleRegisterClick}
+                    onLogout={handleLogout}
+                />
+            </div>
 
-                <div className="max-w-7xl mx-auto p-8">
-                    <section className="flex flex-col items-center gap-8">
+            {/* Add padding to account for fixed nav */}
+            <div className="pt-16"></div>
+
+            {/* Hero Section */}
+            <section className="relative py-16 lg:py-24">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-indigo-600/10"></div>
+                <div className="container mx-auto px-4 relative">
+                    <motion.div
+                        initial={{ y: -30, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ duration: 0.7 }}
+                        className="text-center max-w-4xl mx-auto mb-16"
+                    >
+                        {/* Badge */}
                         <motion.div
-                            initial={{ opacity: 0, y: 50 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8, delay: 0.2 }}
-                            className="flex flex-wrap justify-center gap-4"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.2 }}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-gray-200 mb-8"
                         >
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="relative bg-gradient-to-r from-blue-500 to-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 overflow-hidden group"
-                                onClick={() => navigate("/text")}
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <div className="relative flex items-center justify-center gap-2">
-                                    <span className="group-hover:scale-110 transition-transform duration-300">Summarize Text</span>
-                                    <FaFileAlt className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
-                                </div>
-                            </motion.button>
-
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="relative bg-gradient-to-r from-green-500 to-green-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 overflow-hidden group"
-                                onClick={() => navigate("/document")}
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <div className="relative flex items-center justify-center gap-2">
-                                    <span className="group-hover:scale-110 transition-transform duration-300">Summarize Document</span>
-                                    <FaFilePdf className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
-                                </div>
-                            </motion.button>
-
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="relative bg-gradient-to-r from-purple-500 to-purple-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 overflow-hidden group"
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <div className="relative flex items-center justify-center gap-2">
-                                    <span className="group-hover:scale-110 transition-transform duration-300">Summarize Link</span>
-                                    <FaLink className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
-                                </div>
-                            </motion.button>
+                            <Sparkles className="w-4 h-4 text-blue-600" />
+                            <span className="text-sm font-medium text-gray-700">AI-Powered Web Content Intelligence</span>
                         </motion.div>
-
-                        <div className="relative flex items-center justify-center mt-4">
-                            <button
-                                onClick={() => setShowHelp(!showHelp)}
-                                className="group relative rounded-full p-2 transition-all duration-500 hover:rotate-[360deg] focus:outline-none"
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
-                                <HelpCircle
-                                    className={`w-9 h-9 transition-all duration-500 ${showHelp
-                                        ? 'text-purple-600 drop-shadow-[0_4px_8px_rgba(99,102,241,0.3)]'
-                                        : 'text-gray-400 hover:text-blue-500 group-hover:scale-110 group-hover:drop-shadow-[0_4px_12px_rgba(59,130,246,0.25)]'
-                                        }`}
-                                    strokeWidth={1.5}
-                                />
-                            </button>
-
-                            {showHelp && (
-                                <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30 backdrop-blur-sm">
-                                    <motion.div
-                                        initial={{ opacity: 0, y: -10, scale: 0.97 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: -10, scale: 0.97 }}
-                                        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                                        className="w-full max-w-md mx-4 bg-white/95 backdrop-blur-lg shadow-2xl p-6 rounded-2xl border border-white/20 relative"
-                                        style={{
-                                            background: 'radial-gradient(at top right, #f8fafc 0%, #f1f5f9 100%)',
-                                            boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)',
-                                            border: '1px solid rgba(255,255,255,0.3)',
-                                        }}
-                                    >
-                                        <div className="flex justify-between items-start mb-5">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg shadow-lg">
-                                                    <FaLink className="w-6 h-6 text-white" />
-                                                </div>
-                                                <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent">
-                                                    Quick Start Guide
-                                                </h3>
-                                            </div>
-                                            <button
-                                                onClick={() => setShowHelp(false)}
-                                                className="p-1 hover:bg-gray-100/50 rounded-full transition-all duration-200 hover:rotate-90"
-                                            >
-                                                <X className="w-5 h-5 text-gray-400 hover:text-gray-600" />
-                                            </button>
-                                        </div>
-
-                                        <ul className="space-y-4">
-                                            {["Enter Document URL", "Generate Summary", "Translate Results"].map((title, index) => (
-                                                <motion.li
-                                                    key={index}
-                                                    className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors"
-                                                    whileHover={{ x: 5 }}
-                                                >
-                                                    <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center font-semibold ${index === 0 ? 'bg-blue-500/10 text-blue-600' : index === 1 ? 'bg-purple-500/10 text-purple-600' : 'bg-pink-500/10 text-pink-600'}`}>
-                                                        {index + 1}
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-medium text-gray-700">{title}</p>
-                                                        <p className="text-sm text-gray-500 mt-1">
-                                                            {index === 0 ? "Paste your document URL link to analyze" : index === 1 ? "Click the 'Summarize' button for AI-powered analysis" : "Select language and click 'Translate' for instant conversion"}
-                                                        </p>
-                                                    </div>
-                                                </motion.li>
-                                            ))}
-                                        </ul>
-                                    </motion.div>
+                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+                            Summarize Any Website with{" "}
+                            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                                Advanced AI
+                            </span>
+                        </h1>
+                        <p className="text-xl text-gray-600 mb-8 leading-relaxed max-w-3xl mx-auto">
+                            Extract key insights, translate content, and unlock knowledge from any webpage instantly with our cutting-edge artificial intelligence technology.
+                        </p>
+                        {/* Stats */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4 }}
+                            className="flex flex-wrap justify-center gap-8 mb-12"
+                        >
+                            {[
+                                { number: "1M+", label: "Websites Processed" },
+                                { number: "96%", label: "Accuracy Rate" },
+                                { number: "50+", label: "Languages Supported" },
+                                { number: "10s", label: "Average Processing" }
+                            ].map((stat, index) => (
+                                <div key={index} className="text-center">
+                                    <div className="text-2xl font-bold text-gray-900">{stat.number}</div>
+                                    <div className="text-sm text-gray-500">{stat.label}</div>
                                 </div>
-                            )}
-                        </div>
-                    </section>
-
+                            ))}
+                        </motion.div>
+                    </motion.div>
+                    {/* Service Cards */}
                     <motion.div
                         initial={{ opacity: 0, y: 50 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.6 }}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10"
+                        transition={{ duration: 0.8, delay: 0.3 }}
+                        className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-16"
                     >
-                        <div className="bg-white p-6 rounded-xl shadow-lg">
-                            <h3 className="text-xl font-semibold text-gray-800 mb-4">Upload Link</h3>
-                            <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-6">
-                                <Link2 className="w-12 h-12 text-blue-500 mb-4" />
-                                <input
-                                    type="text"
-                                    placeholder="Enter URL here (e.g., https://example.com)"
-                                    value={linkInput}
-                                    onChange={handleLinkChange}
-                                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${error ? "border-red-500" : "border-gray-300"}`}
-                                />
-                                {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-                            </div>
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={handleGenerateSummary}
-                                disabled={isLoading}
-                                className={`mt-6 w-full py-3 rounded-xl font-semibold text-white transition-colors ${isLoading ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-500 hover:bg-indigo-600"}`}
-                            >
-                                {isLoading ? "Generating..." : "Generate Summary"}
-                            </motion.button>
-                        </div>
-
-                        <div className="bg-white p-6 rounded-xl shadow-lg">
-                            <h3 className="text-xl font-semibold text-gray-800 mb-4">Summary Result</h3>
-                            <div className="space-y-6">
-                                {summaryResult && (
-                                    <article className="bg-white rounded-xl border-2 border-gray-200 p-5 shadow-sm">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                                                <svg
-                                                    className="w-6 h-6 text-green-600"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                    strokeWidth="2"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M6 15h.01M6 11h.01M9 11h.01M9 15h.01"
-                                                    />
-                                                </svg>
-                                                Summary
-                                            </h3>
-                                            <span className="text-sm text-gray-500 font-medium">
-                                                {summaryResult.length} chars
-                                            </span>
-                                        </div>
-                                        <div className="bg-gray-50 rounded-lg p-4">
-                                            <textarea
-                                                className="w-full min-h-[180px] bg-transparent focus:outline-none resize-none text-gray-700 placeholder-gray-400 text-md"
-                                                value={summaryResult}
-                                                placeholder="✨ Your summary will appear here..."
-                                                readOnly
-                                            />
-                                        </div>
-                                    </article>
-                                )}
-
-                                {summaryResult && (
-                                    <div className="space-y-6">
-                                        <div className="relative">
-                                            <div className="flex items-center border-2 border-emerald-200 bg-white rounded-xl pr-3 shadow-sm">
-                                                <input
-                                                    type="text"
-                                                    className="w-full p-4 bg-transparent placeholder-gray-400 focus:outline-none text-lg"
-                                                    placeholder="Search language..."
-                                                    value={searchTerm}
-                                                    onChange={(e) => {
-                                                        setSearchTerm(e.target.value);
-                                                        setIsDropdownOpen(true);
-                                                    }}
-                                                    onFocus={() => setIsDropdownOpen(true)}
-                                                    onBlur={() => setTimeout(() => setIsDropdownOpen(false), 100)}
-                                                />
-                                            </div>
-                                            {isDropdownOpen && filteredLanguages.length > 0 && (
-                                                <ul className="absolute z-10 mt-1 w-full bg-white border border-emerald-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                                    {filteredLanguages.map((lang) => (
-                                                        <li
-                                                            key={lang.code}
-                                                            className="px-4 py-2 hover:bg-emerald-100 cursor-pointer"
-                                                            onClick={() => handleLanguageSelect(lang.code, lang.name)}
-                                                        >
-                                                            {lang.name}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            )}
-                                        </div>
-
-                                        <button
-                                            onClick={translateSummary}
-                                            className="w-full bg-gradient-to-br from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-lg"
-                                            disabled={isLoading}
-                                        >
-                                            {isLoading ? "Translating..." : "Translate Now"}
-                                        </button>
-
-                                        {translatedContent && (
-                                            <article className="bg-white rounded-xl border-2 border-gray-200 p-5 shadow-sm">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                                                        <svg
-                                                            className="w-6 h-6 text-purple-600"
-                                                            fill="none"
-                                                            viewBox="0 0 24 24"
-                                                            stroke="currentColor"
-                                                            strokeWidth="2"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                            />
-                                                        </svg>
-                                                        Translation (
-                                                        {availableLanguages.find((l) => l.code === targetLang)?.name || "English"}
-                                                        )
-                                                    </h3>
-                                                    <span className="text-sm text-gray-500 font-medium">
-                                                        {translatedContent.length} chars
-                                                    </span>
-                                                </div>
-                                                <div className="bg-gray-50 rounded-lg p-4">
-                                                    <textarea
-                                                        className="w-full min-h-[180px] bg-transparent focus:outline-none resize-none text-gray-700 text-md"
-                                                        value={translatedContent}
-                                                        placeholder="✨ Your translation will appear here..."
-                                                        readOnly
-                                                    />
-                                                </div>
-                                            </article>
-                                        )}
-                                    </div>
-                                )}
-
-                                {error && <p className="text-red-500">{error}</p>}
-                                {!summaryResult && !error && !isLoading && (
-                                    <p className="text-gray-400 italic text-center">
-                                        Summary will appear here after processing...
-                                    </p>
-                                )}
-                                {isLoading && !error && (
-                                    <div className="text-center">
-                                        <svg
-                                            className="animate-spin h-5 w-5 text-gray-600 inline-block mr-2"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <circle
-                                                cx="12"
-                                                cy="12"
-                                                r="10"
-                                                stroke="currentColor"
-                                                strokeWidth="4"
-                                                fill="none"
-                                            />
-                                        </svg>
-                                        <p className="text-gray-600 inline">Processing...</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </motion.div>
-                </div>
-            </div>
-
-            <motion.section
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-                viewport={{ once: true }}
-                className="mx-auto mt-20 px-6 py-16 bg-gradient-to-br from-blue-50 to-purple-50 shadow-2xl shadow-blue-100/50"
-            >
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                    className="mb-12 px-4 sm:px-6 lg:px-8 text-center"
-                >
-                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent mb-6">
-                        Advanced Summarization & Translation with WebSummarizer
-                    </h2>
-                    <p className="text-black sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-                        WebSummarizer empowers you to <strong className="text-blue-600 dark:text-blue-400">quickly summarize web content</strong> and
-                        <strong className="text-red-600 dark:text-red-400"> translate with precision</strong>.
-                        Harnessing the power of <strong className="text-indigo-600 dark:text-indigo-400">artificial intelligence</strong>, it effortlessly condenses lengthy articles into concise summaries
-                        while delivering highly accurate translations across multiple languages.
-                        Save time, stay informed, and experience seamless content transformation with WebSummarizer today!
-                    </p>
-
-                </motion.div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-14">
-                    <motion.div
-                        initial={{ x: -50 }}
-                        whileInView={{ x: 0 }}
-                        transition={{ duration: 0.6 }}
-                        className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/20"
-                    >
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="p-4 bg-blue-100 rounded-xl">
-                                <CpuChipIcon className="h-8 w-8 text-blue-600" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-gray-800">
-                                Smart Summarization Process
-                            </h3>
-                        </div>
-
-                        <motion.ul className="space-y-6">
-                            {[
-                                {
-                                    icon: <GlobeAltIcon className="h-6 w-6 text-blue-500" />,
-                                    title: "Web Content Extraction",
-                                    desc: "Our AI-powered engine intelligently crawls and extracts the most relevant information from any webpage URL, ensuring you get the core content without distractions."
-                                },
-                                {
-                                    icon: <ScaleIcon className="h-6 w-6 text-purple-500" />,
-                                    title: "Contextual Analysis",
-                                    desc: "Leveraging advanced Natural Language Processing (NLP), our system identifies key themes, concepts, and relationships within the text to provide a deeper understanding."
-                                },
-                                {
-                                    icon: <FunnelIcon className="h-6 w-6 text-green-500" />,
-                                    title: "Noise Reduction",
-                                    desc: "Automatically eliminates ads, navigation menus, and other irrelevant elements, allowing you to focus solely on the essential information without unnecessary clutter."
-                                },
-                                {
-                                    icon: <DocumentTextIcon className="h-6 w-6 text-pink-500" />,
-                                    title: "Adaptive Summarization",
-                                    desc: "Generates concise yet informative summaries tailored to your needs, whether you prefer a brief overview or a more detailed breakdown of the original content."
-                                }
-                            ].map((item, idx) => (
-                                <motion.li
-                                    key={idx}
-                                    initial={{ opacity: 0 }}
-                                    whileInView={{ opacity: 1 }}
-                                    transition={{ delay: idx * 0.1 }}
-                                    className="flex gap-4 p-4 hover:bg-blue-50/50 rounded-xl transition-colors"
-                                >
-                                    <div className="flex-shrink-0 p-3 bg-white rounded-lg shadow">
-                                        {item.icon}
-                                    </div>
-                                    <div>
-                                        <h4 className="text-lg font-semibold text-gray-800 mb-2">
-                                            {item.title}
-                                        </h4>
-                                        <p className="text-gray-600">
-                                            {item.desc}
-                                        </p>
-                                    </div>
-                                </motion.li>
-                            ))}
-                        </motion.ul>
-                    </motion.div>
-
-                    <motion.div
-                        initial={{ x: 50 }}
-                        whileInView={{ x: 0 }}
-                        transition={{ duration: 0.6 }}
-                        className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/20"
-                    >
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="p-4 bg-purple-100 rounded-xl">
-                                <GlobeAltIcon className="h-8 w-8 text-purple-600" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-gray-800">
-                                Why Choose TextSum for URL Summarization?
-                            </h3>
-                        </div>
-
-                        <div className="grid gap-6">
-                            {[
-                                {
-                                    color: "bg-blue-100",
-                                    icon: <ClockIcon className="h-6 w-6 text-blue-600" />,
-                                    title: "Lightning-Fast Summaries",
-                                    desc: "Get concise summaries from URLs in under 15 seconds with real-time AI processing, saving you time on web content.",
-                                },
-                                {
-                                    color: "bg-green-100",
-                                    icon: <LanguageIcon className="h-6 w-6 text-green-600" />,
-                                    title: "Seamless Multi-Language Support",
-                                    desc: "Summarize and translate web content across 20+ languages instantly, making global information accessible.",
-                                },
-                                {
-                                    color: "bg-orange-100",
-                                    icon: <AdjustmentsHorizontalIcon className="h-6 w-6 text-orange-600" />,
-                                    title: "Tailored Summarization Styles",
-                                    desc: "Choose between bullet points or paragraphs to suit your reading preference, all from any webpage.",
-                                },
-                                {
-                                    color: "bg-purple-100",
-                                    icon: <GlobeAltIcon className="h-6 w-6 text-purple-600" />,
-                                    title: "Smart Web Extraction",
-                                    desc: "Extract key insights from URLs by filtering out ads and noise, delivering only what matters.",
-                                },
-                            ].map((item, idx) => (
-                                <motion.div
-                                    key={idx}
-                                    whileHover={{ scale: 1.02 }}
-                                    className={`p-5 rounded-xl ${item.color} transition-all shadow-sm hover:shadow-md`}
-                                >
-                                    <div className="flex gap-4 items-center">
-                                        <div className="p-2 bg-white rounded-lg">{item.icon}</div>
-                                        <div>
-                                            <h4 className="text-lg font-semibold text-gray-800">{item.title}</h4>
-                                            <p className="text-gray-600 mt-1">{item.desc}</p>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </motion.div>
-                </div>
-
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    className="mt-20"
-                >
-                    <h3 className="text-3xl font-bold text-center text-gray-800 mb-16">
-                        Transform Your Workflow
-                    </h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {[
                             {
-                                icon: <AcademicCapIcon className="h-8 w-8 text-blue-600" />,
-                                title: "Academic Research",
-                                desc: "Quickly digest research papers and scholarly articles",
-                                color: "bg-blue-100"
+                                title: "Text Summarizer",
+                                description: "Process direct text input with intelligent AI analysis",
+                                icon: FaFileAlt,
+                                color: "from-blue-500 to-cyan-500",
+                                hoverColor: "hover:from-blue-600 hover:to-cyan-600",
+                                features: ["Smart Extraction", "Context Aware", "Multiple Formats"],
+                                onClick: () => navigate("/text")
                             },
                             {
-                                icon: <BriefcaseIcon className="h-8 w-8 text-purple-600" />,
-                                title: "Business Intelligence",
-                                desc: "Stay ahead with instant market reports analysis",
-                                color: "bg-purple-100"
+                                title: "Document Processor",
+                                description: "Upload and analyze PDF documents with advanced AI",
+                                icon: FaFilePdf,
+                                color: "from-green-500 to-emerald-500",
+                                hoverColor: "hover:from-green-600 hover:to-emerald-600",
+                                features: ["PDF Support", "Batch Processing", "Secure Upload"],
+                                onClick: () => navigate("/document")
                             },
                             {
-                                icon: <NewspaperIcon className="h-8 w-8 text-green-600" />,
-                                title: "Media Monitoring",
-                                desc: "Track news trends across multiple sources",
-                                color: "bg-green-100"
+                                title: "Web Content",
+                                description: "Extract and summarize content from any webpage URL",
+                                icon: FaLink,
+                                color: "from-purple-500 to-pink-500",
+                                hoverColor: "hover:from-purple-600 hover:to-pink-600",
+                                features: ["URL Processing", "Real-time Fetch", "Content Cleaning"],
+                                onClick: () => {}
                             }
-                        ].map((item, idx) => (
+                        ].map((service, index) => (
                             <motion.div
-                                key={idx}
-                                whileHover={{ y: -10 }}
-                                className={`${item.color} p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow`}
+                                key={service.title}
+                                whileHover={{ y: -8, scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="relative group cursor-pointer"
+                                onClick={service.onClick}
                             >
-                                <div className="mb-6">
-                                    <div className="p-4 bg-white w-fit rounded-2xl shadow">
-                                        {item.icon}
+                                <div className="absolute inset-0 bg-gradient-to-r from-white to-gray-50 rounded-3xl shadow-lg border border-gray-200 transform group-hover:scale-105 transition-all duration-300" />
+                                <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-white/50 shadow-xl overflow-hidden">
+                                    <div className={`absolute inset-0 bg-gradient-to-br ${service.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+                                    <div className={`relative inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r ${service.color} mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                                        <service.icon className="w-8 h-8 text-white" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-gray-900 mb-3 relative">{service.title}</h3>
+                                    <p className="text-gray-600 mb-6 leading-relaxed">{service.description}</p>
+                                    <div className="space-y-2 mb-6">
+                                        {service.features.map((feature, idx) => (
+                                            <div key={idx} className="flex items-center gap-3 text-sm text-gray-500">
+                                                <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${service.color}`} />
+                                                {feature}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className={`flex items-center gap-2 text-sm font-medium bg-gradient-to-r ${service.color} bg-clip-text text-transparent`}>
+                                        Get Started
+                                        <Zap className="w-4 h-4" />
                                     </div>
                                 </div>
-                                <h4 className="text-xl font-bold text-gray-800 mb-4">
-                                    {item.title}
-                                </h4>
-                                <p className="text-gray-600 leading-relaxed">
-                                    {item.desc}
-                                </p>
+                            </motion.div>
+                        ))}
+                    </motion.div>
+                    {/* CTA Buttons */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6 }}
+                        className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+                    >
+                        <button
+                            onClick={() => setShowHelp(true)}
+                            className="flex items-center gap-3 px-8 py-4 bg-white border border-gray-200 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-gray-700 font-semibold hover:scale-105"
+                        >
+                            <HelpCircle className="w-5 h-5 text-blue-600" />
+                            How It Works
+                        </button>
+                        {!loggedInUser && (
+                            <button
+                                onClick={handleRegisterClick}
+                                className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-white font-semibold hover:scale-105 hover:from-blue-700 hover:to-purple-700"
+                            >
+                                <Sparkles className="w-5 h-5" />
+                                Start Free Today
+                            </button>
+                        )}
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* History Summary */}
+            <HistorySummary key={historyUpdated ? 'refresh' : 'normal'} />
+
+            {/* Main Content Section */}
+            <section className="relative py-12">
+                <div className="container mx-auto px-4">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
+                        className="max-w-7xl mx-auto"
+                    >
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                            {/* Input Section */}
+                            <motion.div
+                                initial={{ opacity: 0, x: -30 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.6 }}
+                                className="group relative bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-white/50 shadow-xl hover:shadow-2xl transition-all duration-500"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-4 mb-6">
+                                        <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg">
+                                            <Link2 className="w-6 h-6 text-white" />
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-gray-900">Enter Website URL</h3>
+                                    </div>
+                                    <div className="space-y-6">
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-sm font-medium text-gray-700">Website URL</label>
+                                            <input
+                                                type="text"
+                                                placeholder="https://example.com/article"
+                                                value={linkInput}
+                                                onChange={handleLinkChange}
+                                                className={`w-full p-4 border rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 ${error ? "border-red-500" : "border-gray-200"}`}
+                                            />
+                                            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+                                        </div>
+                                        <motion.button
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={handleGenerateSummary}
+                                            disabled={isLoading}
+                                            className={`w-full py-4 rounded-2xl font-semibold text-white transition-all duration-300 shadow-lg ${isLoading
+                                                ? "bg-indigo-400 cursor-not-allowed"
+                                                : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl"
+                                                }`}
+                                        >
+                                            {isLoading ? (
+                                                <div className="flex items-center justify-center gap-3">
+                                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                    Generating Summary...
+                                                </div>
+                                            ) : (
+                                                "Generate Summary"
+                                            )}
+                                        </motion.button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                            {/* Results Section */}
+                            <motion.div
+                                initial={{ opacity: 0, x: 30 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.6 }}
+                                className="group relative bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-white/50 shadow-xl hover:shadow-2xl transition-all duration-500"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-4 mb-6">
+                                        <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg">
+                                            <Sparkles className="w-6 h-6 text-white" />
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-gray-900">Summary Results</h3>
+                                    </div>
+                                    <div className="space-y-6">
+                                        {summaryResult && (
+                                            <div className="space-y-6">
+                                                {/* Summary */}
+                                                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <h4 className="text-lg font-semibold text-gray-800">Summary</h4>
+                                                        <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                                                            {summaryResult.length} chars
+                                                        </span>
+                                                    </div>
+                                                    <div className="max-h-60 overflow-y-auto">
+                                                        <p className="text-gray-700 leading-relaxed">{summaryResult}</p>
+                                                    </div>
+                                                </div>
+                                                {/* Translation Section */}
+                                                <div className="space-y-4">
+                                                    <div className="bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl p-6 border border-emerald-100 shadow-md">
+                                                        <h4 className="text-lg font-semibold text-gray-800 mb-4">Translate Summary</h4>
+                                                        <div className="space-y-4">
+                                                            {/* Language Selection */}
+                                                            <div className="relative z-10">
+                                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                                    Select Target Language
+                                                                </label>
+                                                                <div className="relative">
+                                                                    <input
+                                                                        type="text"
+                                                                        className="w-full p-4 border border-emerald-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/20 bg-white shadow-sm pr-10"
+                                                                        placeholder="Search language..."
+                                                                        value={searchTerm}
+                                                                        onChange={(e) => {
+                                                                            setSearchTerm(e.target.value);
+                                                                            setIsDropdownOpen(true);
+                                                                        }}
+                                                                        onFocus={() => setIsDropdownOpen(true)}
+                                                                        onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
+                                                                    />
+                                                                    <Languages className="absolute right-4 top-1/2 transform -translate-y-1/2 text-emerald-500 w-5 h-5" />
+                                                                    {isDropdownOpen && (
+                                                                        <ul className="absolute z-20 mt-2 w-full bg-white border border-emerald-200 rounded-2xl shadow-lg max-h-48 overflow-y-auto">
+                                                                            {filteredLanguages.map((lang) => (
+                                                                                <li
+                                                                                    key={lang.code}
+                                                                                    className="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-200 flex items-center justify-between"
+                                                                                    onClick={() => handleLanguageSelect(lang.code, lang.name)}
+                                                                                >
+                                                                                    <span className="text-gray-700">{lang.name}</span>
+                                                                                    <span className="text-emerald-600 font-medium">{lang.code.toUpperCase()}</span>
+                                                                                </li>
+                                                                            ))}
+                                                                        </ul>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            {/* Translate Button */}
+                                                            <motion.button
+                                                                whileHover={{ scale: 1.02 }}
+                                                                whileTap={{ scale: 0.98 }}
+                                                                onClick={translateSummary}
+                                                                disabled={isLoading || !summaryResult || !targetLang}
+                                                                className={`w-full py-4 rounded-2xl font-semibold text-white transition-all duration-300 shadow-lg flex items-center justify-center gap-3 ${
+                                                                    isLoading || !summaryResult || !targetLang
+                                                                        ? "bg-gray-400 cursor-not-allowed"
+                                                                        : "bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 hover:shadow-xl"
+                                                                }`}
+                                                            >
+                                                                {isLoading ? (
+                                                                    <>
+                                                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                                        Translating...
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <Languages className="w-5 h-5" />
+                                                                        Translate Summary
+                                                                    </>
+                                                                )}
+                                                            </motion.button>
+                                                        </div>
+                                                    </div>
+                                                    {/* Translation Result */}
+                                                    {translatedContent && (
+                                                        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-100">
+                                                            <div className="flex items-center justify-between mb-4">
+                                                                <h4 className="text-lg font-semibold text-gray-800">
+                                                                    Translation ({availableLanguages.find((l) => l.code === targetLang)?.name || "Unknown"})
+                                                                </h4>
+                                                                <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+                                                                    {translatedContent.length} chars
+                                                                </span>
+                                                            </div>
+                                                            <div className="max-h-60 overflow-y-auto">
+                                                                <p className="text-gray-700 leading-relaxed">{translatedContent}</p>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {!summaryResult && !error && !isLoading && (
+                                            <div className="text-center py-12">
+                                                <div className="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                                    <Sparkles className="w-8 h-8 text-gray-400" />
+                                                </div>
+                                                <p className="text-gray-500 text-lg">Your summary will appear here after processing...</p>
+                                            </div>
+                                        )}
+                                        {isLoading && !error && (
+                                            <div className="text-center py-12">
+                                                <div className="w-20 h-20 bg-gradient-to-br from-blue-200 to-blue-300 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                                    <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                                                </div>
+                                                <p className="text-gray-600 text-lg">Processing your request...</p>
+                                            </div>
+                                        )}
+                                        {error && (
+                                            <div className="text-center py-12">
+                                                <p className="text-red-500 text-lg">{error}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </div>
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* Features Section */}
+            <section className="relative py-20 bg-white">
+                <div className="container mx-auto px-4">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
+                        className="text-center max-w-3xl mx-auto mb-16"
+                    >
+                        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+                            Why Choose Our{" "}
+                            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                Web Summarizer
+                            </span>
+                        </h2>
+                        <p className="text-xl text-gray-600 leading-relaxed">
+                            Experience the power of AI-driven web content analysis that saves you time and enhances productivity
+                        </p>
+                    </motion.div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+                        {[
+                            {
+                                icon: <Globe className="w-8 h-8 text-blue-600" />,
+                                title: "Universal Compatibility",
+                                description: "Works with any website, blog, news article, or online content",
+                                color: "bg-blue-50"
+                            },
+                            {
+                                icon: <Cpu className="w-8 h-8 text-green-600" />,
+                                title: "Smart AI Processing",
+                                description: "Advanced algorithms extract key insights while maintaining context",
+                                color: "bg-green-50"
+                            },
+                            {
+                                icon: <Languages className="w-8 h-8 text-purple-600" />,
+                                title: "Multi-language Support",
+                                description: "Translate summaries into 20+ languages with high accuracy",
+                                color: "bg-purple-50"
+                            },
+                            {
+                                icon: <Clock className="w-8 h-8 text-orange-600" />,
+                                title: "Instant Results",
+                                description: "Get summarized content in seconds, not hours",
+                                color: "bg-orange-50"
+                            }
+                        ].map((feature, index) => (
+                            <motion.div
+                                key={index}
+                                initial={{ opacity: 0, y: 30 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.6, delay: index * 0.1 }}
+                                className="text-center group"
+                            >
+                                <div className={`w-20 h-20 ${feature.color} rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                                    {feature.icon}
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-900 mb-4">{feature.title}</h3>
+                                <p className="text-gray-600 leading-relaxed">{feature.description}</p>
                             </motion.div>
                         ))}
                     </div>
-                </motion.div>
+                </div>
+            </section>
 
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    className="mt-20 bg-gradient-to-r from-blue-600 to-purple-500 rounded-2xl p-12 text-center shadow-2xl"
-                >
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-white">
+            {/* Use Cases Section */}
+            <section className="relative py-20 bg-gradient-to-br from-slate-50 to-blue-50">
+                <div className="container mx-auto px-4">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
+                        className="text-center max-w-3xl mx-auto mb-16"
+                    >
+                        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+                            Perfect For Every{" "}
+                            <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                                Use Case
+                            </span>
+                        </h2>
+                        <p className="text-xl text-gray-600 leading-relaxed">
+                            From students to professionals, our web summarizer adapts to your needs
+                        </p>
+                    </motion.div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
                         {[
-                            { number: "5M+", label: "Pages Summarized" },
-                            { number: "98%", label: "Accuracy Rate" },
-                            { number: "20", label: "Languages Supported" },
-                            { number: "15s", label: "Average Processing" }
-                        ].map((stat, idx) => (
-                            <div key={idx} className="space-y-4">
-                                <motion.div
-                                    whileHover={{ scale: 1.1 }}
-                                    className="text-4xl font-bold drop-shadow"
-                                >
-                                    {stat.number}
-                                </motion.div>
-                                <div className="text-sm font-medium opacity-90">
-                                    {stat.label}
+                            {
+                                icon: "🎓",
+                                title: "Students & Researchers",
+                                description: "Quickly digest academic papers, research articles, and study materials",
+                                features: ["Academic Research", "Study Materials", "Paper Analysis"]
+                            },
+                            {
+                                icon: "💼",
+                                title: "Professionals",
+                                description: "Stay updated with industry news, reports, and competitor analysis",
+                                features: ["Market Research", "Business Intelligence", "Competitor Analysis"]
+                            },
+                            {
+                                icon: "📰",
+                                title: "Content Creators",
+                                description: "Gather insights and inspiration from various sources efficiently",
+                                features: ["Content Research", "Trend Analysis", "Inspiration Gathering"]
+                            }
+                        ].map((useCase, index) => (
+                            <motion.div
+                                key={index}
+                                initial={{ opacity: 0, y: 30 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.6, delay: index * 0.2 }}
+                                className="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100"
+                            >
+                                <div className="text-4xl mb-6">{useCase.icon}</div>
+                                <h3 className="text-2xl font-bold text-gray-900 mb-4">{useCase.title}</h3>
+                                <p className="text-gray-600 mb-6 leading-relaxed">{useCase.description}</p>
+                                <div className="space-y-2">
+                                    {useCase.features.map((feature, idx) => (
+                                        <div key={idx} className="flex items-center gap-3 text-gray-700">
+                                            <FaCheckCircle className="w-4 h-4 text-green-500" />
+                                            {feature}
+                                        </div>
+                                    ))}
                                 </div>
-                            </div>
+                            </motion.div>
                         ))}
                     </div>
-                </motion.div>
-            </motion.section>
+                </div>
+            </section>
 
+            {/* Testimonials Section */}
+            <section className="relative py-20 bg-gradient-to-r from-blue-50 to-indigo-50">
+                <div className="container mx-auto px-4">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
+                        className="text-center max-w-3xl mx-auto mb-16"
+                    >
+                        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+                            What Our{" "}
+                            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                Users Say
+                            </span>
+                        </h2>
+                        <p className="text-xl text-gray-600 leading-relaxed">
+                            Hear from those who have transformed their workflow with our AI-powered summarizer
+                        </p>
+                    </motion.div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+                        {[
+                            {
+                                name: "Sarah T., Student",
+                                quote: "This tool has saved me hours of reading time! I can quickly get the gist of any research paper.",
+                                avatar: "🎓",
+                                rating: 5
+                            },
+                            {
+                                name: "James R., Marketing Manager",
+                                quote: "Perfect for keeping up with industry news without getting overwhelmed by lengthy articles.",
+                                avatar: "💼",
+                                rating: 5
+                            },
+                            {
+                                name: "Emily K., Blogger",
+                                quote: "The translation feature is a game-changer for researching international content ideas!",
+                                avatar: "📰",
+                                rating: 4
+                            }
+                        ].map((testimonial, index) => (
+                            <motion.div
+                                key={index}
+                                initial={{ opacity: 0, y: 30 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.6, delay: index * 0.2 }}
+                                className="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100"
+                            >
+                                <div className="text-4xl mb-4">{testimonial.avatar}</div>
+                                <h3 className="text-xl font-bold text-gray-900 mb-2">{testimonial.name}</h3>
+                                <p className="text-gray-600 mb-4 leading-relaxed">"{testimonial.quote}"</p>
+                                <div className="flex justify-center gap-1">
+                                    {[...Array(testimonial.rating)].map((_, i) => (
+                                        <span key={i} className="text-yellow-400">★</span>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Help Modal */}
+            {showHelp && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 p-4">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-gray-200"
+                    >
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                                    <HelpCircle className="w-5 h-5 text-blue-600" />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-900">How to Use Web Summarizer</h3>
+                            </div>
+                            <button
+                                onClick={() => setShowHelp(false)}
+                                className="p-2 hover:bg-gray-100 rounded-xl transition-colors duration-200"
+                            >
+                                <X className="w-5 h-5 text-gray-500" />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-6">
+                            {[
+                                {
+                                    step: "1",
+                                    title: "Enter Website URL",
+                                    description: "Paste any webpage URL starting with http:// or https://",
+                                    icon: "🔗"
+                                },
+                                {
+                                    step: "2",
+                                    title: "AI Processing",
+                                    description: "Our advanced AI analyzes and extracts key content from the webpage",
+                                    icon: "🤖"
+                                },
+                                {
+                                    step: "3",
+                                    title: "Get Summary & Translate",
+                                    description: "Receive concise summary and translate to any language instantly",
+                                    icon: "🌍"
+                                }
+                            ].map((item) => (
+                                <div key={item.step} className="flex gap-4 group">
+                                    <div className="flex-shrink-0">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center font-semibold text-white text-lg shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                            {item.icon}
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="font-semibold text-gray-900 text-lg mb-2">{item.title}</h4>
+                                        <p className="text-gray-600 leading-relaxed">{item.description}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                            <button
+                                onClick={() => setShowHelp(false)}
+                                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+                            >
+                                Got It, Let's Start!
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
+            <Footer />
         </div>
     );
 };
