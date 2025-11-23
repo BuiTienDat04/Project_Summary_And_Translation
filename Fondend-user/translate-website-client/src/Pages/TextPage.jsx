@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { HelpCircle, X, FileText } from "lucide-react"; // Added X and FileText here
+import { HelpCircle, X, FileText, Sparkles, Zap, Globe, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import LoginPage from "./LoginPage";
 import RegisterPage from "./RegisterPage";
@@ -8,9 +8,9 @@ import ServicesSection from "./ServicesSection";
 import TextSummarizerAndTranslator from "../Pages/TextSummarizerAndTranslator";
 import Footer from "./Footer";
 
-import { FaFileAlt, FaSignInAlt, FaCheckCircle } from "react-icons/fa";
+import { FaFileAlt, FaSignInAlt, FaCheckCircle, FaStar, FaRocket, FaUsers } from "react-icons/fa";
 import { motion } from "framer-motion";
-import { FaFilePdf, FaLink, } from "react-icons/fa";
+import { FaFilePdf, FaLink } from "react-icons/fa";
 
 function TextPage() {
   const [showLogin, setShowLogin] = useState(false);
@@ -21,6 +21,8 @@ function TextPage() {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [welcomeMessageVisible, setWelcomeMessageVisible] = useState(true);
   const [loginPromptVisible, setLoginPromptVisible] = useState(false);
+  const [isNavVisible, setIsNavVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   const handleCloseLogin = () => setShowLogin(false);
   const handleCloseRegister = () => setShowRegister(false);
@@ -38,51 +40,69 @@ function TextPage() {
     setLoggedInUser(user);
     setLoggedInUsername(user.email);
     setShowLogin(false);
-
     localStorage.setItem('loggedInUser', JSON.stringify(user));
   };
 
   useEffect(() => {
-    // Kiểm tra localStorage khi component được mount
     const storedUser = localStorage.getItem('loggedInUser');
     if (storedUser) {
       setLoggedInUser(JSON.parse(storedUser));
-      setLoggedInUsername(JSON.parse(storedUser).email); // Giả sử email là thuộc tính để hiển thị username
+      setLoggedInUsername(JSON.parse(storedUser).email);
     }
   }, []);
 
+  // Fix navigation scroll behavior
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down and past 100px - hide nav
+        setIsNavVisible(false);
+      } else {
+        // Scrolling up - show nav
+        setIsNavVisible(true);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   const handleLogout = () => {
     setLoggedInUsername(null);
     setLoggedInUser(null);
-
-    // Xóa dữ liệu loggedInUser khỏi localStorage
     localStorage.removeItem('loggedInUser');
-
-    // Điều hướng người dùng về trang đăng nhập (hoặc trang chủ)
     navigate('/');
     window.location.reload();
   };
 
-
-
   return (
-    <div className="min-h-screen bg-indigo-200 font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 font-sans overflow-x-hidden">
+      {/* Background Decorations */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-200 rounded-full blur-3xl opacity-20 animate-pulse"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-100 rounded-full blur-3xl opacity-10"></div>
+      </div>
+
       {/* Popups for Login and Register */}
       {showLogin && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[1000]">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-[1000]">
           <LoginPage onClose={handleCloseLogin} onLoginSuccess={handleLoginSuccess} />
         </div>
       )}
 
       {showRegister && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[1000]">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-[1000]">
           <RegisterPage onClose={handleCloseRegister} onRegistrationSuccess={handleRegistrationSuccess} />
         </div>
       )}
 
-      {/* Navigation Bar */}
-      <div className="bg-indigo-100 py-2">
+      {/* Navigation Bar - Fixed with smooth hide/show */}
+      <div className={`fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md shadow-sm border-b border-white/20 transition-transform duration-300 ${isNavVisible ? 'translate-y-0' : '-translate-y-full'
+        }`}>
         <Navigation
           loggedInUsername={loggedInUsername}
           onLoginClick={handleLoginClick}
@@ -91,379 +111,405 @@ function TextPage() {
         />
       </div>
 
-      {/* Header Section */}
-      <motion.header
-        initial={{ y: -50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8 }}
-        className="container mx-auto mt-20 px-6 text-center"
-      >
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6 flex items-center justify-center">
-          {/* Gradient Text with LED Effect */}
-          <span className="bg-gradient-to-r from-blue-600 to-green-500 text-transparent bg-clip-text bg-[length:200%_auto] animate-gradient">
-            AI-Powered Text Summarization & Translation Tool
-          </span>
-          {/* Simple Icon */}
-          <FaFileAlt className="ml-4 text-blue-500" />
-        </h1>
-        <div className="container mx-auto px-6 text-center text-indigo-700 text-xl mt-10">
-          Unlock the power of AI to summarize and translate text effortlessly.
-        </div>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-          Quickly grasp the main points from any text and translate it into your desired language.
-        </p>
-      </motion.header>
+      {/* Add padding to account for fixed nav */}
+      <div className="pt-16"></div>
 
-      {/* Features and Help Section */}
-      <div className="max-w-7xl mx-auto p-8">
-        <section className="flex flex-col items-center gap-8">
+      {/* Hero Section */}
+      <section className="relative py-16 lg:py-24 overflow-hidden -mt-8">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-indigo-600/10"></div>
+
+        <div className="container mx-auto px-4 relative">
+          <motion.div
+            initial={{ y: -30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.7 }}
+            className="text-center max-w-4xl mx-auto mb-16"
+          >
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-gray-200 mb-8"
+            >
+              <Sparkles className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-medium text-gray-700">AI-Powered Text Intelligence</span>
+            </motion.div>
+
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+              Transform Your Text with{" "}
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                Advanced AI
+              </span>
+            </h1>
+            <p className="text-xl text-gray-600 mb-8 leading-relaxed max-w-3xl mx-auto">
+              Summarize lengthy documents, translate across languages, and extract key insights instantly with our cutting-edge artificial intelligence technology.
+            </p>
+
+            {/* Stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex flex-wrap justify-center gap-8 mb-12"
+            >
+              {[
+                { number: "10K+", label: "Documents Processed" },
+                { number: "98%", label: "Accuracy Rate" },
+                { number: "20+", label: "Languages Supported" },
+                { number: "2s", label: "Average Response" }
+              ].map((stat, index) => (
+                <div key={index} className="text-center">
+                  <div className="text-2xl font-bold text-gray-900">{stat.number}</div>
+                  <div className="text-sm text-gray-500">{stat.label}</div>
+                </div>
+              ))}
+            </motion.div>
+          </motion.div>
+
+          {/* Service Cards */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="flex flex-wrap justify-center gap-4"
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-16"
           >
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="relative bg-gradient-to-r from-blue-500 to-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 overflow-hidden group"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative flex items-center justify-center gap-2">
-                <span className="group-hover:scale-110 transition-transform duration-300">Summarize Text</span>
-                <FaFileAlt className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
-              </div>
-            </motion.button>
+            {[
+              {
+                title: "Text Summarizer",
+                description: "Process direct text input with intelligent AI analysis",
+                icon: FaFileAlt,
+                color: "from-blue-500 to-cyan-500",
+                hoverColor: "hover:from-blue-600 hover:to-cyan-600",
+                features: ["Smart Extraction", "Context Aware", "Multiple Formats"],
+                onClick: () => { }
+              },
+              {
+                title: "Document Processor",
+                description: "Upload and analyze PDF, DOC, and other document formats",
+                icon: FaFilePdf,
+                color: "from-green-500 to-emerald-500",
+                hoverColor: "hover:from-green-600 hover:to-emerald-600",
+                features: ["PDF Support", "Batch Processing", "Secure Upload"],
+                onClick: () => navigate("/document")
+              },
+              {
+                title: "Web Content",
+                description: "Extract and summarize content from any webpage URL",
+                icon: FaLink,
+                color: "from-purple-500 to-pink-500",
+                hoverColor: "hover:from-purple-600 hover:to-pink-600",
+                features: ["URL Processing", "Real-time Fetch", "Content Cleaning"],
+                onClick: () => navigate("/link")
+              }
+            ].map((service, index) => (
+              <motion.div
+                key={service.title}
+                whileHover={{ y: -8, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="relative group cursor-pointer"
+                onClick={service.onClick}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-white to-gray-50 rounded-3xl shadow-lg border border-gray-200 transform group-hover:scale-105 transition-all duration-300" />
+                <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-white/50 shadow-xl overflow-hidden">
+                  {/* Gradient Overlay */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${service.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
 
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="relative bg-gradient-to-r from-green-500 to-green-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 overflow-hidden group"
-              onClick={() => navigate("/document")}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative flex items-center justify-center gap-2">
-                <span className="group-hover:scale-110 transition-transform duration-300">Summarize Document</span>
-                <FaFilePdf className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
-              </div>
-            </motion.button>
+                  {/* Icon */}
+                  <div className={`relative inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r ${service.color} mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                    <service.icon className="w-8 h-8 text-white" />
+                  </div>
 
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="relative bg-gradient-to-r from-purple-500 to-purple-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 overflow-hidden group"
-              onClick={() => navigate("/link")}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative flex items-center justify-center gap-2">
-                <span className="group-hover:scale-110 transition-transform duration-300">Summarize Link</span>
-                <FaLink className="w-5 h-5 text-white group-hover:rotate-12 transition-transform duration-300" />
-              </div>
-            </motion.button>
+                  {/* Content */}
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3 relative">{service.title}</h3>
+                  <p className="text-gray-600 mb-6 leading-relaxed">{service.description}</p>
+
+                  {/* Features */}
+                  <div className="space-y-2 mb-6">
+                    {service.features.map((feature, idx) => (
+                      <div key={idx} className="flex items-center gap-3 text-sm text-gray-500">
+                        <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${service.color}`} />
+                        {feature}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Action Indicator */}
+                  <div className={`flex items-center gap-2 text-sm font-medium bg-gradient-to-r ${service.color} bg-clip-text text-transparent`}>
+                    Get Started
+                    <Zap className="w-4 h-4" />
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </motion.div>
 
-          <div className="relative flex items-center justify-center mt-4 px-4 w-full max-w-4xl mx-auto">
+          {/* CTA Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+          >
             <button
-              onClick={() => setShowHelp(!showHelp)}
-              className="group relative rounded-full p-2 transition-all duration-500 hover:rotate-[360deg] focus:outline-none z-50"
+              onClick={() => setShowHelp(true)}
+              className="flex items-center gap-3 px-8 py-4 bg-white border border-gray-200 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-gray-700 font-semibold hover:scale-105"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
-              <HelpCircle
-                className={`w-8 h-8 md:w-9 md:h-9 transition-all duration-500 ${showHelp
-                  ? 'text-purple-600 drop-shadow-[0_4px_8px_rgba(99,102,241,0.3)]'
-                  : 'text-gray-400 hover:text-blue-500 group-hover:scale-110 group-hover:drop-shadow-[0_4px_12px_rgba(59,130,246,0.25)]'
-                  }`}
-                strokeWidth={1.5}
-              />
+              <HelpCircle className="w-5 h-5 text-blue-600" />
+              How It Works
             </button>
 
-            {showHelp && (
-              <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-50">
-                <motion.div
-                  initial={{ opacity: 0, y: -10, scale: 0.97 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.97 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className="w-full max-w-md sm:max-w-lg bg-white/95 backdrop-blur-sm shadow-2xl p-6 rounded-2xl border border-white/20 relative"
-                  style={{
-                    background: 'radial-gradient(at top right, #f8fafc 0%, #f1f5f9 100%)',
-                    boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                  }}
-                >
-                  <button
-                    onClick={() => setShowHelp(false)}
-                    className="absolute top-4 right-4 p-1 hover:bg-gray-100/50 rounded-full transition-all duration-200 hover:rotate-90"
-                  >
-                    <X className="w-5 h-5 text-gray-400 hover:text-gray-600" />
-                  </button>
-
-                  <div className="flex justify-between items-start mb-5">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg shadow-lg">
-                        <FaFileAlt className="w-6 h-6 text-white" />
-                      </div>
-                      <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent">
-                        Quick Start Guide
-                      </h3>
-                    </div>
-                  </div>
-
-                  <ul className="space-y-4">
-                    <motion.li className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors" whileHover={{ x: 5 }}>
-                      <div className="flex-shrink-0 w-7 h-7 bg-blue-500/10 text-blue-600 rounded-full flex items-center justify-center font-semibold">
-                        1
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-700">Enter Text</p>
-                        <p className="text-sm text-gray-500 mt-1">Paste or enter the text you want to summarize</p>
-                      </div>
-                    </motion.li>
-
-                    <motion.li className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors" whileHover={{ x: 5 }}>
-                      <div className="flex-shrink-0 w-7 h-7 bg-purple-500/10 text-purple-600 rounded-full flex items-center justify-center font-semibold">
-                        2
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-700">Generate Summary</p>
-                        <p className="text-sm text-gray-500 mt-1">Click the "Summarize" button for AI-powered analysis</p>
-                      </div>
-                    </motion.li>
-
-                    <motion.li className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/50 transition-colors" whileHover={{ x: 5 }}>
-                      <div className="flex-shrink-0 w-7 h-7 bg-pink-500/10 text-pink-600 rounded-full flex items-center justify-center font-semibold">
-                        3
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-700">Translate Results</p>
-                        <p className="text-sm text-gray-500 mt-1">Select language and click "Translate" for instant conversion</p>
-                      </div>
-                    </motion.li>
-                  </ul>
-                </motion.div>
-              </div>
+            {!loggedInUser && (
+              <button
+                onClick={handleRegisterClick}
+                className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 text-white font-semibold hover:scale-105 hover:from-blue-700 hover:to-purple-700"
+              >
+                <FaRocket className="w-5 h-5" />
+                Start Free Today
+              </button>
             )}
-          </div>
-
-        </section>
-      </div>
-
-      {/* Main Content: Text Summarizer and Translator */}
-      <div className=" mx-auto px-4 pt-2">
-        <TextSummarizerAndTranslator loggedInUser={loggedInUser} />
-      </div>
-
-      {/* About Section */}
-      <section className="w-full min-h-screen flex flex-col items-center px-0 bg-white mt-20 px-6 py-16 bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 rounded-2xl shadow-2xl shadow-indigo-100/50 hover:shadow-2xl hover:shadow-indigo-200/60 transition-all duration-500 border-2 border-white/50 relative overflow-hidden group">
-        {/* Animated background elements */}
-        <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-200/20 rounded-full group-hover:scale-150 transition-transform duration-1000 animate-[pulse_7s_infinite]"></div>
-        <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-purple-200/20 rounded-full group-hover:scale-150 transition-transform duration-1000 delay-150 animate-[pulse_7s_infinite]"></div>
-
-        <div className="relative z-10 space-y-12">
-          <div className="text-center space-y-4">
-            <h2 className="text-5xl font-extrabold mb-8 text-center group/title bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent inline-block relative">
-              <span className="inline-block animate-gradient bg-[length:200%] bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-500 to-indigo-600 hover:animate-gradient-flow">
-                Introduction to AI Summarization & Translation Tool
-              </span>
-              <div className="absolute bottom-0 left-1/2 w-4/5 h-1 bg-indigo-100/50 transform -translate-x-1/2 rounded-full overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-40 animate-shine" />
-              </div>
-            </h2>
-
-
-            <div className="max-w-4xl w-full relative group">
-              {/* Enhanced background effects */}
-              <div className="absolute inset-0 bg-[linear-gradient(45deg,#f0f0f0_25%,transparent_25%),linear-gradient(-45deg,#f0f0f0_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f0f0f0_75%),linear-gradient(-45deg,transparent_75%,#f0f0f0_75%)] bg-[size:20px_20px] opacity-10 animate-grid-move" />
-
-              {/* Particle system */}
-              {[...Array(30)].map((_, i) => (
-                <div
-                  key={i}
-                  className="absolute w-1.5 h-1.5 bg-indigo-400/30 rounded-full animate-float pointer-events-none"
-                  style={{
-                    left: `${Math.random() * 100}%`,
-                    top: `${Math.random() * 100}%`,
-                    animationDelay: `${i * 0.2}s`,
-                    animationDuration: `${8 + Math.random() * 15}s`
-                  }}
-                />
-              ))}
-
-
-              <div className="absolute -top-12 sm:-top-16 left-1/4 rotate-12 opacity-10 text-[80px] sm:text-[100px] md:text-[120px] font-bold text-indigo-200/30 animate-pulse-slow pointer-events-none select-none">
-                AI POWERED
-              </div>
-
-              <div className="space-y-4 text-gray-800 leading-relaxed text-base sm:text-lg">
-                <section className="hover:bg-indigo-50/30 rounded-xl p-6 transition-all duration-300 shadow-sm hover:shadow-md relative">
-                  <span className="absolute left-4 top-6 w-4 h-4 bg-indigo-400 rounded-full animate-pulse" />
-                  <p className="font-medium text-left">
-                    <span className="text-3xl float-left mr-3">📌</span>
-                    In an age where information flows at an unprecedented rate,
-                    <span className="bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent font-bold">
-                      text summarization
-                    </span>
-                    has emerged as an indispensable tool. It condenses extensive documents, reports, and articles into concise, insightful summaries, preserving the essence of the content without losing contextual depth.
-                    <br />
-                    <br />
-                    Cutting-edge
-                    <span className="font-semibold text-indigo-600">Natural Language Processing (NLP)</span>
-                    techniques empower AI to identify key insights, extract meaningful data, and present information in a digestible manner. Imagine analyzing thousands of documents in minutes—enhancing decision-making, boosting productivity, and making knowledge more accessible than ever.
-                  </p>
-                </section>
-
-                <section className="hover:bg-purple-50/30 rounded-xl p-6 transition-all duration-300 shadow-sm hover:shadow-md relative">
-                  <span className="absolute left-4 top-6 w-4 h-4 bg-purple-400 rounded-full animate-pulse delay-1000" />
-                  <p className="font-medium text-left">
-                    <span className="text-3xl float-left mr-3">🧠</span>
-                    Modern AI models, built on
-                    <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent font-bold">
-                      transformer-based architectures
-                    </span>,
-                    have redefined the boundaries of semantic understanding and text processing.
-                    <br />
-                    <br />
-                    Advanced systems like
-                    <span className="font-semibold text-purple-600">GPT-4</span>,
-                    <span className="font-semibold text-purple-600">DeepSeek R1</span>,
-                    <span className="font-semibold text-purple-600">Gemini</span>,
-                    and other state-of-the-art models leverage billions of parameters to process and generate human-like text with unprecedented accuracy. These AI systems excel in:
-                  </p>
-                  <ul className="mt-2 space-y-2 pl-8">
-                    <li className="flex items-center hover:translate-x-2 transition-transform">
-                      <div className="w-2 h-2 bg-indigo-400 mr-3 rounded-full" />
-                      Understanding and synthesizing key themes across vast datasets.
-                    </li>
-                    <li className="flex items-center hover:translate-x-2 transition-transform">
-                      <div className="w-2 h-2 bg-purple-400 mr-3 rounded-full" />
-                      Ensuring factual consistency through cross-referencing large-scale information sources.
-                    </li>
-                    <li className="flex items-center hover:translate-x-2 transition-transform">
-                      <div className="w-2 h-2 bg-pink-400 mr-3 rounded-full" />
-                      Adapting tone, style, and context for diverse audiences and use cases.
-                    </li>
-                    <li className="flex items-center hover:translate-x-2 transition-transform">
-                      <div className="w-2 h-2 bg-indigo-500 mr-3 rounded-full" />
-                      Generating human-like responses for interactive AI applications, from chatbots to content creation.
-                    </li>
-                    <li className="flex items-center hover:translate-x-2 transition-transform">
-                      <div className="w-2 h-2 bg-purple-500 mr-3 rounded-full" />
-                      Supporting multilingual processing, breaking language barriers in global communication.
-                    </li>
-                  </ul>
-                </section>
-              </div>
-
-
-            </div>
-          </div>
-          {/* Feature Cards */}
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-              <div className="relative group transition-all duration-700">
-                <div className="bg-gradient-to-br from-white to-indigo-50 p-8 rounded-3xl shadow-2xl shadow-indigo-100/40 hover:shadow-indigo-200/60 transition-all duration-500 transform-style-preserve-3d group-hover:rotate-x-3 group-hover:rotate-y-2 group-hover:translate-z-20 h-full">
-                  <div className="flex flex-col h-full">
-                    <div className="flex items-start gap-5 mb-6">
-                      <div className="p-4 bg-indigo-500/10 rounded-2xl transition-all duration-500 group-hover:rotate-12">
-                        <svg className="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h7"></path>
-                        </svg>
-                      </div>
-                      <h3 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mt-2">
-                        Smart Summarization
-                      </h3>
-                    </div>
-
-                    <p className="text-gray-600 mb-8 text-lg leading-relaxed flex-1">
-                      Harness deep learning algorithms to extract key insights from any text while maintaining contextual integrity.
-                    </p>
-
-                    <div className="space-y-5 border-l-2 border-indigo-100 pl-5">
-                      {[
-                        { title: 'Speed', value: '15s /page', color: 'from-green-400 to-cyan-400' },
-                        { title: 'Accuracy', value: '90%', color: 'from-amber-400 to-orange-400' }
-                      ].map((item, index) => (
-                        <div key={index} className="relative">
-                          <div className="absolute -left-5 top-3 w-3 h-3 bg-indigo-200 rounded-full transition-all duration-300 group-hover:scale-150"></div>
-                          <div className="flex justify-between items-center text-gray-700 hover:text-gray-900 transition-colors duration-300">
-                            <span className="font-medium">{item.title}</span>
-                            <span className={`bg-gradient-to-r ${item.color} bg-clip-text text-transparent font-bold`}>
-                              {item.value}
-                            </span>
-                          </div>
-                          <div className="h-1 mt-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div className={`w-full h-full bg-gradient-to-r ${item.color} transition-all duration-1000 delay-${index * 200}`}></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {/* Translator Card */}
-              <div className="relative group transition-all duration-700">
-                <div className="bg-gradient-to-br from-white to-purple-50 p-8 rounded-3xl shadow-2xl shadow-purple-100/40 hover:shadow-purple-200/60 transition-all duration-500 transform-style-preserve-3d group-hover:rotate-x-3 group-hover:-rotate-y-2 group-hover:translate-z-20 h-full">
-                  <div className="flex flex-col h-full">
-                    <div className="flex items-start gap-5 mb-6">
-                      <div className="p-4 bg-purple-500/10 rounded-2xl transition-all duration-500 group-hover:-rotate-12">
-                        <svg className="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path>
-                        </svg>
-                      </div>
-                      <h3 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mt-2">
-                        Neural Translation
-                      </h3>
-                    </div>
-
-                    <p className="text-gray-600 mb-8 text-lg leading-relaxed flex-1">
-                      Break language barriers with real-time translation supporting 20+ languages using transformer architecture.
-                    </p>
-
-                    <div className="grid grid-cols-2 gap-6">
-                      {[
-                        { icon: '🌍', title: 'Languages', value: '20+' },
-                        { icon: '⚡', title: 'Speed', value: '15s /Paragraph' },
-                        { icon: '🤖', title: 'AI Models', value: '1+' },
-                        { icon: '🎯', title: 'Accuracy', value: '90%' }
-                      ].map((item, index) => (
-                        <div key={index} className="p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
-                          <div className="text-2xl mb-2">{item.icon}</div>
-                          <div className="text-gray-700 font-medium">{item.title}</div>
-                          <div className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent">
-                            {item.value}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {/* Đoạn văn bổ sung */}
-              <div className="relative mt-12 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
-                <div className="text-sm font-medium text-blue-800">
-                  🚀 Pro Tip: Combine summarization with keyword extraction for maximum efficiency. Use hierarchical approaches for complex documents, and always validate results against original context!
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Floating Particles */}
-        <div className="absolute inset-0 pointer-events-none">
-          {[...Array(12)].map((_, i) => (
-            <div key={i} className="absolute w-2 h-2 bg-indigo-400/30 rounded-full animate-float"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${i * 0.5}s`
-              }} />
-          ))}
+          </motion.div>
         </div>
       </section>
 
+      {/* Main Content Area - Simplified and Clean */}
+      <section className="relative backdrop-blur-sm mt-10">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="max-w-6xl mx-auto"
+          >
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Try Our <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">AI Text Analyzer</span>
+              </h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Experience the power of AI-driven text processing with our intuitive interface
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+       <TextSummarizerAndTranslator loggedInUser={loggedInUser} />
+
+      {/* Features Section */}
+      <section className="relative py-20 bg-gradient-to-br from-slate-900 via-purple-900 to-blue-900 text-white overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
+            backgroundSize: '40px 40px'
+          }}></div>
+        </div>
+
+        <div className="container mx-auto px-4 relative">
+          <div className="text-center mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 mb-6"
+            >
+              <Zap className="w-4 h-4 text-yellow-400" />
+              <span className="text-sm font-medium text-white">Powered by Advanced AI</span>
+            </motion.div>
+
+            <motion.h2
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-4xl md:text-5xl font-bold mb-6"
+            >
+              Enterprise-Grade AI Capabilities
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="text-xl text-blue-200 max-w-3xl mx-auto leading-relaxed"
+            >
+              Leveraging state-of-the-art natural language processing to deliver accurate, efficient, and secure text analysis
+            </motion.p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            {/* Summarization Feature */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+              className="group relative bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20 hover:border-white/40 transition-all duration-500"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+              <div className="relative z-10">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg">
+                    <FaFileAlt className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold">Intelligent Summarization</h3>
+                </div>
+                <p className="text-blue-100 mb-6 leading-relaxed text-lg">
+                  Our advanced AI extracts key information while maintaining context and meaning, delivering concise summaries that perfectly capture the essence of your content.
+                </p>
+                <div className="space-y-4">
+                  {[
+                    { label: "Processing Speed", value: "Instant", color: "bg-green-400", icon: "⚡" },
+                    { label: "Accuracy Rate", value: "98%+", color: "bg-blue-400", icon: "🎯" },
+                    { label: "Context Preservation", value: "Excellent", color: "bg-purple-400", icon: "🔍" }
+                  ].map((metric, index) => (
+                    <div key={index} className="flex justify-between items-center py-3 border-b border-white/10 last:border-b-0">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">{metric.icon}</span>
+                        <span className="text-blue-200">{metric.label}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold">{metric.value}</span>
+                        <div className={`w-3 h-3 rounded-full ${metric.color} shadow-sm`}></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Translation Feature */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+              className="group relative bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20 hover:border-white/40 transition-all duration-500"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+              <div className="relative z-10">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg">
+                    <Globe className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold">Neural Translation</h3>
+                </div>
+                <p className="text-blue-100 mb-6 leading-relaxed text-lg">
+                  Break language barriers with advanced neural machine translation supporting 50+ languages while preserving nuance, tone, and cultural context.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { icon: "🌍", label: "Languages", value: "50+", color: "from-blue-500 to-cyan-500" },
+                    { icon: "⚡", label: "Speed", value: "Real-time", color: "from-green-500 to-emerald-500" },
+                    { icon: "🤖", label: "AI Models", value: "Multiple", color: "from-purple-500 to-pink-500" },
+                    { icon: "🎯", label: "Accuracy", value: "95%+", color: "from-orange-500 to-red-500" }
+                  ].map((item, index) => (
+                    <div key={index} className="text-center p-4 bg-white/5 rounded-2xl backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all duration-300">
+                      <div className="text-2xl mb-3">{item.icon}</div>
+                      <div className="text-sm text-blue-200 mb-1">{item.label}</div>
+                      <div className="font-bold text-white text-lg">{item.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Security Feature */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="max-w-4xl mx-auto mt-12"
+          >
+            <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm rounded-3xl p-8 border border-white/20 text-center">
+              <div className="flex items-center justify-center gap-4 mb-4">
+                <Shield className="w-8 h-8 text-green-400" />
+                <h3 className="text-2xl font-bold">Enterprise-Grade Security</h3>
+              </div>
+              <p className="text-blue-100 text-lg mb-6">
+                Your data is protected with military-grade encryption. We never store your personal documents and ensure complete privacy throughout the processing.
+              </p>
+              <div className="flex flex-wrap justify-center gap-6">
+                {["End-to-End Encryption", "GDPR Compliant", "No Data Storage", "SSL Secure"].map((feature, index) => (
+                  <div key={index} className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full">
+                    <FaCheckCircle className="w-4 h-4 text-green-400" />
+                    <span className="text-sm text-white">{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Help Modal */}
+      {showHelp && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-gray-200"
+          >
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <HelpCircle className="w-5 h-5 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">How to Use PDFSmart</h3>
+              </div>
+              <button
+                onClick={() => setShowHelp(false)}
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors duration-200"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              {[
+                {
+                  step: "1",
+                  title: "Input Your Content",
+                  description: "Paste your text, upload documents, or provide webpage URLs for processing",
+                  icon: "📝"
+                },
+                {
+                  step: "2",
+                  title: "AI Processing",
+                  description: "Our advanced AI analyzes and understands your content contextually",
+                  icon: "🤖"
+                },
+                {
+                  step: "3",
+                  title: "Get Results",
+                  description: "Receive summarized insights and translations in seconds",
+                  icon: "🎯"
+                }
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 group">
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center font-semibold text-white text-lg shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      {item.icon}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 text-lg mb-2">{item.title}</h4>
+                    <p className="text-gray-600 leading-relaxed">{item.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+              <button
+                onClick={() => setShowHelp(false)}
+                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+              >
+                Got It, Let's Start!
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Services Section */}
       <ServicesSection />
-
     </div>
   );
 }
